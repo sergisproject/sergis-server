@@ -14,7 +14,11 @@ var fs = require("fs"),
 var mime = require("mime");
 
 /**
- * Serve a static page.
+ * Serve a static HTML page.
+ *
+ * @param req
+ * @param res
+ * @param {string} file - The path of the file to serve.
  */
 var servePage = exports.servePage = function (req, res, file) {
     fs.readFile(file, function (err, data) {
@@ -29,6 +33,10 @@ var servePage = exports.servePage = function (req, res, file) {
 
 /**
  * Serve a static resource.
+ *
+ * @param req
+ * @param res
+ * @param {string} pathname - The path of the resource to serve.
  */
 var serveResource = exports.serveResource = function (req, res, pathname) {
     fs.stat(pathname, function (err, stats) {

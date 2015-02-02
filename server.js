@@ -23,13 +23,13 @@ var staticserve = require("./modules/staticserve");
  * @todo Move to external file.
  */
 var config = {
-    /** Default port */
+    /** Default server port */
     PORT: process.env.PORT || 3000,
     
-    /** Web resources directory (mapped to http://nodejs-server/lib/...) */
+    /** Web resources directory (mapped to http://this-nodejs-server/lib/...) */
     RESOURCES_DIR: path.join(__dirname, "sergis-client", "lib"),
     
-    /** Homepage file */
+    /** Homepage file (mapped to http://this-nodejs-server/ */
     HOMEPAGE_FILE: path.join(__dirname, "sergis-client", "index.html")
 };
 
@@ -42,8 +42,10 @@ app.listen(config.PORT);
 function handler(req, res) {
     var url = url_module.parse(req.url, true);
     
-    // Assuming /dir/file
-    // If we have "/mydir/mysubdir/myfile", dir=="mydir" and file=="mysubdir/myfile"
+    // Assuming a form resembling /dir/file
+    // "/file"            --> dir=="file" and file==""
+    // "/dir/file"        --> dir=="dir"  and file=="file"
+    // "/dir/subdir/file" --> dir=="dir"  and file=="subdir/file"
     var dir = url.pathname.substring(1);
     if (dir.indexOf("/") != -1) dir = dir.substring(0, dir.indexOf("/"));
     var file = url.pathname.substring(dir.length + 2);
