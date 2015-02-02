@@ -1,0 +1,30 @@
+{
+  "name": "sergis-server",
+  "version": "0.9.0",
+  "description": "SerGIS Server",
+  "license": "MIT",
+  "contributors": [
+    {
+      "name": "Jake Hartz",
+      "email": "jhartz@mail.rit.edu"
+    },
+    {
+      "name": "Drew Heintz",
+      "email": "ach3628@rit.edu"
+    },
+    {
+      "name": "Jeannette Forbes",
+      "email": "jxf2190@rit.edu"
+    }
+  ],
+  "dependencies": {
+    "socket.io": "1.3.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sergisproject/sergis-server.git"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}
