@@ -1,3 +1,0 @@
-[submodule "sergis-client"]
-	path = sergis-client
-	url = git@github.com:sergisproject/sergis-client.git
