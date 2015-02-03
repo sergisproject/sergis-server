@@ -7,12 +7,15 @@
  */
 
 // node modules
-var app = require("http").createServer(handler),
-    path = require("path"),
+var path = require("path"),
     url_module = require("url");
 
 // required modules
-var io = require("socket.io")(app);
+var app = require("express")(),
+    server = require("http").Server(app),
+    io = require("socket.io")(server);
+var finalhandler = require("finalhandler"),
+    serveStatic = require("serve-static");
 
 // our modules
 var staticserve = require("./modules/staticserve");
@@ -33,12 +36,14 @@ var config = {
     HOMEPAGE_FILE: path.join(__dirname, "sergis-client", "index.html")
 };
 
+// Start listening
 console.log("Starting SerGIS server on port " + config.PORT);
-app.listen(config.PORT);
+server.listen(config.PORT);
 
-/**
- * Handle URL requests.
- */
+// Create handler for serving "/lib"
+app.use("/lib", serveStatic(config.RESOURCES_DIR, {}));
+
+/*
 function handler(req, res) {
     var url = url_module.parse(req.url, true);
     
@@ -57,13 +62,15 @@ function handler(req, res) {
     } else if (dir == "lib") {
         staticserve.serveResource(req, res, path.join(config.RESOURCES_DIR, file));
     // The /admin stuff (TODO: future)
-    /*
     } else if (dir == "admin" && file == "") {
         //serveAdmin(url, req, res);
-    */
     // Anything else
     } else {
         staticserve.serveError(req, res, 404);
     }
 }
+*/
 
+app.get("/", function (req, res) {
+    staticserve.servePage(req, res, config.HOMEPAGE_FILE);
+});
