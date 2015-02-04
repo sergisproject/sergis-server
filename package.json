@@ -22,7 +22,8 @@
     "mime": "1.2.x",
     "express": "4.11.x",
     "finalhandler": "0.3.x",
-    "serve-static": "1.8.x"
+    "serve-static": "1.8.x",
+    "mongodb": "1.4.x"
   },
   "repository": {
     "type": "git",
