@@ -14,19 +14,18 @@ var MONGODB_SERVER_ENABLED = true;
 
 
 // node modules
-var path = require("path"),
+var fs = require("fs"),
+    path = require("path"),
     url_module = require("url");
 
 // required modules
-var app = require("express")(),
+var express = require("express"),
+    app = express(),
     server = require("http").Server(app),
     io = require("socket.io")(server);
 var finalhandler = require("finalhandler"),
     serveStatic = require("serve-static");
 var MongoClient = require("mongodb").MongoClient;
-
-// our modules
-var staticserve = require("./modules/staticserve");
 
 
 /** MongoDB database */
@@ -111,16 +110,17 @@ var config = {
         server.listen(config.PORT);
 
         // Create handler for serving "/lib"
-        app.use("/lib", serveStatic(config.RESOURCES_DIR, {}));
+        app.use("/lib", express.static(config.RESOURCES_DIR));
 
         // Create handler for serving the homepage
         app.get("/", function (req, res) {
-            staticserve.servePage(req, res, config.HOMEPAGE_FILE);
+            console.log("Serving homepage");
+            res.sendFile(config.HOMEPAGE_FILE);
         });
         
         // Create handler for serving the administrative interface
         app.get("/admin", function (req, res) {
-            res.writeHead(200);
+            console.log("Serving admin page");
             res.end("<h1>Admin Page</h1>");
         });
     }
