@@ -92,7 +92,10 @@ var config = {
                 db = _db;
                 exitHandlers.push(function () {
                     // Close the database
-                    if (db) db.close();
+                    if (db) {
+                        console.log("Closing MongoDB database");
+                        db.close();
+                    }
                 });
                 startHttpServer();
                 //db.close();
