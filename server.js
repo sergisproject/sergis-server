@@ -43,34 +43,6 @@ server.listen(config.PORT);
 // Create handler for serving "/lib"
 app.use("/lib", serveStatic(config.RESOURCES_DIR, {}));
 
-/*
-function handler(req, res) {
-    var url = url_module.parse(req.url, true);
-    
-    // Assuming a form resembling /dir/file
-    // "/file"            --> dir=="file" and file==""
-    // "/dir/file"        --> dir=="dir"  and file=="file"
-    // "/dir/subdir/file" --> dir=="dir"  and file=="subdir/file"
-    var dir = url.pathname.substring(1);
-    if (dir.indexOf("/") != -1) dir = dir.substring(0, dir.indexOf("/"));
-    var file = url.pathname.substring(dir.length + 2);
-    
-    // The home page
-    if (dir == "") {
-        staticserve.servePage(req, res, config.HOMEPAGE_FILE);
-    // The /lib stuff (static resources)
-    } else if (dir == "lib") {
-        staticserve.serveResource(req, res, path.join(config.RESOURCES_DIR, file));
-    // The /admin stuff (TODO: future)
-    } else if (dir == "admin" && file == "") {
-        //serveAdmin(url, req, res);
-    // Anything else
-    } else {
-        staticserve.serveError(req, res, 404);
-    }
-}
-*/
-
 app.get("/", function (req, res) {
     staticserve.servePage(req, res, config.HOMEPAGE_FILE);
 });
