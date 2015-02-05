@@ -16,8 +16,7 @@
 
 // node modules
 var fs = require("fs"),
-    path = require("path"),
-    url_module = require("url");
+    path = require("path");
 
 // required modules
 var express = require("express"),
@@ -25,15 +24,9 @@ var express = require("express"),
     server = require("http").Server(app),
     io = require("socket.io")(server);
 require("coffee-script/register");
-var set = require("indie-set"),
-    bodyParser = require("body-parser"),
-    finalhandler = require("finalhandler"),
-    serveStatic = require("serve-static");
+var set = require("indie-set");
 var MongoClient = require("mongodb").MongoClient;
 
-
-/** MongoDB database */
-var db;
 
 /**
  * Functions to call right before exiting.
@@ -51,6 +44,9 @@ var config = {
     
     /** MongoDB server */
     MONGO_SERVER: "mongodb://localhost:27017/sergis-server",
+    
+    /** Templates directory */
+    TEMPLATES_DIR: path.join(__dirname, "templates"),
     
     /** Web resources directory (mapped to http://this-nodejs-server/lib/...) */
     RESOURCES_DIR: path.join(__dirname, "sergis-client", "lib"),
@@ -87,75 +83,33 @@ var config = {
 
 ///////////////////////////////////////////////////////////////////////////////
 // Connect to database and start HTTP server
-(function () {
-    // Use connect method to connect to the Server
-    MongoClient.connect(config.MONGO_SERVER, function (err, _db) {
-        if (err) {
-            console.error("Error connecting to MongoDB server: ", err);
-        } else {
-            console.log("Connected to MongoDB server: " + config.MONGO_SERVER);
-            db = _db;
-            exitHandlers.push(function () {
-                // Close the database
-                if (db) {
-                    console.log("Closing MongoDB database");
-                    db.close();
-                }
-            });
-            startHttpServer();
-        }
-    });
-    
-    function startHttpServer() {
+MongoClient.connect(config.MONGO_SERVER, function (err, db) {
+    if (err) {
+        console.error("Error connecting to MongoDB server: ", err);
+    } else {
+        console.log("Connected to MongoDB server: " + config.MONGO_SERVER);
+        exitHandlers.push(function () {
+            // Close the database
+            if (db) {
+                console.log("Closing MongoDB database");
+                db.close();
+            }
+        });
+
         // Start listening
         console.log("Starting SerGIS server on port " + config.PORT);
         server.listen(config.PORT);
 
         // Create handler for serving "/lib"
         app.use("/lib", express.static(config.RESOURCES_DIR));
-        
+
         // Set up templating for HTML files
         app.engine("html", set.__express);
 
         // Create handler for serving the homepage
-        app.get("/", function (req, res) {
-            res.render(config.HOMEPAGE_FILE, {
-                "backend-script-location": "lib/backends/sergis-server.js"
-            });
-        });
-        
+        require("./modules/client").init(app, io, db, config);
+
         // Create handler for serving the administrative interface
-        app.get("/admin", function (req, res) {
-            res.render(path.join(__dirname, "templates", "admin.html"), {});
-        });
-        
-        app.use("/admin", bodyParser.urlencoded({extended: true}));
-        
-        app.post("/admin", function (req, res) {
-            console.log("POST from admin page");
-            if (req.body.jsondata) {
-                console.log(req.body.jsondata);
-                try {
-                    var jsondata = JSON.parse(req.body.jsondata);
-                } catch (err) {}
-                if (!jsondata) {
-                    console.error("Invalid JSON data");
-                    res.status(500);
-                    res.end("<h1>Error</h1><h2>See console.</h2>");
-                } else {
-                    var testjson = db.collection("testjson");
-                    testjson.insert(jsondata, function (err, result) {
-                        if (err) {
-                            console.error("Error inserting into testjson database: ", err);
-                            res.status(500);
-                            res.end("<h1>Error</h1><h2>See console</h2>");
-                        } else {
-                            console.log("Inserted document into the document collection: ", result);
-                            res.redirect("/admin");
-                        }
-                    });
-                }
-            }
-        });
+        require("./modules/admin").init(app, io, db, config);
     }
-})();
+});
