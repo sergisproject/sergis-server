@@ -8,8 +8,8 @@
 
 
 /*****************************************************************************/
-// mongod --dbpath=/mongodata --port 27017
-var MONGODB_SERVER_ENABLED = true;
+// mongod --dbpath=\mongodata --port 27017
+// mongod --dbpath=/var/mongod
 /*****************************************************************************/
 
 
@@ -24,7 +24,10 @@ var express = require("express"),
     app = express(),
     server = require("http").Server(app),
     io = require("socket.io")(server);
-var finalhandler = require("finalhandler"),
+require("coffee-script/register");
+var set = require("indie-set"),
+    bodyParser = require("body-parser"),
+    finalhandler = require("finalhandler"),
     serveStatic = require("serve-static");
 var MongoClient = require("mongodb").MongoClient;
 
@@ -59,7 +62,12 @@ var config = {
 ///////////////////////////////////////////////////////////////////////////////
 // Set up cleanup on exit
 (function () {
-    function exitHandler() {
+    // So that the program will not close instantly when Ctrl+C is pressed, etc.
+    process.stdin.resume();
+
+    // Catch app closing
+    process.on("exit", function () {
+        console.log("Exiting...");
         exitHandlers.forEach(function (item) {
             try {
                 item();
@@ -67,43 +75,36 @@ var config = {
                 console.error("Error running exit handler: ", err);
             }
         });
-    }
-
-    // So that the program will not close instantly when Ctrl+C is pressed, etc.
-    process.stdin.resume();
-
-    // Catch app closing
-    process.on("exit", exitHandler);
+        return true;
+    });
 
     // Catch Ctrl+C event
-    process.on("SIGINT", exitHandler);
+    process.on("SIGINT", function () {
+        console.log("Caught SIGINT...");
+        process.exit(2);
+    });
 })();
 
 ///////////////////////////////////////////////////////////////////////////////
 // Connect to database and start HTTP server
 (function () {
-    if (MONGODB_SERVER_ENABLED) {
-        // Use connect method to connect to the Server
-        MongoClient.connect(config.MONGO_SERVER, function (err, _db) {
-            if (err) {
-                console.error("Error connecting to MongoDB server: ", err);
-            } else {
-                console.log("Connected to MongoDB server: " + config.MONGO_SERVER);
-                db = _db;
-                exitHandlers.push(function () {
-                    // Close the database
-                    if (db) {
-                        console.log("Closing MongoDB database");
-                        db.close();
-                    }
-                });
-                startHttpServer();
-                //db.close();
-            }
-        });
-    } else {
-        startHttpServer();
-    }
+    // Use connect method to connect to the Server
+    MongoClient.connect(config.MONGO_SERVER, function (err, _db) {
+        if (err) {
+            console.error("Error connecting to MongoDB server: ", err);
+        } else {
+            console.log("Connected to MongoDB server: " + config.MONGO_SERVER);
+            db = _db;
+            exitHandlers.push(function () {
+                // Close the database
+                if (db) {
+                    console.log("Closing MongoDB database");
+                    db.close();
+                }
+            });
+            startHttpServer();
+        }
+    });
     
     function startHttpServer() {
         // Start listening
@@ -112,17 +113,49 @@ var config = {
 
         // Create handler for serving "/lib"
         app.use("/lib", express.static(config.RESOURCES_DIR));
+        
+        // Set up templating for HTML files
+        app.engine("html", set.__express);
 
         // Create handler for serving the homepage
         app.get("/", function (req, res) {
-            console.log("Serving homepage");
-            res.sendFile(config.HOMEPAGE_FILE);
+            res.render(config.HOMEPAGE_FILE, {
+                "backend-script-location": "lib/backends/sergis-server.js"
+            });
         });
         
         // Create handler for serving the administrative interface
         app.get("/admin", function (req, res) {
-            console.log("Serving admin page");
-            res.end("<h1>Admin Page</h1>");
+            res.render(path.join(__dirname, "templates", "admin.html"), {});
+        });
+        
+        app.use("/admin", bodyParser.urlencoded({extended: true}));
+        
+        app.post("/admin", function (req, res) {
+            console.log("POST from admin page");
+            if (req.body.jsondata) {
+                console.log(req.body.jsondata);
+                try {
+                    var jsondata = JSON.parse(req.body.jsondata);
+                } catch (err) {}
+                if (!jsondata) {
+                    console.error("Invalid JSON data");
+                    res.status(500);
+                    res.end("<h1>Error</h1><h2>See console.</h2>");
+                } else {
+                    var testjson = db.collection("testjson");
+                    testjson.insert(jsondata, function (err, result) {
+                        if (err) {
+                            console.error("Error inserting into testjson database: ", err);
+                            res.status(500);
+                            res.end("<h1>Error</h1><h2>See console</h2>");
+                        } else {
+                            console.log("Inserted document into the document collection: ", result);
+                            res.redirect("/admin");
+                        }
+                    });
+                }
+            }
         });
     }
 })();
