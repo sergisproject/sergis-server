@@ -57,7 +57,7 @@ var config = {
 
 ///////////////////////////////////////////////////////////////////////////////
 // Set up cleanup on exit
-(function () {
+function setupCleanup() {
     // So that the program will not close instantly when Ctrl+C is pressed, etc.
     process.stdin.resume();
 
@@ -79,7 +79,7 @@ var config = {
         console.log("Caught SIGINT...");
         process.exit(2);
     });
-})();
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Connect to database and start HTTP server
@@ -111,5 +111,8 @@ MongoClient.connect(config.MONGO_SERVER, function (err, db) {
 
         // Create handler for serving the administrative interface
         require("./modules/admin").init(app, io, db, config);
+        
+        // Set up cleanup
+        setupCleanup();
     }
 });
