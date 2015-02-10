@@ -1,17 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8">
 <title>SerGIS Server Admin</title>
 </head>
 
 <body>
 <h1>SerGIS Server Admin</h1>
-<p>Enter JSON data to store:</p>
+
 <form action="" method="POST">
 
+<h2>Create New Game</h2>
+<p>Enter JSON Game Data for game:</p>
 <textarea style="width: 100%;" rows="5" name="jsondata"></textarea>
-<p><input type="submit"></p>
+<p>Game Access Credentials:</p>
+<table><tbody>
+    <tr><td>Username: </td><td><input name="username"></td></tr>
+    <tr><td>Password: </td><td><input name="password"></td></tr>
+</tbody></table>
+<p><input type="submit" value="Create Game"></p>
+
+<h2>Existing Games</h2>
+<ul>
+    <li data-set-repeat="game games">
+        <b data-set-text="game.username"></b> / <i data-set-text="game.password"></i> <button name="delete" data-set-attribute="value game.username">Delete</button><br>
+        <code data-set-text="game.jsondata"></code>
+    </li>
+</ul>
 
 </form>
+
 </body>
 </html>

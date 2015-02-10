@@ -31,35 +31,79 @@ function init(_app, _io, _db, _config) {
     
     // Admin homepage
     app.get("/admin", function (req, res) {
-        res.render(path.join(config.TEMPLATES_DIR, "admin.html"), {});
+        db.collection("games").find({}).toArray(function (err, games) {
+            if (err) {
+                console.error("Error finding all in games database: ", err);
+                res.status(500);
+                res.end("<h1>Database Error</h1><h2>See console</h2>");
+            } else {
+                var gamesList = [];
+                for (var i = 0; i < games.length; i++) {
+                    gamesList.push({
+                        username: games[i].username,
+                        password: games[i].password,
+                        jsondata: JSON.stringify(games[i].jsondata)
+                    });
+                }
+                res.render(path.join(config.TEMPLATES_DIR, "admin.html"), {
+                    games: gamesList
+                });
+            }
+        });
     });
 
     app.use("/admin", bodyParser.urlencoded({extended: true}));
 
     app.post("/admin", function (req, res) {
-        console.log("POST from admin page");
-        if (req.body.jsondata) {
-            console.log(req.body.jsondata);
+        var games = db.collection("games");
+        if (req.body.delete) {
+            games.remove({username: req.body.delete}, function (err, result) {
+                if (err) {
+                    console.error("Error removing from games database: ", err);
+                    res.status(500);
+                    res.end("<h1>Database Error</h1><h2>See console</h2>");
+                } else {
+                    console.log("Removed document from games database: ", result);
+                    res.redirect("/admin");
+                }
+            });
+        } else if (req.body.jsondata && req.body.username) {
             try {
                 var jsondata = JSON.parse(req.body.jsondata);
             } catch (err) {}
             if (!jsondata) {
-                console.error("Invalid JSON data");
-                res.status(500);
-                res.end("<h1>Error</h1><h2>See console.</h2>");
+                res.end("<h1>Error</h1><h2>Invalid JSON data.</h2><a href='javascript:history.back();'>Back</a>");
             } else {
-                var testjson = db.collection("testjson");
-                testjson.insert(jsondata, function (err, result) {
+                var username = req.body.username.toLowerCase(),
+                    password = req.body.password;
+                games.find({username: username}).toArray(function (err, games) {
                     if (err) {
-                        console.error("Error inserting into testjson database: ", err);
+                        console.error("Error checking games database: ", err);
                         res.status(500);
-                        res.end("<h1>Error</h1><h2>See console</h2>");
+                        res.end("<h1>Database Error</h1><h2>See console</h2>");
+                    } else if (games.length > 0) {
+                        res.end("<h1>Error</h2><h2>Username has already been used.</h2><a href='javascript:history.back();'>Back</a>");
                     } else {
-                        console.log("Inserted document into the document collection: ", result);
-                        res.redirect("/admin");
+                        var game = {
+                            jsondata: jsondata,
+                            username: username,
+                            password: password
+                        };
+                        db.collection("games").insert(game, function (err, result) {
+                            if (err) {
+                                console.error("Error inserting into games database: ", err);
+                                res.status(500);
+                                res.end("<h1>Database Error</h1><h2>See console</h2>");
+                            } else {
+                                console.log("Inserted document into games database: ", result);
+                                res.redirect("/admin");
+                            }
+                        });
                     }
                 });
             }
+        } else {
+            res.end("<h1>Error</h1><h2>Please enter data for all fields.</h2><a href='javascript:history.back();'>Back</a>");
         }
     });
 }
