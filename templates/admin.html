@@ -4,15 +4,49 @@
 <meta charset="utf-8">
 <title>SerGIS Server Admin</title>
 <style type="text/css">
+body {
+    font-family: sans-serif;
+    background-color: #D9D2B0;
+    color: #402319
+}
+
+header {
+    text-align: center;
+    color: #395273;
+    border-bottom: 1px solid #395273;
+}
+
+section {
+    max-width: 1000px;
+    margin: 10px auto;
+}
+
 th {
     border-bottom: 1px solid black;
+}
+
+td {
+    vertical-align: top;
+}
+
+div.codeholder {
+    max-height: 120px;
+    overflow: hidden;
+}
+
+input[type=checkbox]:checked + div.codeholder {
+    max-height: none;
 }
 </style>
 </head>
 
 <body>
-<h1>SerGIS Server Admin</h1>
 
+<header>
+    <h1>SerGIS Server Admin</h1>
+</header>
+
+<section>
 <form action="" method="POST">
 
 <h2>Create New Game</h2>
@@ -20,13 +54,14 @@ th {
 <textarea style="width: 100%;" rows="5" name="jsondata"></textarea>
 <p>Game Access Credentials:</p>
 <table><tbody>
-    <tr><td>Username: </td><td><input name="username"></td></tr>
+    <tr><td>Username: </td><td><input name="username"> <small>(used to identify the game)</small></td></tr>
     <tr><td>Password: </td><td><input name="password"> <small>(leave blank for no password)</small></td></tr>
 </tbody></table>
 <p><input type="submit" value="Create Game"></p>
 
 <h2>Existing Games</h2>
-<table>
+<p data-set-if="nogames">No games! Create one above.</p>
+<table data-set-if="yesgames">
 <thead>
 <tr>
     <th>Username</th>
@@ -43,12 +78,13 @@ th {
     <td><i data-set-text="game.password">&nbsp;</i></td>
     <td><a data-set-attribute="href game.url" data-set-text="game.url" target="_blank"></a></td>
     <td><button name="delete" data-set-attribute="value game.username">Delete</button></td>
-    <td><code data-set-text="game.jsondata" style="font-size: 6pt;"></code></td>
+    <td><input type="checkbox" data-set-attribute="id game.username" style="display: none;"><div class="codeholder"><label data-set-attribute="for game.username"><code data-set-text="game.jsondata" style="font-size: 6pt;"></code></label></div></td>
 </tr>
 </tbody>
 </table>
 
 </form>
+</section>
 
 </body>
 </html>
