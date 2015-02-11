@@ -52,7 +52,15 @@ var config = {
     RESOURCES_DIR: path.join(__dirname, "sergis-client", "lib"),
     
     /** Homepage file (mapped to http://this-nodejs-server/ */
-    HOMEPAGE_FILE: path.join(__dirname, "sergis-client", "index.html")
+    HOMEPAGE_FILE: path.join(__dirname, "sergis-client", "index.html"),
+
+    ADMIN_PAGE_NAME: "admin",
+
+    /** Username regex */
+    USERNAME_REGEX: /^[A-Za-z0-9~$"':;,.-_]+/,
+
+    /** Username in URL regex (i.e. "/" + USERNAME_REGEX + "/"?) */
+    USERNAME_URL_REGEX: /^\/([A-Za-z0-9~$"':;,.-_]*)\/?/
 };
 
 ///////////////////////////////////////////////////////////////////////////////

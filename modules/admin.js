@@ -18,11 +18,7 @@ var bodyParser = require("body-parser");
 
 var app, io, db, config;
 
-// Valid username
-var USERNAME_REGEX = /^[A-Za-z0-9~$"':;,.-_]+/;
-
 // Name of admin page
-var ADMIN_PAGE_NAME = "admin";
 
 /**
  * Set up handlers and such.
@@ -36,7 +32,7 @@ function init(_app, _io, _db, _config) {
     app = _app; io = _io; db = _db; config = _config;
     
     // Admin homepage
-    app.get("/" + ADMIN_PAGE_NAME, function (req, res) {
+    app.get("/" + config.ADMIN_PAGE_NAME, function (req, res) {
         db.collection("games").find({}).toArray(function (err, games) {
             if (err) {
                 console.error("Error finding all in games database: ", err);
@@ -53,7 +49,9 @@ function init(_app, _io, _db, _config) {
                     });
                 }
                 res.render(path.join(config.TEMPLATES_DIR, "admin.html"), {
-                    games: gamesList
+                    games: gamesList,
+                    yesgames: gamesList.length > 0,
+                    nogames: gamesList.length == 0
                 });
             }
         });
@@ -77,9 +75,9 @@ function init(_app, _io, _db, _config) {
             });
         } else if (req.body.jsondata && req.body.username) {
             // Check username
-            if (USERNAME_REGEX.test(req.body.username) == false ||
+            if (config.USERNAME_REGEX.test(req.body.username) == false ||
                 // We can't have the same name as the admin page...
-                req.body.username.toLowerCase() == ADMIN_PAGE_NAME.toLowerCase()) {
+                req.body.username.toLowerCase() == config.ADMIN_PAGE_NAME.toLowerCase()) {
                 
                 res.end("<h1>Error</h1><h2>Invalid username.</h2><a href='javascript:history.back();'>Back</a>");
                 return;

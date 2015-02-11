@@ -15,7 +15,6 @@ var fs = require("fs"),
 var app, io, db, config;
 
 // Valid username in URL
-var USERNAME_URL_REGEX = /^\/([A-Za-z0-9~$"':;,.-_]*)\/?/;
 
 /**
  * Set up handlers and such.
@@ -29,8 +28,8 @@ exports.init = function (_app, _io, _db, _config) {
     app = _app; io = _io; db = _db; config = _config;
     
     // Homepage handler
-    app.get(USERNAME_URL_REGEX, function (req, res) {
-        var username = USERNAME_URL_REGEX.exec(req.path)[1] || "";
+    app.get(config.USERNAME_URL_REGEX, function (req, res) {
+        var username = config.USERNAME_URL_REGEX.exec(req.path)[1] || "";
         // See if username exists
         db.collection("games").find({username: username}).toArray(function (err, games) {
             if (err || games.length == 0) username = "";
