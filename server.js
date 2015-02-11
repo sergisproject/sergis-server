@@ -106,11 +106,11 @@ MongoClient.connect(config.MONGO_SERVER, function (err, db) {
         // Set up templating for HTML files
         app.engine("html", set.__express);
 
-        // Create handler for serving the homepage
-        require("./modules/client").init(app, io, db, config);
-
         // Create handler for serving the administrative interface
         require("./modules/admin").init(app, io, db, config);
+
+        // Create handler for serving the homepage
+        require("./modules/client").init(app, io, db, config);
         
         // Set up cleanup
         setupCleanup();

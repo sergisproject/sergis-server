@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <title>SerGIS Server Admin</title>
+<style type="text/css">
+th {
+    border-bottom: 1px solid black;
+}
+</style>
 </head>
 
 <body>
@@ -16,17 +21,32 @@
 <p>Game Access Credentials:</p>
 <table><tbody>
     <tr><td>Username: </td><td><input name="username"></td></tr>
-    <tr><td>Password: </td><td><input name="password"></td></tr>
+    <tr><td>Password: </td><td><input name="password"> <small>(leave blank for no password)</small></td></tr>
 </tbody></table>
 <p><input type="submit" value="Create Game"></p>
 
 <h2>Existing Games</h2>
-<ul>
-    <li data-set-repeat="game games">
-        <b data-set-text="game.username"></b> / <i data-set-text="game.password"></i> <button name="delete" data-set-attribute="value game.username">Delete</button><br>
-        <code data-set-text="game.jsondata"></code>
-    </li>
-</ul>
+<table>
+<thead>
+<tr>
+    <th>Username</th>
+    <th>Password</th>
+    <th>URL</th>
+    <th>&nbsp;</th>
+    <th>&nbsp;</th>
+</tr>
+</thead>
+
+<tbody>
+<tr data-set-repeat="game games">
+    <td><b data-set-text="game.username"></b></td>
+    <td><i data-set-text="game.password">&nbsp;</i></td>
+    <td><a data-set-attribute="href game.url" data-set-text="game.url" target="_blank"></a></td>
+    <td><button name="delete" data-set-attribute="value game.username">Delete</button></td>
+    <td><code data-set-text="game.jsondata" style="font-size: 6pt;"></code></td>
+</tr>
+</tbody>
+</table>
 
 </form>
 
