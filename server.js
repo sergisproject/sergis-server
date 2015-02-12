@@ -54,6 +54,7 @@ var config = {
     /** Homepage file (mapped to http://this-nodejs-server/ */
     HOMEPAGE_FILE: path.join(__dirname, "sergis-client", "index.html"),
 
+    /** Name of the admin page (i.e., http://thi-nodejs-server/ADMIN_PAGE_NAME) */
     ADMIN_PAGE_NAME: "admin",
 
     /** Username regex */
