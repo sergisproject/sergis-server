@@ -31,7 +31,7 @@ exports.init = function (_app, _io, _db, _config) {
     app.get(config.USERNAME_URL_REGEX, function (req, res) {
         var username = config.USERNAME_URL_REGEX.exec(req.path)[1] || "";
         // See if username exists
-        db.collection("games").find({username: username}).toArray(function (err, games) {
+        db.collection("sergis-games").find({username: username}).toArray(function (err, games) {
             if (err || games.length == 0) username = "";
             // Render page
             res.render(config.HOMEPAGE_FILE, {
@@ -80,9 +80,9 @@ exports.init = function (_app, _io, _db, _config) {
                         return;
                     }
                     
-                    db.collection("games").find({username: tokens[0].username}).toArray(function (err, games) {
+                    db.collection("sergis-games").find({username: tokens[0].username}).toArray(function (err, games) {
                         if (err) {
-                            console.error("Error checking games database: ", err);
+                            console.error("Error checking sergis-games database: ", err);
                             callback(false, "Database error");
                             return;
                         }
@@ -316,9 +316,9 @@ function randInt(d) {
  * @param {string} [password] - The password.
  */
 function makeToken(callback, username, password) {
-    db.collection("games").find({username: username}).toArray(function (err, games) {
+    db.collection("sergis-games").find({username: username}).toArray(function (err, games) {
         if (err) {
-            console.error("Error accessing user in games database: ", err);
+            console.error("Error accessing user in sergis-games database: ", err);
             callback();
         } else if (games.length > 0) {
             if ((!games[0].password || games[0].password === password)) {

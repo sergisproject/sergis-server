@@ -46,7 +46,13 @@ input[type=checkbox]:checked + div.codeholder {
     <h1>SerGIS Server Admin</h1>
 </header>
 
-<section>
+<section data-set-if="error">
+    <h2 data-set-text="error.title">Error</h2>
+    <p data-set-text="error.text"></p>
+    <p><a href="javascript:history.back()">Back</a></p>
+</section>
+
+<section data-set-if="noerror">
 <form action="" method="POST">
 
 <h2>Create New Game</h2>

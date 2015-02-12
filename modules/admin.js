@@ -18,7 +18,15 @@ var bodyParser = require("body-parser");
 
 var app, io, db, config;
 
-// Name of admin page
+/**
+ * Render the admin page.
+ *
+ * @param res - The Express response object.
+ * @param vars - The variables for the template.
+ */
+function renderAdmin(res, vars) {
+    res.render(path.join(config.TEMPLATES_DIR, "admin.html"), vars);
+}
 
 /**
  * Set up handlers and such.
@@ -33,11 +41,16 @@ function init(_app, _io, _db, _config) {
     
     // Admin homepage
     app.get("/" + config.ADMIN_PAGE_NAME, function (req, res) {
-        db.collection("games").find({}).toArray(function (err, games) {
+        db.collection("sergis-games").find({}).toArray(function (err, games) {
             if (err) {
-                console.error("Error finding all in games database: ", err);
+                console.error("Error finding all in sergis-games database: ", err);
                 res.status(500);
-                res.end("<h1>Database Error</h1><h2>See console</h2>");
+                renderAdmin(res, {
+                    error: {
+                        title: "Database Error",
+                        text: "See console."
+                    }
+                });
             } else {
                 var gamesList = [];
                 for (var i = 0; i < games.length; i++) {
@@ -48,7 +61,8 @@ function init(_app, _io, _db, _config) {
                         url: req.protocol + "://" + req.hostname + ((req.protocol == "http" && config.PORT == 80) || (req.protocol == "https" && config.PORT == 443) ? "" : ":" + config.PORT) + "/" + games[i].username
                     });
                 }
-                res.render(path.join(config.TEMPLATES_DIR, "admin.html"), {
+                renderAdmin(res, {
+                    noerror: true,
                     games: gamesList,
                     yesgames: gamesList.length > 0,
                     nogames: gamesList.length == 0
@@ -60,16 +74,21 @@ function init(_app, _io, _db, _config) {
     app.use("/admin", bodyParser.urlencoded({extended: true}));
 
     app.post("/admin", function (req, res) {
-        var games = db.collection("games");
+        var games = db.collection("sergis-games");
         if (req.body.delete) {
             // Delete game (by username)
             games.remove({username: req.body.delete}, function (err, result) {
                 if (err) {
-                    console.error("Error removing from games database: ", err);
+                    console.error("Error removing from sergis-games database: ", err);
                     res.status(500);
-                    res.end("<h1>Database Error</h1><h2>See console</h2>");
+                    renderAdmin(res, {
+                        error: {
+                            title: "Database Error",
+                            text: "See console."
+                        }
+                    });
                 } else {
-                    console.log("Removed document from games database: ", result);
+                    console.log("Removed document from sergis-games database: ", result);
                     res.redirect("/admin");
                 }
             });
@@ -77,9 +96,15 @@ function init(_app, _io, _db, _config) {
             // Check username
             if (config.USERNAME_REGEX.test(req.body.username) == false ||
                 // We can't have the same name as the admin page...
-                req.body.username.toLowerCase() == config.ADMIN_PAGE_NAME.toLowerCase()) {
+                req.body.username.toLowerCase() == config.ADMIN_PAGE_NAME.toLowerCase() ||
+                // We can't have the same name as the static files directory...
+                req.body.username.toLowerCase() == "lib") {
                 
-                res.end("<h1>Error</h1><h2>Invalid username.</h2><a href='javascript:history.back();'>Back</a>");
+                renderAdmin(res, {
+                    error: {
+                        text: "Invalid username."
+                    }
+                });
                 return;
             }
             
@@ -88,7 +113,11 @@ function init(_app, _io, _db, _config) {
                 var jsondata = JSON.parse(req.body.jsondata);
             } catch (err) {}
             if (!jsondata) {
-                res.end("<h1>Error</h1><h2>Invalid JSON data.</h2><a href='javascript:history.back();'>Back</a>");
+                renderAdmin(res, {
+                    error: {
+                        text: "Invalid JSON data."
+                    }
+                });
                 return;
             }
             
@@ -98,15 +127,24 @@ function init(_app, _io, _db, _config) {
             games.find({username: username}).toArray(function (err, games) {
                 // Check for database error
                 if (err) {
-                    console.error("Error checking games database: ", err);
+                    console.error("Error checking sergis-games database: ", err);
                     res.status(500);
-                    res.end("<h1>Database Error</h1><h2>See console</h2>");
+                    renderAdmin(res, {
+                        error: {
+                            title: "Database Error",
+                            text: "See console."
+                        }
+                    });
                     return;
                 }
                 
                 // Check username existance
                 if (games.length > 0) {
-                    res.end("<h1>Error</h2><h2>Username has already been used.</h2><a href='javascript:history.back();'>Back</a>");
+                    renderAdmin(res, {
+                        error: {
+                            text: "Username has already been used."
+                        }
+                    });
                     return;
                 }
                 
@@ -116,23 +154,32 @@ function init(_app, _io, _db, _config) {
                     username: username,
                     password: password
                 };
-                db.collection("games").insert(game, function (err, result) {
+                db.collection("sergis-games").insert(game, function (err, result) {
                     // Check for database error
                     if (err) {
-                        console.error("Error inserting into games database: ", err);
+                        console.error("Error inserting into sergis-games database: ", err);
                         res.status(500);
-                        res.end("<h1>Database Error</h1><h2>See console</h2>");
+                        renderAdmin(res, {
+                            error: {
+                                title: "Database Error",
+                                text: "See console."
+                            }
+                        });
                         return;
                     }
                     
                     // We're good!
-                    console.log("Inserted document into games database: ", result);
+                    console.log("Inserted document into sergis-games database: ", result);
                     res.redirect("/admin");
                 });
             });
         } else {
             // Neither deletion nor insertion... (or missing data)
-            res.end("<h1>Error</h1><h2>Please enter data for all fields.</h2><a href='javascript:history.back();'>Back</a>");
+            renderAdmin(res, {
+                error: {
+                    text: "Please enter data for all required fields."
+                }
+            });
         }
     });
 }
