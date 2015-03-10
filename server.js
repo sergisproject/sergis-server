@@ -32,10 +32,10 @@ var config = require("./config");
  * modules in `modules/`.
  */
 var HTTP_SERVERS = {
-    config.HTTP_PREFIX + "/game": "gameHandler",
-    config.HTTP_PREFIX + "/admin": "adminHandler",
+    "/game": "gameHandler",
+    "/admin": "adminHandler",
     // This one catches everything else
-    config.HTTP_PREFIX + "/": "homepageHandler"
+    "/": "homepageHandler"
 };
 
 
@@ -182,7 +182,7 @@ function init() {
         // Create handlers for our other page servers (see HTTP_SERVERS above)
         for (var pathDescrip in HTTP_SERVERS) {
             if (HTTP_SERVERS.hasOwnProperty(pathDescrip)) {
-                app.use(pathDescrip, require("./modules/" + HTTP_SERVERS[pathDescrip])(db));
+                app.use((config.HTTP_PREFIX || "") + pathDescrip, require("./modules/" + HTTP_SERVERS[pathDescrip])(db));
             }
         }
     }
