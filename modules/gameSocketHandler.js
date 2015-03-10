@@ -9,8 +9,7 @@
 // This file handles everything having to do with serving the socket for sergis-client
 
 // node modules
-var fs = require("fs"),
-    path = require("path");
+var path = require("path");
 
 // our modules
 var config = require("../config");

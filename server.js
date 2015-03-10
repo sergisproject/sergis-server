@@ -15,8 +15,7 @@
 
 
 // node modules
-var fs = require("fs"),
-    path = require("path");
+var path = require("path");
 
 // required modules
 // NOTE: express, http, socket.io, cookie-parser, coffee-script/register,

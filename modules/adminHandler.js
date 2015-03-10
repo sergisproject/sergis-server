@@ -10,8 +10,7 @@
 // for sergis-server.
 
 // node modules
-var fs = require("fs"),
-    path = require("path");
+var path = require("path");
 
 // required modules
 var express = require("express"),
