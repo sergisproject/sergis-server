@@ -7,6 +7,8 @@
  */
 
 // This file holds configuration information for sergis-server.
+// NOTE: Changing this file is quite breaking to clones of sergis-server that use modified versions of this file!!
+// Be extremely careful and obnoxiously loud when changing it.
 
 // node modules
 var path = require("path");
@@ -54,6 +56,7 @@ var config = module.exports = {
     /** MongoDB server */
     MONGO_SERVER: "mongodb://localhost:27017/sergis-server",
     
+    ///////////////////////////////////////////////////////////////////////////
     // ARGUMENT-OVERRIDDEN CONFIG
     
     /** Whether to start the HTTP server */
@@ -71,6 +74,9 @@ var config = module.exports = {
     /** The prefix to the path (i.e. if someone is serving us at /my-web-game/..., this would be "/my-web-game") */
     HTTP_PREFIX: args["http-server-prefix"] || "",
     
+    ///////////////////////////////////////////////////////////////////////////
+    // DATA DIRECTORIES
+    
     /** Templates directory */
     TEMPLATES_DIR: path.join(__dirname, "templates"),
     
@@ -80,6 +86,9 @@ var config = module.exports = {
     /** Path to the index.html file for sergis-client */
     GAME_INDEX: path.join(__dirname, "sergis-client", "index.html"),
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Misc.
+    
     /** Username regex */
     USERNAME_REGEX: /^[A-Za-z0-9~$"':;,.-_]+/,
 
