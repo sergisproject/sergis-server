@@ -14,9 +14,36 @@ var fs = require("fs"),
     path = require("path");
 
 // required modules
-var bodyParser = require("body-parser");
+var express = require("express"),
+    bodyParser = require("body-parser");
 
-var app, io, db, config;
+// SerGIS Server globals
+var config, db;
+
+// The router for /admin/
+var router = express.Router();
+
+// Initialize everything
+module.exports = function (_config, _db) {
+    config = _config;
+    db = _db;
+    
+    // Set up body parser for POST data
+    router.use(bodyParser.urlencoded({
+        extended: true
+    }));
+
+    // Set up all the page handlers
+    router.get("", function (req, res) {
+        pageHandlers.adminHomeGet(req, res);
+    });
+    router.post("", function (req, res) {
+        pageHandlers.adminHomePost(req, res);
+    });
+    
+    return router;
+};
+
 
 /**
  * Render the admin page.
@@ -28,19 +55,9 @@ function renderAdmin(res, vars) {
     res.render(path.join(config.TEMPLATES_DIR, "admin.html"), vars);
 }
 
-/**
- * Set up handlers and such.
- *
- * @param _app - The express app.
- * @param _io - The socket.io instance.
- * @param _db - The MongoDB database.
- * @param _config - The sergis-server configuration.
- */
-function init(_app, _io, _db, _config) {
-    app = _app; io = _io; db = _db; config = _config;
-    
+var pageHandlers = {
     // Admin homepage
-    app.get("/" + config.ADMIN_PAGE_NAME, function (req, res) {
+    adminHomeGet: function (req, res) {
         db.collection("sergis-games").find({}).toArray(function (err, games) {
             if (err) {
                 console.error("Error finding all in sergis-games database: ", err);
@@ -58,7 +75,7 @@ function init(_app, _io, _db, _config) {
                         username: games[i].username,
                         password: games[i].password,
                         jsondata: JSON.stringify(games[i].jsondata),
-                        url: req.protocol + "://" + req.hostname + ((req.protocol == "http" && config.PORT == 80) || (req.protocol == "https" && config.PORT == 443) ? "" : ":" + config.PORT) + "/" + games[i].username
+                        url: req.protocol + "://" + req.hostname + ((req.protocol == "http" && config.PORT == 80) || (req.protocol == "https" && config.PORT == 443) ? "" : ":" + config.PORT) + "/game/" + games[i].username
                     });
                 }
                 renderAdmin(res, {
@@ -69,11 +86,9 @@ function init(_app, _io, _db, _config) {
                 });
             }
         });
-    });
+    },
 
-    app.use("/admin", bodyParser.urlencoded({extended: true}));
-
-    app.post("/admin", function (req, res) {
+    adminHomePost: function (req, res) {
         var games = db.collection("sergis-games");
         if (req.body.delete) {
             // Delete game (by username)
@@ -94,12 +109,7 @@ function init(_app, _io, _db, _config) {
             });
         } else if (req.body.jsondata && req.body.username) {
             // Check username
-            if (config.USERNAME_REGEX.test(req.body.username) == false ||
-                // We can't have the same name as the admin page...
-                req.body.username.toLowerCase() == config.ADMIN_PAGE_NAME.toLowerCase() ||
-                // We can't have the same name as the static files directory...
-                req.body.username.toLowerCase() == "lib") {
-                
+            if (!config.USERNAME_REGEX.test(req.body.username)) {
                 renderAdmin(res, {
                     error: {
                         text: "Invalid username."
@@ -181,7 +191,5 @@ function init(_app, _io, _db, _config) {
                 }
             });
         }
-    });
-}
-
-exports.init = init;
+    }
+};

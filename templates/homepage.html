@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>SerGIS</title>
+<link rel="stylesheet" type="text/css" href="/lib/style-simple.css">
+</head>
+
+<body>
+
+<header>
+    <h1>Welcome to SerGIS!</h1>
+</header>
+
+<section data-set-if="error">
+    <h2 data-set-text="error.title">Error</h2>
+    <p data-set-text="error.text"></p>
+    <p><a href="javascript:history.back()">Back</a></p>
+</section>
+
+<section data-set-if="noerror">
+    <p>For more information on SerGIS, see: <a href="http://sergisproject.github.io/">sergisproject.github.io</a></p>
+</section>
+
+</body>
+</html>

@@ -6,44 +6,30 @@
     in the LICENSE.txt file.
  */
 
-// This file handles everything having to do with serving sergis-client
+// This file handles everything having to do with serving the socket for sergis-client
 
 // node modules
 var fs = require("fs"),
     path = require("path");
 
-var app, io, db, config;
+// SerGIS Server globals
+var config, db, io;
 
-// Valid username in URL
 
-/**
- * Set up handlers and such.
- *
- * @param _app - The express app.
- * @param _io - The socket.io instance.
- * @param _db - The MongoDB database.
- * @param _config - The sergis-server configuration.
- */
-exports.init = function (_app, _io, _db, _config) {
-    app = _app; io = _io; db = _db; config = _config;
+module.exports = function (_config, _db, _io) {
+    config = _config;
+    db = _db;
+    io = _io;
     
-    // Homepage handler
-    app.get(config.USERNAME_URL_REGEX, function (req, res) {
-        var username = config.USERNAME_URL_REGEX.exec(req.path)[1] || "";
-        // See if username exists
-        db.collection("sergis-games").find({username: username}).toArray(function (err, games) {
-            if (err || games.length == 0) username = "";
-            // Render page
-            res.render(config.HOMEPAGE_FILE, {
-                "socket-io-script-src": "/socket.io/socket.io.js",
-                "backend-script-src": "lib/backends/sergis-server.js",
-                "backend-script-username": username
-            });
-        });
-    });
-    
-    // Initialize socket
-    io.of("/client").on("connection", function (socket) {
+    /**
+     * Initialize the handler for connections to the "/game" socket.
+     * This is called each time a new connection is made to the "/game" socket.
+     *
+     * @param socket - The Socket instance.
+     * @param {Function} next - The function to call once we have initialized
+     *        the socket on our end.
+     */
+    return function (socket, next) {
         // logIn handler
         socket.on("logIn", function (username, password, callback) {
             makeToken(callback, username, password);
@@ -114,8 +100,14 @@ exports.init = function (_app, _io, _db, _config) {
                 callback(false, func + " does not exist.");
             }
         });
-    });
+        
+        
+        // Everything's initialized for us; move on!
+        next();
+    };
 };
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Game functions
