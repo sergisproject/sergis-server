@@ -32,10 +32,10 @@ var config = require("./config");
  * modules in `modules/`.
  */
 var HTTP_SERVERS = {
-    "/game": "gameHandler",
-    "/admin": "adminHandler",
+    config.HTTP_PREFIX + "/game": "gameHandler",
+    config.HTTP_PREFIX + "/admin": "adminHandler",
     // This one catches everything else
-    "/": "homepageHandler"
+    config.HTTP_PREFIX + "/": "homepageHandler"
 };
 
 
@@ -60,7 +60,11 @@ var exitHandlers = [];
  */
 function initExitHandlers() {
     // So that the server will not close instantly when Ctrl+C is pressed, etc.
-    process.stdin.resume();
+    try {
+        process.stdin.resume();
+    } catch (err) {
+        console.error("Error listening on stdin: ", err.stack);
+    }
 
     // Catch app closing
     process.on("beforeExit", runExitHandlers);
@@ -165,8 +169,8 @@ function init() {
         // Listen with the HTTP server on our port
         server.listen(config.PORT);
 
-        // Create handler for serving "/static"
-        app.use("/lib", express.static(config.RESOURCES_DIR));
+        // Create handler for serving "/lib"
+        app.use(config.HTTP_PREFIX + "/lib", express.static(config.RESOURCES_DIR));
         
         // Set up cookie processing
         app.use(cookieParser(config.COOKIE_SIGNING_KEY || undefined));
