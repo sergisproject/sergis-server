@@ -12,14 +12,15 @@
 var fs = require("fs"),
     path = require("path");
 
+// our modules
+var config = require("../config");
+
 // SerGIS Server globals
-var config, db, io;
+var db;
 
 
-module.exports = function (_config, _db, _io) {
-    config = _config;
+module.exports = function (_db) {
     db = _db;
-    io = _io;
     
     /**
      * Initialize the handler for connections to the "/game" socket.

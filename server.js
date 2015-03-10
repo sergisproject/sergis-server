@@ -23,69 +23,8 @@ var fs = require("fs"),
 // and indie-set are require'd below if needed.
 var MongoClient = require("mongodb").MongoClient;
 
-
-/**
- * Arguments passed via the command line (argv).
- */
-var args = {};
-(function () {
-    var arg, name, value;
-    for (var i = 2; i < process.argv.length; i++) {
-        arg = process.argv[i];
-        if (arg.indexOf("=") != -1) {
-            name = arg.substring(0, arg.indexOf("="));
-            value = arg.substring(arg.indexOf("=") + 1);
-        } else {
-            name = arg;
-            value = true;
-        }
-        args[name] = value;
-    }
-})();
-
-/**
- * SerGIS Server configuration.
- * @todo Move to external file.
- */
-var config = {
-    /** Default server port */
-    PORT: process.env.PORT || 3000,
-    
-    /** MongoDB server */
-    MONGO_SERVER: "mongodb://localhost:27017/sergis-server",
-    
-    // ARGUMENT-OVERRIDDEN CONFIG
-    
-    /** Whether to start the HTTP server */
-    ENABLE_HTTP_SERVER: !!args["start-http-server"],
-    
-    /** Whether to start the WebSockets (socket.io) server */
-    ENABLE_SOCKET_SERVER: !!args["start-socket-server"],
-    
-    /** Origin for the HTTP server (only set if running separately as the socket.io server) */
-    HTTP_ORIGIN: args["http-server-origin"] || "",
-    
-    /** Origin for the socket.io server (set to empty string if same as http server) */
-    SOCKET_ORIGIN: args["socket-server-origin"] || "",
-    
-    /** The prefix to the path (i.e. if someone is serving us at /my-web-game/..., this would be "/my-web-game") */
-    HTTP_PREFIX: args["http-server-prefix"] || "",
-    
-    /** Templates directory */
-    TEMPLATES_DIR: path.join(__dirname, "templates"),
-    
-    /** Web resources directory (mapped to http://this-nodejs-server/lib/...) */
-    RESOURCES_DIR: path.join(__dirname, "sergis-client", "lib"),
-    
-    /** Path to the index.html file for sergis-client */
-    GAME_INDEX: path.join(__dirname, "sergis-client", "index.html"),
-
-    /** Username regex */
-    USERNAME_REGEX: /^[A-Za-z0-9~$"':;,.-_]+/,
-
-    /** Username in URL regex (i.e. "/" + USERNAME_REGEX + "/"?) */
-    USERNAME_URL_REGEX: /^\/([A-Za-z0-9~$"':;,.-_]*)\/?/
-};
+// our modules
+var config = require("./config");
 
 
 /**
@@ -194,17 +133,10 @@ if (config.ENABLE_HTTP_SERVER || config.ENABLE_SOCKET_SERVER) {
     console.error("Neither HTTP nor socket server enabled!");
     console.log("\nUsage: " + process.argv[0] + " " + process.argv[1] + " [OPTIONS]");
     console.log("\nOptions:");
-    var argdata = [
-        ["start-http-server", "Start the HTTP server."],
-        ["start-socket-server", "Start the socket server."],
-        ["http-server-origin=http://hostname:post", "Origin for the HTTP server (if separate from the socket server)"],
-        ["socket-server-origin=http://hostname:port", "Origin for the socket server (if separate from the HTTP server)"],
-        ["http-server-prefix=/path/prefix/by/server", "Prefix to the path added by a forwarding server"]
-    ];
-    var max = Math.max.apply(Math, argdata.map(function (arginfo) {
+    var max = Math.max.apply(Math, config.argdata.map(function (arginfo) {
         return arginfo[0].length;
     }));
-    argdata.forEach(function (arginfo) {
+    config.argdata.forEach(function (arginfo) {
         var msg = "    " + arginfo[0];
         for (var i = 0; i < (max - arginfo[0].length); i++) {
             msg += " ";
@@ -247,7 +179,7 @@ function init() {
         // Create handlers for our other page servers (see HTTP_SERVERS above)
         for (var pathDescrip in HTTP_SERVERS) {
             if (HTTP_SERVERS.hasOwnProperty(pathDescrip)) {
-                app.use(pathDescrip, require("./modules/" + HTTP_SERVERS[pathDescrip])(config, db));
+                app.use(pathDescrip, require("./modules/" + HTTP_SERVERS[pathDescrip])(db));
             }
         }
     }
@@ -273,7 +205,7 @@ function init() {
         for (var pathDescrip in SOCKET_SERVERS) {
             if (SOCKET_SERVERS.hasOwnProperty(pathDescrip)) {
                 //io.of(pathDescrip).on("connection", require("./modules/socketServers/" + SOCKET_SERVERS[pathDescrip]));
-                io.of(pathDescrip).use(require("./modules/" + SOCKET_SERVERS[pathDescrip])(config, db, io));
+                io.of(pathDescrip).use(require("./modules/" + SOCKET_SERVERS[pathDescrip])(db));
             }
         }
     }

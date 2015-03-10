@@ -17,15 +17,17 @@ var fs = require("fs"),
 var express = require("express"),
     bodyParser = require("body-parser");
 
+// our modules
+var config = require("../config");
+
 // SerGIS Server globals
-var config, db;
+var db;
 
 // The router for /admin/
 var router = express.Router();
 
 // Initialize everything
-module.exports = function (_config, _db) {
-    config = _config;
+module.exports = function (_db) {
     db = _db;
     
     // Set up body parser for POST data

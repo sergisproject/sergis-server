@@ -15,12 +15,14 @@ var fs = require("fs"),
 // required modules
 var express = require("express");
 
+// our modules
+var config = require("../config");
+
 // SerGIS Server globals
-var config, db;
+var db;
 
 // Initialize everything
-module.exports = function (_config, _db) {
-    config = _config;
+module.exports = function (_db) {
     db = _db;
     
     return function (req, res, next) {

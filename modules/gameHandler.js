@@ -15,15 +15,17 @@ var fs = require("fs"),
 // required modules
 var express = require("express");
 
+// our modules
+var config = require("../config");
+
 // SerGIS Server globals
-var config, db;
+var db;
 
 // The router for /game/
 var router = express.Router();
 
 // Initialize everything
-module.exports = function (_config, _db) {
-    config = _config;
+module.exports = function (_db) {
     db = _db;
     
     // Set up all the page handlers
