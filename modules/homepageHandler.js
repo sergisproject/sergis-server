@@ -54,11 +54,11 @@ var pageHandlers = {
         res.render(config.GAME_INDEX, {
             test: "",
             // lib files
-            "style.css": "/lib/style.css",
-            "es6-promise-2.0.0.min.js": "/lib/es6-promise-2.0.0.min.js",
-            "main.js": "/lib/main.js",
-            "frontend-script-src": "/lib/frontends/arcgis.js",
-            "backend-script-src": "/lib/backends/local.js"
+            "style.css": (config.HTTP_PREFIX || "") + "/lib/style.css",
+            "es6-promise-2.0.0.min.js": (config.HTTP_PREFIX || "") + "/lib/es6-promise-2.0.0.min.js",
+            "main.js": (config.HTTP_PREFIX || "") + "/lib/main.js",
+            "frontend-script-src": (config.HTTP_PREFIX || "") + "/lib/frontends/arcgis.js",
+            "backend-script-src": (config.HTTP_PREFIX || "") + "/lib/backends/local.js"
         });
     },
     

@@ -54,6 +54,8 @@ var config = {
     /** MongoDB server */
     MONGO_SERVER: "mongodb://localhost:27017/sergis-server",
     
+    // ARGUMENT-OVERRIDDEN CONFIG
+    
     /** Whether to start the HTTP server */
     ENABLE_HTTP_SERVER: !!args["start-http-server"],
     
@@ -65,6 +67,9 @@ var config = {
     
     /** Origin for the socket.io server (set to empty string if same as http server) */
     SOCKET_ORIGIN: args["socket-server-origin"] || "",
+    
+    /** The prefix to the path (i.e. if someone is serving us at /my-web-game/..., this would be "/my-web-game") */
+    HTTP_PREFIX: args["http-server-prefix"] || "",
     
     /** Templates directory */
     TEMPLATES_DIR: path.join(__dirname, "templates"),
@@ -193,7 +198,8 @@ if (config.ENABLE_HTTP_SERVER || config.ENABLE_SOCKET_SERVER) {
         ["start-http-server", "Start the HTTP server."],
         ["start-socket-server", "Start the socket server."],
         ["http-server-origin=http://hostname:post", "Origin for the HTTP server (if separate from the socket server)"],
-        ["socket-server-origin=http://hostname:port", "Origin for the socket server (if separate from the HTTP server)"]
+        ["socket-server-origin=http://hostname:port", "Origin for the socket server (if separate from the HTTP server)"],
+        ["http-server-prefix=/path/prefix/by/server", "Prefix to the path added by a forwarding server"]
     ];
     var max = Math.max.apply(Math, argdata.map(function (arginfo) {
         return arginfo[0].length;

@@ -75,7 +75,7 @@ var pageHandlers = {
                         username: games[i].username,
                         password: games[i].password,
                         jsondata: JSON.stringify(games[i].jsondata),
-                        url: req.protocol + "://" + req.hostname + ((req.protocol == "http" && config.PORT == 80) || (req.protocol == "https" && config.PORT == 443) ? "" : ":" + config.PORT) + "/game/" + games[i].username
+                        url: req.protocol + "://" + req.hostname + ((req.protocol == "http" && config.PORT == 80) || (req.protocol == "https" && config.PORT == 443) ? "" : ":" + config.PORT) + (config.HTTP_PREFIX || "") + "/game/" + games[i].username
                     });
                 }
                 renderAdmin(res, {
@@ -104,7 +104,7 @@ var pageHandlers = {
                     });
                 } else {
                     console.log("Removed document from sergis-games database: ", result);
-                    res.redirect("/admin");
+                    res.redirect((config.HTTP_PREFIX || "") + "/admin");
                 }
             });
         } else if (req.body.jsondata && req.body.username) {
@@ -180,7 +180,7 @@ var pageHandlers = {
                     
                     // We're good!
                     console.log("Inserted document into sergis-games database: ", result);
-                    res.redirect("/admin");
+                    res.redirect((config.HTTP_PREFIX || "") + "/admin");
                 });
             });
         } else {
