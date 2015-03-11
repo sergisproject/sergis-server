@@ -199,9 +199,14 @@ function init() {
             // There's no HTTP server yet; make socket.io listen all by its lonesomes
             io = require("socket.io").listen(config.PORT);
         }
+        
         if (config.SOCKET_ORIGIN) {
             console.log("Setting socket to allow origin " + config.HTTP_ORIGIN);
             io.origins(config.HTTP_ORIGIN);
+        }
+        if (config.SOCKET_PREFIX) {
+            console.log("Setting socket path to " + config.SOCKET_PREFIX + "/socket.io");
+            io.path(config.SOCKET_PREFIX + "/socket.io");
         }
 
         // Create handlers for all our socket servers (see SOCKET_SERVERS above)
