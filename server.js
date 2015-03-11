@@ -189,24 +189,31 @@ function init() {
 
     // Start socket server (if enabled)
     if (config.ENABLE_SOCKET_SERVER) {
+        // Decide on the socket.io path
+        var path = undefined;
+        if (config.SOCKET_PREFIX) {
+            console.log("Setting socket path to " + config.SOCKET_PREFIX + "/socket.io");
+            path = config.SOCKET_PREFIX + "/socket.io";
+        }
+        
         // Check if we already have the Express HTTP server
         if (app) {
             console.log("Starting SerGIS socket server with HTTP server");
             // Use the same server instance for the socket.io server
-            io = require("socket.io")(server);
+            io = require("socket.io")(server, {
+                path: path
+            });
         } else {
             console.log("Starting SerGIS socket server on port " + config.PORT);
             // There's no HTTP server yet; make socket.io listen all by its lonesomes
-            io = require("socket.io").listen(config.PORT);
+            io = require("socket.io").listen(config.PORT, {
+                port: port
+            });
         }
         
         if (config.SOCKET_ORIGIN) {
             console.log("Setting socket to allow origin " + config.HTTP_ORIGIN);
             io.origins(config.HTTP_ORIGIN);
-        }
-        if (config.SOCKET_PREFIX) {
-            console.log("Setting socket path to " + config.SOCKET_PREFIX + "/socket.io");
-            io.path(config.SOCKET_PREFIX + "/socket.io");
         }
 
         // Create handlers for all our socket servers (see SOCKET_SERVERS above)
