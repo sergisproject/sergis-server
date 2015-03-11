@@ -72,12 +72,15 @@ var pageHandlers = {
                 });
             } else {
                 var gamesList = [];
+                // If the port isn't a real port, we'll just have to guess
+                var PORT = (!isNaN(Number(config.PORT)) && config.PORT) ?
+                    config.PORT : req.protocol == "https" ? 443 : 80;
                 for (var i = 0; i < games.length; i++) {
                     gamesList.push({
                         username: games[i].username,
                         password: games[i].password,
                         jsondata: JSON.stringify(games[i].jsondata),
-                        url: req.protocol + "://" + req.hostname + ((req.protocol == "http" && config.PORT == 80) || (req.protocol == "https" && config.PORT == 443) ? "" : ":" + config.PORT) + (config.HTTP_PREFIX || "") + "/game/" + games[i].username
+                        url: req.protocol + "://" + req.hostname + ((req.protocol == "http" && PORT == 80) || (req.protocol == "https" && PORT == 443) ? "" : ":" + PORT) + (config.HTTP_PREFIX || "") + "/game/" + games[i].username
                     });
                 }
                 renderAdmin(res, {
