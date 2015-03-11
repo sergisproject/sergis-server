@@ -42,7 +42,8 @@ var argdata = [
     ["start-socket-server", "Start the socket server."],
     ["http-server-origin=http://hostname:post", "Origin for the HTTP server (if separate from the socket server)"],
     ["socket-server-origin=http://hostname:port", "Origin for the socket server (if separate from the HTTP server)"],
-    ["http-server-prefix=/path/prefix/by/server", "Prefix to the path added by a forwarding server"]
+    ["http-server-prefix=/path/prefix/by/server", "Prefix to the path added by a forwarding server wrapping the HTTP server"],
+    ["socket-server-prefix=/path/prefix/by/server", "Prefix to the path added by a forwarding server wrapping the socket server"]
 ];
 
 
@@ -73,6 +74,10 @@ var config = module.exports = {
     
     /** The prefix to the path (i.e. if someone is serving us at /my-web-game/..., this would be "/my-web-game") */
     HTTP_PREFIX: args["http-server-prefix"] || "",
+    
+    /** The prefix to the socket.io server, if hosted through some sort of proxy that adds to the beginning of the path
+        (i.e. if the socket.io.js path is /my-web-game/socket.io/socket.io.js, this would be "/my-web-game") */
+    SOCKET_PREFIX: args["socket-server-prefix"] || "",
     
     ///////////////////////////////////////////////////////////////////////////
     // DATA DIRECTORIES

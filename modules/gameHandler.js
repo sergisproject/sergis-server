@@ -52,8 +52,9 @@ var pageHandlers = {
                 "frontend-script-src": (config.HTTP_PREFIX || "") + "/lib/frontends/arcgis.js",
                 "backend-script-src": (config.HTTP_PREFIX || "") + "/lib/backends/sergis-server.js",
                 
-                "socket-io-script-src": (config.SOCKET_ORIGIN || "") + "/socket.io/socket.io.js",
+                "socket-io-script-src": (config.SOCKET_ORIGIN || "") + (config.SOCKET_PREFIX || "") + "/socket.io/socket.io.js",
                 "socket-io-origin": config.SOCKET_ORIGIN || "",
+                "socket-io-prefix": config.SOCKET_PREFIX || "",
                 "backend-script-username": username
             });
         });
