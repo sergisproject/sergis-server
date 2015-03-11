@@ -45,6 +45,7 @@ module.exports = function (_db) {
 var pageHandlers = {
     homepageGet: function (req, res) {
         res.render(path.join(config.TEMPLATES_DIR, "homepage.html"), {
+            "style.css": (config.HTTP_PREFIX || "") + "/lib/style.css",
             noerror: true
         });
     },
@@ -66,6 +67,7 @@ var pageHandlers = {
     error: function (req, res, number, details) {
         res.status(number);
         res.render(path.join(config.TEMPLATES_DIR, "error.html"), {
+            "style.css": (config.HTTP_PREFIX || "") + "/lib/style.css",
             number: number,
             details: details
         });
