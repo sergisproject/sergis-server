@@ -45,7 +45,7 @@ module.exports = function (_db) {
 var pageHandlers = {
     homepageGet: function (req, res) {
         res.render(path.join(config.TEMPLATES_DIR, "homepage.html"), {
-            "style.css": (config.HTTP_PREFIX || "") + "/lib/style.css",
+            "style-simple.css": (config.HTTP_PREFIX || "") + "/lib/style-simple.css",
             noerror: true
         });
     },
@@ -56,7 +56,7 @@ var pageHandlers = {
         res.render(config.GAME_INDEX, {
             test: "",
             // lib files
-            "style.css": (config.HTTP_PREFIX || "") + "/lib/style.css",
+            "style-simple.css": (config.HTTP_PREFIX || "") + "/lib/style-simple.css",
             "es6-promise-2.0.0.min.js": (config.HTTP_PREFIX || "") + "/lib/es6-promise-2.0.0.min.js",
             "main.js": (config.HTTP_PREFIX || "") + "/lib/main.js",
             "frontend-script-src": (config.HTTP_PREFIX || "") + "/lib/frontends/arcgis.js",
@@ -67,7 +67,7 @@ var pageHandlers = {
     error: function (req, res, number, details) {
         res.status(number);
         res.render(path.join(config.TEMPLATES_DIR, "error.html"), {
-            "style.css": (config.HTTP_PREFIX || "") + "/lib/style.css",
+            "style-simple.css": (config.HTTP_PREFIX || "") + "/lib/style-simple.css",
             number: number,
             details: details
         });

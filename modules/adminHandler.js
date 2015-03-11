@@ -53,7 +53,7 @@ module.exports = function (_db) {
  * @param vars - The variables for the template.
  */
 function renderAdmin(res, vars) {
-    vars["style.css"] = (config.HTTP_PREFIX || "") + "/lib/style.css";
+    vars["style-simple.css"] = (config.HTTP_PREFIX || "") + "/lib/style-simple.css";
     res.render(path.join(config.TEMPLATES_DIR, "admin.html"), vars);
 }
 
