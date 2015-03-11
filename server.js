@@ -207,7 +207,7 @@ function init() {
             console.log("Starting SerGIS socket server on port " + config.PORT);
             // There's no HTTP server yet; make socket.io listen all by its lonesomes
             io = require("socket.io").listen(config.PORT, {
-                port: port
+                path: path
             });
         }
         
