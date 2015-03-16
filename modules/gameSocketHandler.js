@@ -6,105 +6,103 @@
     in the LICENSE.txt file.
  */
 
-// This file handles everything having to do with serving the socket for sergis-client
-
-// node modules
-var path = require("path");
+// This file handles everything having to do with serving the socket for
+// sergis-client
 
 // our modules
-var config = require("../config");
-
-// SerGIS Server globals
-var db;
+var config = require("../config"),
+    db = require("./db");
 
 
-module.exports = function (_db) {
-    db = _db;
-    
-    /**
-     * Initialize the handler for connections to the "/game" socket.
-     * This is called each time a new connection is made to the "/game" socket.
-     *
-     * @param socket - The Socket instance.
-     * @param {Function} next - The function to call once we have initialized
-     *        the socket on our end.
-     */
-    return function (socket, next) {
-        // logIn handler
-        socket.on("logIn", function (username, password, callback) {
-            makeToken(callback, username, password);
-        });
+/**
+ * Initialize the handler for connections to the "/game" socket.
+ * This is called each time a new connection is made to the "/game" socket.
+ *
+ * @param socket - The Socket instance.
+ * @param {Function} next - The function to call once we have initialized
+ *        the socket on our end.
+ */
+module.exports = function (socket, next) {
+    // logIn handler
+    socket.on("logIn", function (gameUsername, gameName, username, password, callback) {
+        db.games.makeAuthenticatedGameToken(gameUsername, gameName, username, password, callback);
+    });
+
+    // logOut handler
+    socket.on("logOut", function (token, callback) {
+        db.games.deleteGameToken(token, callback);
+    });
+
+    // getUser handler
+    socket.on("getUser", function (gameUsername, gameName, sessionID, callback) {
+        if (!gameUsername || !gameName) {
+            return callback();
+        }
         
-        // logOut handler
-        socket.on("logOut", function (token, callback) {
-            deleteToken(callback, token);
-        });
+        function last_resort() {
+            // Try logging in without authentication, if possible
+            db.games.makeAnonymousGameToken(gameUsername, gameName, callback);
+        };
         
-        // getUser handler
-        socket.on("getUser", function (username, callback) {
-            // Try logging in with only a username, if available
-            if (!username) {
-                callback();
-            } else {
-                makeToken(callback, username);
+        if (!sessionID) {
+            return last_resort();
+        }
+        
+        // Since we have a session ID, try looking up username from that
+        db.getDB().collection("sessions").findOne({_id: sessionID}, function (err, session) {
+            if (err) {
+                console.error("Error accessing sessions collection: ", err.stack);
+                return callback();
             }
-        });
-        
-        // game function handler
-        socket.on("game", function (token, func, args, callback) {
-            if (game.hasOwnProperty(func) && typeof game[func] == "function") {
-                var sergisTokens = db.collection("sergis-tokens");
-                sergisTokens.find({token: token}).toArray(function (err, tokens) {
-                    if (err) {
-                        console.error("Error checking sergis-tokens database: ", err);
-                        callback(false, "Database error");
-                        return;
-                    }
-                    
-                    if (tokens.length == 0) {
-                        callback(false, "Invalid token");
-                        return;
-                    }
-                    
-                    db.collection("sergis-games").find({username: tokens[0].username}).toArray(function (err, games) {
-                        if (err) {
-                            console.error("Error checking sergis-games database: ", err);
-                            callback(false, "Database error");
-                            return;
-                        }
-                        
-                        if (games.length == 0) {
-                            callback(false, "Invalid token session");
-                            return;
-                        }
-                        
-                        var state = tokens[0].state;
-                        game[func].apply(game, [
-                            games[0].jsondata,
-                            state,
-                            function () {
-                                sergisTokens.update({token: tokens[0].token},
-                                                    {$set: {state: state}},
-                                                    function (err, result) {
-                                    if (err) {
-                                        console.error("Error updating sergis-tokens database: ", err);
-                                    }
-                                });
-                            },
-                            function (data) { callback(true, data); },
-                            function (data) { callback(false, data); }
-                        ].concat(args));
-                    });
-                });
-            } else {
-                callback(false, func + " does not exist.");
+
+            if (!session || !session.session) {
+                // Nothing useful in the session
+                return last_resort();
             }
+            
+            var sessionUsername;
+            try {
+                sessionUsername = JSON.parse(session.session).username;
+            } catch (err) {}
+            if (!sessionUsername) {
+                // Couldn't find username in the session
+                return last_resort();
+            }
+            
+            // We should be good!
+            db.games.makeGameToken(gameUsername, gameName, sessionUsername, callback);
         });
-        
-        
-        // Everything's initialized for us; move on!
-        next();
-    };
+    });
+
+    // game function handler
+    socket.on("game", function (token, func, args, callback) {
+        if (gameFunctions.hasOwnProperty(func) && typeof gameFunctions[func] == "function") {
+            db.games.getGameAndTokenData(token, function (game, tokenData) {
+                if (!game || !tokenData) {
+                    return callback(false, "Invalid token");
+                }
+
+                var state = tokenData.state;
+                gameFunctions[func].apply(game, [
+                    game.jsondata,
+                    state,
+                    function () {
+                        db.games.updateGameTokenData(tokenData.token, {$set: {state: state}}, function (success) {
+                            // Yay! (hopefully)
+                        });
+                    },
+                    function (data) { callback(true, data); },
+                    function (data) { callback(false, data); }
+                ].concat(args));
+            });
+        } else {
+            return callback(false, func + " does not exist.");
+        }
+    });
+
+
+    // Everything's initialized for us; move on!
+    return next();
 };
 
 
@@ -112,11 +110,10 @@ module.exports = function (_db) {
 ///////////////////////////////////////////////////////////////////////////////
 // Game functions
 // (NOTE: These are heavily related to sergis-client/lib/backends/local.js)
-var game = {
+var gameFunctions = {
     getPreviousMapActions: function (jsondata, state, updateState, resolve, reject) {
         if (!jsondata || !jsondata.promptList) {
-            reject("Invalid JSON Game Data.");
-            return;
+            return reject("Invalid JSON Game Data.");
         }
         
         var actions = [],
@@ -149,22 +146,20 @@ var game = {
                 pushActions(promptIndex);
             }
         }
-        resolve(actions);
+        return resolve(actions);
     },
 
     getPromptCount: function (jsondata, state, updateState, resolve, reject) {
         if (!jsondata || !jsondata.promptList) {
-            reject("Invalid JSON Game Data.");
-            return;
+            return reject("Invalid JSON Game Data.");
         }
         
-        resolve(jsondata.promptList.length);
+        return resolve(jsondata.promptList.length);
     },
 
     getPrompt: function (jsondata, state, updateState, resolve, reject, promptIndex) {
         if (!jsondata || !jsondata.promptList) {
-            reject("Invalid JSON Game Data.");
-            return;
+            return reject("Invalid JSON Game Data.");
         }
         
         // Check if promptIndex is equal to where we're expecting to go
@@ -178,8 +173,7 @@ var game = {
                 // Jumping backwards!
                 if (!jsondata.jumpingBackAllowed) {
                     // BAD!!
-                    reject("Jumping back not allowed!");
-                    return;
+                    return reject("Jumping back not allowed!");
                 } else {
                     // Check onJumpBack (this is also checked in getPreviousMapActions)
                     if (jsondata.onJumpBack == "reset") {
@@ -193,8 +187,7 @@ var game = {
                 // Jumping forwards!
                 if (!jsondata.jumpingForwardAllowed) {
                     // BAD!!
-                    reject("Jumping forward not allowed!");
-                    return;
+                    return reject("Jumping forward not allowed!");
                 }
             } // else: Either same promptIndex, or the next one (always allowed)
         }
@@ -210,13 +203,12 @@ var game = {
         }
         updateState();
         // Finally, resolve with the prompt
-        resolve(jsondata.promptList[promptIndex].prompt);
+        return resolve(jsondata.promptList[promptIndex].prompt);
     },
 
     getActions: function (jsondata, state, updateState, resolve, reject, promptIndex, choiceIndex) {
         if (!jsondata || !jsondata.promptList) {
-            reject("Invalid JSON Game Data.");
-            return;
+            return reject("Invalid JSON Game Data.");
         }
         
         // Store the user's choice (so we can access it later using getPreviousMapActions)
@@ -243,13 +235,12 @@ var game = {
         updateState();
         
         // Finally, resolve with the actions
-        resolve(actions);
+        return resolve(actions);
     },
 
     getGameOverContent: function (jsondata, state, updateState, resolve, reject) {
         if (!jsondata || !jsondata.promptList) {
-            reject("Invalid JSON Game Data.");
-            return;
+            return reject("Invalid JSON Game Data.");
         }
         
         var breakdown = "<table><thead><tr>" +
@@ -280,7 +271,7 @@ var game = {
             }
         }
         breakdown += "</tbody></table>";
-        resolve([
+        return resolve([
             {"type": "html", "value": "<h3>Congratulations!</h3>"},
             {"type": "text", "value": "You have completed SerGIS."},
             {"type": "html", "value": "Your total score was: <b>" + totalScore + "</b>"},
@@ -289,80 +280,3 @@ var game = {
         ]);
     }
 };
-
-
-/**
- * Make a quick and dirty random integer.
- *
- * @param {number} d - The number of digits in the number.
- */
-function randInt(d) {
-    return Math.floor((Math.random() * 9 + 1) * Math.pow(10, d-1));
-}
-
-/**
- * Get user info and create an auth token.
- *
- * @param {Function} callback - Called with (userObject, authToken).
- * @param {string} username - The username.
- * @param {string} [password] - The password.
- */
-function makeToken(callback, username, password) {
-    db.collection("sergis-games").find({username: username}).toArray(function (err, games) {
-        if (err) {
-            console.error("Error accessing user in sergis-games database: ", err);
-            callback();
-        } else if (games.length > 0) {
-            if ((!games[0].password || games[0].password === password)) {
-                // All good, make a token!
-                var token = Number(randInt(10) + "" + (new Date()).getTime() + "" + randInt(10)).toString(36);
-                db.collection("sergis-tokens").insert({
-                    token: token,
-                    username: username,
-                    state: {
-                        // Default state
-                        currentPromptIndex: null,
-                        nextAllowedPromptIndex: null,
-                        userChoices: [],
-                        userChoiceOrder: []
-                    }
-                }, function (err, result) {
-                    if (err) {
-                        console.error("Error inserting into sergis-tokens database: ", err);
-                        callback(false);
-                        return;
-                    }
-                    callback({
-                        displayName: games[0].username,
-                        jumpingBackAllowed: !!games[0].jsondata.jumpingBackAllowed,
-                        jumpingForwardAllowed: !!games[0].jsondata.jumpingForwardAllowed
-                    }, token);
-                });
-            } else {
-                // Good username, bas password
-                callback(false);
-            }
-        } else {
-            // Bad username
-            callback();
-        }
-    });
-}
-
-/**
- * Delete an auth token (i.e., log a user out).
- *
- * @param {Function} callback - Called with true if successful, or false
- *                   otherwise.
- * @param {string} token - The auth token.
- */
-function deleteToken(callback, token) {
-    db.collection("sergis-tokens").remove({token: token}, function (err, result) {
-        if (err) {
-            console.error("Error removing from sergis-tokens database: ", err);
-            callback(false);
-        } else {
-            callback(true);
-        }
-    });
-}

@@ -8,45 +8,71 @@
 
 // This file handles any miscellaneous URLs for sergis-server
 
-// node modules
-var path = require("path");
-
 // required modules
 var express = require("express");
 
 // our modules
-var config = require("../config");
+var config = require("../config"),
+    db = require("./db");
 
-// SerGIS Server globals
-var db;
+// Common error titles
+var ERROR_TITLES = {
+    400: "Bad Request",
+    403: "Access Denied",
+    404: "Not Found",
+    405: "Method Not Allowed",
+    406: "Not Acceptable",
+    500: "Internal Server Error"
+};
 
 // Initialize everything
-module.exports = function (_db) {
-    db = _db;
-    
-    return function (req, res, next) {
-        switch (req.method) {
-            case "GET":
-                if (req.path == "/") {
-                    pageHandlers.homepageGet(req, res);
-                } else if (req.path == "/preview") {
-                    pageHandlers.previewGet(req, res);
-                } else {
-                    pageHandlers.error(req, res, 404, "File Not Found");
-                }
-                break;
-            default:
-                pageHandlers.error(req, res, 405, "Method Not Allowed");
+module.exports = function (req, res, next) {
+    // Check if the session says we should serve an error
+    if (req.error) {
+        var number = req.error.number || 404,
+            title = req.error.title,
+            details = req.error.details || "";
+        req.error = null;
+        if (!title) {
+            if (ERROR_TITLES[number]) {
+                title = ERROR_TITLES[number];
+            } else {
+                title = "SerGIS Error";
+            }
         }
-    };
+        // Serve the error
+        pageHandlers.error(req, res, number, title, details);
+        // Don't do anything else
+        return;
+    }
+
+    // I'm probably posessed by a demon right now, because I just made SWITCH-LOOP-CEPTION
+    switch (req.method) {
+        case "GET":
+            switch (req.path) {
+                case "/":
+                    pageHandlers.homepageGet(req, res);
+                    break;
+                case "/preview":
+                    pageHandlers.previewGet(req, res);
+                    break;
+                case "/logout":
+                    pageHandlers.logoutGet(req, res);
+                    break;
+                default:
+                    pageHandlers.error(req, res, 404, "Not Found");
+            }
+            break;
+        default:
+            pageHandlers.error(req, res, 405, "Method Not Allowed");
+    }
 };
 
 
 var pageHandlers = {
     homepageGet: function (req, res) {
-        res.render(path.join(config.TEMPLATES_DIR, "homepage.html"), {
-            "style-simple.css": (config.HTTP_PREFIX || "") + "/lib/style-simple.css",
-            noerror: true
+        res.render("homepage.ejs", {
+            me: req.user,
         });
     },
     
@@ -54,9 +80,9 @@ var pageHandlers = {
         // Serve sergis-client without changing the backend (i.e. keeping local.js).
         // Used for the "Preview" functionality in the SerGIS Author, etc.
         res.render(config.GAME_INDEX, {
-            test: "",
+            test: false,
             // lib files
-            "style-simple.css": (config.HTTP_PREFIX || "") + "/lib/style-simple.css",
+            "style.css": (config.HTTP_PREFIX || "") + "/lib/style.css",
             "es6-promise-2.0.0.min.js": (config.HTTP_PREFIX || "") + "/lib/es6-promise-2.0.0.min.js",
             "main.js": (config.HTTP_PREFIX || "") + "/lib/main.js",
             "frontend-script-src": (config.HTTP_PREFIX || "") + "/lib/frontends/arcgis.js",
@@ -64,11 +90,21 @@ var pageHandlers = {
         });
     },
     
-    error: function (req, res, number, details) {
+    logoutGet: function (req, res) {
+        req.session.destroy(function (err) {
+            if (err) throw err;
+            
+            // We're probably good now!
+            res.redirect(config.HTTP_PREFIX + "/");
+        });
+    },
+    
+    error: function (req, res, number, title, details) {
         res.status(number);
-        res.render(path.join(config.TEMPLATES_DIR, "error.html"), {
-            "style-simple.css": (config.HTTP_PREFIX || "") + "/lib/style-simple.css",
+        res.render("error.ejs", {
+            me: req.user,
             number: number,
+            title: title,
             details: details
         });
     }

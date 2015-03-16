@@ -57,6 +57,9 @@ var config = module.exports = {
     /** MongoDB server */
     MONGO_SERVER: "mongodb://localhost:27017/sergis-server",
     
+    /** Session secret (NOTE: This should be changed from the default!!) */
+    SESSION_SECRET: "put-your-random-sergis-session-secret-here",
+    
     ///////////////////////////////////////////////////////////////////////////
     // ARGUMENT-OVERRIDDEN CONFIG
     
@@ -94,12 +97,12 @@ var config = module.exports = {
     ///////////////////////////////////////////////////////////////////////////
     // Misc.
     
-    /** Username regex */
-    USERNAME_REGEX: /^[A-Za-z0-9~$"':;,.-_]+/,
-
-    /** Username in URL regex (i.e. "/" + USERNAME_REGEX + "/"?) */
-    USERNAME_URL_REGEX: /^\/([A-Za-z0-9~$"':;,.-_]*)\/?/,
+    /** Regex for things that must be URL-safe (i.e. usernames and game names) */
+    URL_SAFE_REGEX: /^[A-Za-z0-9~$"':;,.-_]+$/,
     
+    /** Human-readable character list for URL_SAFE_REGEX */
+    URL_SAFE_REGEX_CHARS: "~ $ \" ' : ; , . - _",
+
     /** Information about command-line arguments that can be passed to server.js */
     argdata: argdata
 };

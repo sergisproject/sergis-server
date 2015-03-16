@@ -1,0 +1,35 @@
+<%- include("HEADER", {title: "SerGIS Games", page: "games-all"}) %>
+
+<section>
+    <h2>SerGIS Games</h2>
+
+    <% gamesByAccess.forEach(function (gameObj) { %>
+    <h3 class="has-description"><%= gameObj.name %></h3>
+    <p class="description"><%= gameObj.description %></p>
+    <% if (gameObj.games.length == 0) { %>
+    <p><%= gameObj.none %></p>
+    <% } else { %>
+    <table>
+    <thead>
+    <tr>
+        <th>Game Name</th>
+        <th>Game Owner</th>
+        <th>&nbsp;</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <% gameObj.games.forEach(function (game) { %>
+    <tr>
+        <td><i><%= game.gameName %></i></td>
+        <td><a href="<%= httpPrefix %>/games/<%= game.username %>"><%= game.ownerDisplayName || game.username %></a></td>
+        <td><a href="<%= httpPrefix %>/games/<%= game.username %>/<%= game.gameName %>">Play Game</a></td>
+    </tr>
+    <% }) %>
+    </tbody>
+    </table>
+    <% } %>
+    <% }) %>
+</section>
+
+<%- include("FOOTER", {formcheckers: true}) %>

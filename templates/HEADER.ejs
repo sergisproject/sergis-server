@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title><%= title %></title>
+<link rel="stylesheet" type="text/css" href="<%= httpPrefix %>/lib/style-simple.css">
+</head>
+
+<body>
+
+<header>
+    <h1><%= title %></h1>
+    <% if (typeof me != "undefined" && me) { %>
+    <ul>
+        <li>Logged in as <%= me.username %></li>
+    </ul>
+    <% } %>
+    <ul>
+        <li><a href="<%= httpPrefix %>/">Home</a></li>
+        <li><a href="<%= httpPrefix %>/games">Games</a></li>
+    <% if (typeof me != "undefined" && me) { %>
+        <li><a href="<%= httpPrefix %>/games/<%= me.username %>">My Games</a></li>
+        <li><a href="<%= httpPrefix %>/account">My Account</a></li>
+        <% if (me.isAdmin || me.isOrganizationAdmin) { %><li><a href="<%= httpPrefix %>/account/admin">Admin</a></li><% } %>
+        <li><a href="<%= httpPrefix %>/logout">Log Out</a></li>
+    <% } else if (page != "login") { %>
+        <li><a href="<%= httpPrefix %>/account">Log In</a></li>
+    <% } %>
+    </ul>
+</header>

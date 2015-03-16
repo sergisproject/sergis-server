@@ -1,0 +1,65 @@
+<%- include("HEADER", {title: "SerGIS Games", page: "games"}) %>
+
+<section>
+    <h2><% if (me && me.username == user.username) { %>My Games
+    <% } else { %>Games by <%= user.displayName %><% } %></h2>
+
+    <% gamesByAccess.forEach(function (gameObj) { %>
+    <h3 class="has-description"><%= gameObj.name %></h3>
+    <p class="description"><%= gameObj.description %></p>
+    <% if (gameObj.games.length == 0) { %>
+    <p><%= gameObj.none %></p>
+    <% } else { %>
+    <table>
+    <thead>
+    <tr>
+        <th>Game Name</th>
+        <% if (canEditGames) { %>
+        <th>Access Level</th>
+        <% } %>
+        <th>&nbsp;</th>
+        <% if (canEditGames) { %>
+        <th>&nbsp;</th>
+        <% } %>
+    </tr>
+    </thead>
+
+    <tbody>
+    <% gameObj.games.forEach(function (game) { %>
+    <tr>
+        <td><i><%= game.gameName %></i></td>
+        <% if (canEditGames) { %>
+        <td>
+            <form action="" method="POST">
+                <input type="hidden" name="action" value="set-game-access">
+                <input type="hidden" name="username" value="<%= user.username %>">
+                <input type="hidden" name="gameName" value="<%= game.gameName %>">
+                <select name="access" class="formcheckers-select-auto-submit">
+                    <option value="public"<% if (game.access == "public") { %> selected<% } %>>Public</option>
+                    <% if (user.organization || game.access == "organization") { %><option value="organization"<% if (game.access == "organization") { %> selected<% } %>>Organization</option><% } %>
+                    <option value="private"<% if (game.access != "public" && game.access != "organization") { %> selected<% } %>>Private</option>
+                </select>
+                <input type="submit" value="Update">
+            </form>
+        </td>
+        <% } %>
+        <td><a href="<%= httpPrefix %>/games/<%= user.username %>/<%= game.gameName %>">Play Game</a><% if (canEditGames) { /* <br><a href="{{httpPrefix}}/games/{{user.username}}/{{game.gameName}}/edit">Edit Game</a> */ } %></td>
+        <% if (canEditGames) { %>
+        <td>
+            <form action="" method="POST" class="formcheckers-delete-check" data-name="<%= game.gameName %>">
+                <input type="hidden" name="action" value="delete-game">
+                <input type="hidden" name="username" value="<%= user.username %>">
+                <input type="hidden" name="gameName" value="<%= game.gameName %>">
+                <input type="submit" value="Delete">
+            </form>
+        </td>
+        <% } %>
+    </tr>
+    <% }) %>
+    </tbody>
+    </table>
+    <% } %>
+    <% }) %>
+</section>
+
+<%- include("FOOTER", {formCheckers: true}) %>
