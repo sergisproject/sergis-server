@@ -437,6 +437,7 @@ exports.games = {
      *        authentication is successful, or (false) if the username or
      *        password is incorrect, or (false, false) if the user does not have
      *        accessor to the game, or no arguments if there is an error.
+     *        (See checkAndMakeToken below.)
      */
     makeAuthenticatedGameToken: function (gameUsername, gameName, username, password, callback) {
         db.collection("sergis-games").findOne({
@@ -451,10 +452,6 @@ exports.games = {
             if (!game) {
                 // Bad game name
                 return callback();
-            }
-            if (game.access != "public" && game.access != "organization" && game.username != username) {
-                // Private game not owned by us
-                return callback(false, false);
             }
 
             db.collection("sergis-users").findOne({username: gameUsername}, function (err, owner) {
@@ -487,24 +484,8 @@ exports.games = {
                             return callback(false);
                         }
 
-                        // Now, is this user allowed to access this game?
-                        if (game.access == "public" ||
-                            (game.access == "organization" && owner.organization && owner.organization === user.organization) ||
-                            owner.username == user.username) {
-
-                            // All good, make a token!
-                            makeToken(gameUsername, gameName, username, function (gamePerms, authToken) {
-                                if (!gamePerms || !authToken) {
-                                    return callback();
-                                }
-
-                                gamePerms.displayName = user.displayName;
-                                return callback(gamePerms, authToken);
-                            });
-                        } else {
-                            // No access for you!
-                            return callback(false, false);
-                        }
+                        // Now, pass the control to checkAndMakeToken
+                        checkAndMakeToken(game, owner, user, callback);
                     });
                 });
             });
@@ -520,8 +501,10 @@ exports.games = {
      * @param {string} username - The username.
      * @param {Function} callback - Called with (userObject, authToken) if
      *        authentication is successful, or (false) if the username is bad,
+     *        or (false, false) if the user does not have access to the game,
      *        or no arguments if there is an error (including if the user
      *        doesn't have access to the game).
+     *        (See checkAndMakeToken below.)
      */
     makeGameToken: function (gameUsername, gameName, username, callback) {
         db.collection("sergis-games").findOne({
@@ -533,8 +516,8 @@ exports.games = {
                 return callback();
             }
 
-            if (!game || (game.access != "public" && game.access != "organization" && game.username != username)) {
-                // Bad game name, or private game not owned by us
+            if (!game) {
+                // Bad game name
                 return callback();
             }
 
@@ -558,24 +541,8 @@ exports.games = {
                         return callback(false);
                     }
 
-                    // Now, is this user allowed to access this game?
-                    if (game.access == "public" ||
-                        (game.access == "organization" && owner.organization && owner.organization === user.organization) ||
-                        owner.username == user.username) {
-
-                        // All good, make a token!
-                        makeToken(gameUsername, gameName, username, function (gamePerms, authToken) {
-                            if (!gamePerms || !authToken) {
-                                return callback();
-                            }
-
-                            gamePerms.displayName = user.displayName;
-                            return callback(gamePerms, authToken);
-                        });
-                    } else {
-                        // No access for you!
-                        return callback();
-                    }
+                    // Now, pass the control to checkAndMakeToken
+                    checkAndMakeToken(game, owner, user, callback);
                 });
             });
         });
@@ -727,6 +694,42 @@ function checkPassword(password, encryptedPassword, callback) {
         });
     } else {
         return callback(new Error("Invalid encrypted password."));
+    }
+}
+
+/**
+ * Check a game/user/owner combo for access and then make an auth token.
+ *
+ * @param {object} game - The game from sergis-games.
+ * @param {object} owner - The owner of the game from sergis-users.
+ * @param {object} user - The logged-in user from sergis-users.
+ * @param {Function} callback - Called with (userObject, authToken) if
+ *        authentication is successful, or (false, false) if the user does not
+ *        have access to the game, or no arguments if there is an error.
+ */
+function checkAndMakeToken(game, owner, user, callback) {
+    // Is this user allowed to access this game?
+        // If they're an admin, or the game is public
+    if (user.isAdmin || game.access == "public" ||
+        // If the game is organization and they're in the same organization as the owner
+        (game.access == "organization" && owner.organization && owner.organization === user.organization) ||
+        // If they're an organization admin and in the same organization as the owner
+        (user.isOrganizationAdmin && user.organization && user.organization === owner.organization) ||
+        // If they are the owner
+        owner.username == user.username) {
+
+        // All good, make a token!
+        makeToken(gameUsername, gameName, username, function (gamePerms, authToken) {
+            if (!gamePerms || !authToken) {
+                return callback();
+            }
+
+            gamePerms.displayName = user.displayName;
+            return callback(gamePerms, authToken);
+        });
+    } else {
+        // No access for you!
+        return callback(false, false);
     }
 }
 
