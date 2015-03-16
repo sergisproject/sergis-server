@@ -560,6 +560,15 @@ var adminActions = {
 ////////////////////////////////////////////////////////////////////////////////
 // Set up login
 router.use(function (req, res, next) {
+    // Test admin account, if we don't have any accounts in the database yet
+    /*
+    req.user = {
+        username: "admin",
+        displayName: "Admin",
+        isAdmin: true
+    };
+    */
+    
     // Is it a login request?
     if (req.method == "POST" && req.body.login == "account-login") {
         // Kill any previous account that the user might have been logged in to
