@@ -435,8 +435,8 @@ exports.games = {
      * @param {string} password - The password.
      * @param {Function} callback - Called with (userObject, authToken) if
      *        authentication is successful, or (false) if the username or
-     *        password is incorrect, or no arguments if there is an error
-     *        (including when the user doesn't have access to the game).
+     *        password is incorrect, or (false, false) if the user does not have
+     *        accessor to the game, or no arguments if there is an error.
      */
     makeAuthenticatedGameToken: function (gameUsername, gameName, username, password, callback) {
         db.collection("sergis-games").findOne({
@@ -448,9 +448,13 @@ exports.games = {
                 return callback();
             }
 
-            if (!game || (game.access != "public" && game.access != "organization" && game.username != username)) {
-                // Bad game name, or private game not owned by us
+            if (!game) {
+                // Bad game name
                 return callback();
+            }
+            if (game.access != "public" && game.access != "organization" && game.username != username) {
+                // Private game not owned by us
+                return callback(false, false);
             }
 
             db.collection("sergis-users").findOne({username: gameUsername}, function (err, owner) {
@@ -499,7 +503,7 @@ exports.games = {
                             });
                         } else {
                             // No access for you!
-                            return callback();
+                            return callback(false, false);
                         }
                     });
                 });
