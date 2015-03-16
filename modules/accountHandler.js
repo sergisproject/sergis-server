@@ -89,7 +89,7 @@ var pageHandlers = {
                 statusMessages: req.statusMessages || false,
                 organizations: organizations,
                 gameNamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
-                gameNameCharacters: config.URL_SAFE_REGEX_CHARS,
+                gameNameCharacters: config.URL_SAFE_REGEX_CHARS
             });
         });
     },
@@ -125,11 +125,64 @@ var pageHandlers = {
     },
     
     /**
+     * Handle GET requests for the publishing page.
+     */
+    publishGet: function (req, res, next) {
+        // Just throw a "Method Not Allowed"
+        req.error = {number: 405};
+        return next("route");
+    },
+    
+    /**
      * Handle POST requests for the publishing page.
      */
     publishPost: function (req, res, next) {
-        req.error = {number: 400};
-        return next("route");
+        // If we're coming from the publish page
+        if (req.body.action == "create-game") {
+            // Make sure that we have a valid jsonkey
+            if (!req.body.jsonkey || !req.session.publish_jsondata || !req.session.publish_jsondata.hasOwnProperty(req.body.jsonkey)) {
+                req.error = {
+                    number: 400,
+                    details: "Invalid jsonkey."
+                };
+                return next("route");
+            }
+            
+            // Move control to accountActions["create-game"] to check the data and create the game
+            accountActions["create-game"](req, res, next, req.user, true, req.body.jsonkey);
+        } else {
+            // We must be coming from the author
+            // Make sure we have valid JSON data
+            var jsondata, jsonerr;
+            try {
+                jsondata = JSON.parse(req.body.jsondata);
+            } catch (err) {
+                jsondata = null;
+                jsonerr = err;
+            }
+
+            if (!jsondata) {
+                // Ahh! Invalid JSON data!
+                req.error = {
+                    number: 400,
+                    details: "Invalid JSON data" + (jsonerr ? " (" + jsonerr.name + ": " + jsonerr.message + ")" : ".")
+                };
+                return req.next("route");
+            }
+            
+            // Store the JSON data in the session
+            var jsonkey = "" + (Math.random() + Math.floor(Date.now()));
+            if (!req.session.publish_jsondata) req.session.publish_jsondata = {};
+            req.session.publish_jsondata[jsonkey] = jsondata;
+            
+            // Render the publish page
+            return res.render("account-publish.ejs", {
+                me: req.user,
+                jsonkey: jsonkey,
+                gameNamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
+                gameNameCharacters: config.URL_SAFE_REGEX_CHARS
+            });
+        }
     },
     
     /**
@@ -283,8 +336,11 @@ var accountActions = {
     
     /**
      * Handle a request for creating a new game under a user account.
+     * Called from pageHandlers.accountPost and pageHandlers.publishPost.
+     * jsonkey is only provided from publishPost, meaning that the actual JSON
+     * data is in req.session.publish_jsondata[jsonkey].
      */
-    "create-game": function (req, res, next, user, isMe) {
+    "create-game": function (req, res, next, user, isMe, jsonkey) {
         // First, make sure everything's here and good
         if (!req.body.gameName) {
             return res.render("error-back.ejs", {
@@ -307,7 +363,7 @@ var accountActions = {
                 details: "Invalid access level."
             });
         }
-        if (!req.files.jsonfile) {
+        if (!jsonkey && !req.files.jsonfile) {
             return res.render("error-back.ejs", {
                 title: "SerGIS Account - " + user.username,
                 subtitle: "Error Creating Game",
@@ -328,11 +384,15 @@ var accountActions = {
             
             // Now, check the JSON game data
             var jsondata, jsonerr;
-            try {
-                jsondata = JSON.parse(req.files.jsonfile.buffer.toString());
-            } catch (err) {
-                jsondata = null;
-                jsonerr = err;
+            if (jsonkey) {
+                jsondata = req.session.publish_jsondata[jsonkey];
+            } else {
+                try {
+                    jsondata = JSON.parse(req.files.jsonfile.buffer.toString());
+                } catch (err) {
+                    jsondata = null;
+                    jsonerr = err;
+                }
             }
             if (!jsondata) {
                 return res.render("error-back.ejs", {
@@ -630,7 +690,8 @@ router.use(function (req, res, next) {
 router.get("", pageHandlers.account);
 router.post("", pageHandlers.accountPost, pageHandlers.account);
 
-router.post("/publish", pageHandlers.publishPost);
+router.get("/publish", pageHandlers.publishGet);  // so we can throw a 405
+router.post("/publish", pageHandlers.publishPost, pageHandlers.account);
 
 router.get("/admin", pageHandlers.admin);
 router.post("/admin", pageHandlers.adminPost, pageHandlers.admin);
