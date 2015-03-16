@@ -719,7 +719,7 @@ function checkAndMakeToken(game, owner, user, callback) {
         owner.username == user.username) {
 
         // All good, make a token!
-        makeToken(gameUsername, gameName, username, function (gamePerms, authToken) {
+        makeToken(game.username, game.gameName, user.username, function (gamePerms, authToken) {
             if (!gamePerms || !authToken) {
                 return callback();
             }
