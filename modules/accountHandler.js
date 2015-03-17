@@ -284,6 +284,7 @@ var accountActions = {
      */
     "update-user": function (req, res, next, user, isMe) {
         var $set = {};
+        var newPassword;
         req.statusMessages = [];
         // Check if the display name is changed
         if (req.body.displayName && req.body.displayName != user.displayName) {
@@ -293,7 +294,7 @@ var accountActions = {
         // Check if the password should be changed
         if (req.body.password1 && req.body.password2) {
             if (req.body.password1 == req.body.password2) {
-                $set.password = req.body.password1;
+                newPassword = req.body.password1;
                 req.statusMessages.push("The password for " + user.username + " has been updated.");
             } else {
                 req.statusMessages.push("ERROR: New passwords did not match.");
@@ -315,8 +316,8 @@ var accountActions = {
         // Set the changes if there are any
         if (JSON.stringify($set) != "{}") {
             // Yay, there's changes to update!
-            db.users.update(user.username, {$set: $set}, function () {
-                // Update req.otherUser
+            db.users.update(user.username, {$set: $set}, newPassword, function () {
+                // Re-get the user we just updated (store it in req.otherUser)
                 db.users.get(user.username, function (user) {
                     if (!user) {
                         // Ahh! He's gone!
@@ -549,7 +550,7 @@ var adminActions = {
                     $set: {
                         organization: null
                     }
-                }, function () {
+                }, null, function () {
                     // All good now!
                     req.statusMessages = ["The organization has been set to none for user \"" + username + "\"."];
                     return next();
@@ -572,7 +573,7 @@ var adminActions = {
                     $set: {
                         organization: organizationName
                     }
-                }, function () {
+                }, null, function () {
                     // All good now!
                     req.statusMessages = ["The organization has been set to \"" + organizationName + "\" for user \"" + username + "\"."];
                     return next();
@@ -607,7 +608,7 @@ var adminActions = {
                     isAdmin: admin == "yup",
                     isOrganizationAdmin: admin == "kinda",
                 }
-            }, function () {
+            }, null, function () {
                 // All good now!
                 req.statusMessages = ["User \"" + username + "\" is now " + (admin == "yup" ? " an Admin." : admin == "kinda" ? "an Organization Admin." : "not an admin.")];
                 return next();
