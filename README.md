@@ -12,7 +12,7 @@ Also, SerGIS Server requires a [MongoDB](https://www.mongodb.org/) server to run
 
 ## TODOs
 
-- Make usernames and gamenames case-insensitive
+- Add ability to sort the tables of games, users, etc.
 
 ## License
 

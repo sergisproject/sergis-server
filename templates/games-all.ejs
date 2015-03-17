@@ -22,8 +22,8 @@
     <% gameObj.games.forEach(function (game) { %>
     <tr>
         <td><i><%= game.gameName %></i></td>
-        <td><a href="<%= httpPrefix %>/games/<%= game.username %>"><%= game.ownerDisplayName || game.username %></a></td>
-        <td><a href="<%= httpPrefix %>/games/<%= game.username %>/<%= game.gameName %>">Play Game</a></td>
+        <td><a href="<%= httpPrefix %>/games/<%= game.gameOwner %>"><%= game.ownerDisplayName || game.gameOwner %></a></td>
+        <td><a href="<%= httpPrefix %>/games/<%= game.gameOwner %>/<%= game.gameName %>">Play Game</a></td>
     </tr>
     <% }) %>
     </tbody>

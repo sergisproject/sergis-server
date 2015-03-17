@@ -24,8 +24,8 @@ var config = require("../config"),
  */
 module.exports = function (socket, next) {
     // logIn handler
-    socket.on("logIn", function (gameUsername, gameName, username, password, callback) {
-        db.games.makeAuthenticatedGameToken(gameUsername, gameName, username, password, callback);
+    socket.on("logIn", function (gameOwner, gameName, username, password, callback) {
+        db.games.makeAuthenticatedGameToken(gameOwner, gameName, username, password, callback);
     });
 
     // logOut handler
@@ -34,14 +34,14 @@ module.exports = function (socket, next) {
     });
 
     // getUser handler
-    socket.on("getUser", function (gameUsername, gameName, sessionID, callback) {
-        if (!gameUsername || !gameName) {
+    socket.on("getUser", function (gameOwner, gameName, sessionID, callback) {
+        if (!gameOwner || !gameName) {
             return callback();
         }
         
         function last_resort() {
             // Try logging in without authentication, if possible
-            db.games.makeAnonymousGameToken(gameUsername, gameName, callback);
+            db.games.makeAnonymousGameToken(gameOwner, gameName, callback);
         };
         
         if (!sessionID) {
@@ -70,7 +70,7 @@ module.exports = function (socket, next) {
             }
             
             // We should be good!
-            db.games.makeGameToken(gameUsername, gameName, sessionUsername, callback);
+            db.games.makeGameToken(gameOwner, gameName, sessionUsername, callback);
         });
     });
 

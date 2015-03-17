@@ -102,7 +102,7 @@ var pageHandlers = {
         // Double-check
         var user = req.otherUser || req.user;
         var isMe = user.username == req.user.username;
-        if (user.username != req.body.username) {
+        if (user.username.toLowerCase() != req.body.username.toLowerCase()) {
             req.error = {number: 400};
             return next("route");
         }
@@ -374,7 +374,7 @@ var accountActions = {
         // Next, make sure the game name isn't taken
         db.games.get(user.username, req.body.gameName, function (game) {
             if (game) {
-                // Ahh! Game with this username/gameName combo already exists!
+                // Ahh! Game with this gameOwner/gameName combo already exists!
                 return res.render("error-back.ejs", {
                     title: "SerGIS Account - " + user.username,
                     subtitle: "Error Creating Game",
@@ -621,13 +621,16 @@ var adminActions = {
 // Set up login
 router.use(function (req, res, next) {
     // Test admin account, if we don't have any accounts in the database yet
-    /*
-    req.user = {
-        username: "admin",
-        displayName: "Admin",
-        isAdmin: true
-    };
-    */
+    if (config.ASSUME_ADMIN) {
+        // WARNING: EVERYONE IS AN ADMIN! EXTREMELY UNSAFE!!
+        req.user = {
+            username: "TempAdmin",
+            username_lowercase: "tempadmin",
+            encryptedPassword: "",
+            displayName: "WARNING: Set ASSUME_ADMIN to false in config.js",
+            isAdmin: true
+        };
+    }
     
     // Is it a login request?
     if (req.method == "POST" && req.body.login == "account-login") {

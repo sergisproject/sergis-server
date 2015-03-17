@@ -97,6 +97,13 @@ var config = module.exports = {
     ///////////////////////////////////////////////////////////////////////////
     // Misc.
     
+    /**
+     * Whether to temporarily disable login and assume everyone is a logged-in
+     * admin. Can be used when first setting up the server before there are any
+     * accounts. MUST BE SET TO `false` ONCE THE SERVER IS SET UP!!
+     */
+    ASSUME_ADMIN: false,
+    
     /** Regex for things that must be URL-safe (i.e. usernames and game names) */
     URL_SAFE_REGEX: /^[A-Za-z0-9~$"':;,.\-_]+$/,
     

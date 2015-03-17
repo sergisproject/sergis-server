@@ -224,7 +224,7 @@ var pageHandlers = {
                 switch (req.body.action) {
                     case "set-game-access":
                         if (["public", "organization", "private"].indexOf(req.body.access) != -1) {
-                            db.games.update(game.username, game.gameName, {
+                            db.games.update(game.gameOwner, game.gameName, {
                                 $set: {
                                     access: req.body.access
                                 }
@@ -235,7 +235,7 @@ var pageHandlers = {
                         }
                         break;
                     case "delete-game":
-                        db.games.delete(game.username, game.gameName, function () {
+                        db.games.delete(game.gameOwner, game.gameName, function () {
                             next();
                         });
                         return;
@@ -261,7 +261,7 @@ var pageHandlers = {
             "socket-io-script-src": (config.SOCKET_ORIGIN || "") + (config.SOCKET_PREFIX || "") + "/socket.io/socket.io.js",
             "socket-io-origin": config.SOCKET_ORIGIN || "",
             "socket-io-prefix": config.SOCKET_PREFIX || "",
-            "gameUsername": req.game.username,
+            "gameOwner": req.game.gameOwner,
             "gameName": req.game.gameName,
             "session": req.sessionID,
             "logoutUrl": (config.HTTP_PREFIX || "") + "/logout"

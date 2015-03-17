@@ -88,7 +88,9 @@ exports.organizations = {
             }
 
             // Add it in
-            db.collection("sergis-organizations").insert({name: organizationName}, function (err, organization) {
+            db.collection("sergis-organizations").insert({
+                name: organizationName
+            }, function (err, organization) {
                 if (err) throw err;
                 return callback(organization);
             });
@@ -102,12 +104,14 @@ exports.users = {
     /**
      * Get a user by username without checking the password.
      *
-     * @param {string} username
+     * @param {string} username - The user's username (case-insensitive).
      * @param {Function} callback - Called with (userObject) if successful, or no
      *        arguments if the username is not in the database.
      */
     get: function (username, callback) {
-        db.collection("sergis-users").findOne({username: username}, function (err, user) {
+        db.collection("sergis-users").findOne({
+            username_lowercase: username.toLowerCase()
+        }, function (err, user) {
             if (err) throw err;
             if (user) {
                 return callback(user);
@@ -140,13 +144,16 @@ exports.users = {
     /**
      * Get a user via a username and password.
      *
-     * @param {string} username - The username of the user trying to log in.
+     * @param {string} username - The username of the user trying to log in
+     *        (case-insensitive).
      * @param {string} password - The password of the user trying to log in.
      * @param {Function} callback - Called with (userObject) if successful, or
      *        (false) if the username or password was incorrect.
      */
     check: function (username, password, callback) {
-        db.collection("sergis-users").findOne({username: username}, function (err, user) {
+        db.collection("sergis-users").findOne({
+            username_lowercase: username.toLowerCase()
+        }, function (err, user) {
             if (err) throw err;
 
             if (!user) {
@@ -174,7 +181,9 @@ exports.users = {
      */
     create: function (username, password, displayName, organization, admin, callback) {
         // Make sure username doesn't exist
-        db.collection("sergis-users").findOne({username: username}, function (err, user) {
+        db.collection("sergis-users").findOne({
+            username_lowercase: username.toLowerCase()
+        }, function (err, user) {
             if (err) throw err;
             
             if (user) {
@@ -187,6 +196,7 @@ exports.users = {
                 
                 db.collection("sergis-users").insert({
                     username: username,
+                    username_lowercase: username.toLowerCase(),
                     encryptedPassword: encryptedPassword,
                     displayName: displayName,
                     organization: organization,
@@ -205,13 +215,16 @@ exports.users = {
     /**
      * Update a user.
      *
-     * @param {string} username - The username of the user to update.
+     * @param {string} username - The username of the user to update
+     *        (case-insensitive).
      * @param {Object} update - The Mongo data to update.
      * @param {Function} callback - Called when successful.
      */
     update: function (username, update, callback) {
         var afterUpdate = function () {
-            db.collection("sergis-users").update({username: username}, update, function (err, result) {
+            db.collection("sergis-users").update({
+                username_lowercase: username.toLowerCase()
+            }, update, function (err, result) {
                 if (err) throw err;
                 return callback();
             });
@@ -231,11 +244,14 @@ exports.users = {
     /**
      * Delete a user.
      *
-     * @param {string} username - The username of the user to delete.
+     * @param {string} username - The username of the user to delete
+     *        (case-insensitive).
      * @param {Function} callback - Called when the attempted removal is done.
      */
     delete: function (username, callback) {
-        db.collection("sergis-users").remove({username: username}, function (err, result) {
+        db.collection("sergis-users").remove({
+            username_lowercase: username.toLowerCase()
+        }, function (err, result) {
             if (err) throw err;
             return callback();
         });
@@ -246,17 +262,18 @@ exports.users = {
 // sergis-games, and sergis-tokens
 exports.games = {
     /**
-     * Get a game by username and gameName.
+     * Get a game by gameOwner and gameName.
      *
-     * @param {string} gameUsername - The name of the user that owns the game.
-     * @param {string} gameName - The name of the game.
+     * @param {string} gameOwner - The username of the game owner
+     *        (case-insensitive).
+     * @param {string} gameName - The name of the game (case-insensitive).
      * @param {Function} callback - Called with (gameObject) if successful, or
-     *        no arguments if the username/gameName is not in the database.
+     *        no arguments if the gameOwner/gameName is not in the database.
      */
-    get: function (gameUsername, gameName, callback) {
+    get: function (gameOwner, gameName, callback) {
         db.collection("sergis-games").findOne({
-            username: gameUsername,
-            gameName: gameName
+            gameOwner_lowercase: gameOwner.toLowerCase(),
+            gameName_lowercase: gameName.toLowerCase()
         }, function (err, game) {
             if (err) throw err;
             if (game) {
@@ -268,19 +285,19 @@ exports.games = {
     },
 
     /**
-     * Get all the games, optionally filtered by a username, or access level.
+     * Get all the games, optionally filtered by an owner and/or access level.
      *
-     * @param {?string} username - The username to filter by (will only include
-     *        games owned by this username).
+     * @param {?string} gameOwner - The username to filter by; will only include
+     *        games owned by this username (case-insensitive).
      * @param {?string} organization - The organization to filter by (will only
      *        include games whose owner is part of this organization).
      * @param {?string} access - The access level to filter with (will only
      *        include games with this exact access level).
      * @param {Function} callback - Called with ([gameObject, gameObject, ...]).
      */
-    getAll: function (username, organization, access, callback) {
+    getAll: function (gameOwner, organization, access, callback) {
         var criteria = {};
-        if (username) criteria.username = username;
+        if (gameOwner) criteria.gameOwner_lowercase = gameOwner.toLowerCase();
         if (access) criteria.access = access;
         db.collection("sergis-games").find(criteria).toArray(function (err, games) {
             if (err) throw err;
@@ -302,7 +319,9 @@ exports.games = {
             };
 
             games.forEach(function (game) {
-                db.collection("sergis-users").findOne({username: game.username}, function (err, user) {
+                db.collection("sergis-users").findOne({
+                    username_lowercase: game.gameOwner.toLowerCase()
+                }, function (err, user) {
                     if (err) throw err;
 
                     if (!organization || user.organization === organization) {
@@ -320,18 +339,18 @@ exports.games = {
     /**
      * Create a new game.
      *
-     * @param {string} username - The username of the user that owns this game.
+     * @param {string} gameOwner - The username of the game owner.
      * @param {string} gameName - The name of the new game.
      * @param {string} access - The access level for the game.
      * @param {Object} jsondata - The json data for the game.
      * @param {Function} callback - Called with (gameObject) if successful, or
-     *        (false) if the username/gameName combo is already taken.
+     *        (false) if the gameOwner/gameName combo is already taken.
      */
-    create: function (username, gameName, access, jsondata, callback) {
-        // Make sure username/gameName combo doesn't exist
+    create: function (gameOwner, gameName, access, jsondata, callback) {
+        // Make sure gameOwner/gameName combo doesn't exist
         db.collection("sergis-games").findOne({
-            username: username,
-            gameName: gameName
+            gameOwner_lowercase: gameOwner.toLowerCase(),
+            gameName_lowercase: gameName.toLowerCase()
         }, function (err, game) {
             if (err) throw err;
             
@@ -341,8 +360,10 @@ exports.games = {
             }
             
             db.collection("sergis-games").insert({
-                username: username,
+                gameOwner: gameOwner,
+                gameOwner_lowercase: gameOwner.toLowerCase(),
                 gameName: gameName,
+                gameName_lowercase: gameName.toLowerCase(),
                 access: access,
                 jsondata: jsondata
             }, function (err, game) {
@@ -357,15 +378,17 @@ exports.games = {
     /**
      * Update a game.
      *
-     * @param {string} gameUsername - The name of the user that owns the game.
-     * @param {string} gameName - The gameName of the game to update.
+     * @param {string} gameOwner - The username of the game owner
+     *        (case-insensitive).
+     * @param {string} gameName - The gameName of the game to update
+     *        (case-insensitive).
      * @param {Object} update - The Mongo data to update.
      * @param {Function} callback - Called when successful.
      */
-    update: function (gameUsername, gameName, update, callback) {
+    update: function (gameOwner, gameName, update, callback) {
         db.collection("sergis-games").update({
-            username: gameUsername,
-            gameName: gameName
+            gameOwner_lowercase: gameOwner.toLowerCase(),
+            gameName_lowercase: gameName.toLowerCase()
         }, update, function (err, result) {
             if (err) throw err;
             return callback();
@@ -375,14 +398,16 @@ exports.games = {
     /**
      * Delete a game.
      *
-     * @param {string} gameUsername - The name of the user that owns the game.
-     * @param {string} gameName - The gameName of the game to delete.
+     * @param {string} gameOwner - The username of the game owner
+     *        (case-insensitive).
+     * @param {string} gameName - The gameName of the game to delete
+     *        (case-insensitive).
      * @param {Function} callback - Called when the attempted removal is done.
      */
-    delete: function (gameUsername, gameName, callback) {
+    delete: function (gameOwner, gameName, callback) {
         db.collection("sergis-games").remove({
-            username: gameUsername,
-            gameName: gameName
+            gameOwner_lowercase: gameOwner.toLowerCase(),
+            gameName_lowercase: gameName.toLowerCase()
         }, function (err, result) {
             if (err) throw err;
             return callback();
@@ -393,19 +418,20 @@ exports.games = {
      * Create a game auth token without user authentication.
      * NOTE: This function won't throw errors.
      *
-     * @param {string} gameUsername - The name of the user that owns the game.
-     * @param {string} gameName - The name of the game.
+     * @param {string} gameOwner - The username of the game owner
+     *        (case-insensitive).
+     * @param {string} gameName - The name of the game (case-insensitive).
      * @param {Function} callback - Called with (userObject, authToken) if the
      *        game is public, or (false) is authentication is needed, or no
      *        arguments if there is an error.
      */
-    makeAnonymousGameToken: function (gameUsername, gameName, callback) {
+    makeAnonymousGameToken: function (gameOwner, gameName, callback) {
         db.collection("sergis-games").findOne({
-            username: gameUsername,
-            gameName: gameName
+            gameOwner_lowercase: gameOwner.toLowerCase(),
+            gameName_lowercase: gameName.toLowerCase()
         }, function (err, game) {
             if (err) {
-                console.error("Error accessing \"" + gameUsername + "\"/\"" + gameName + "\" in sergis-games collection: ", err.stack);
+                console.error("Error accessing \"" + gameOwner + "\"/\"" + gameName + "\" in sergis-games collection: ", err.stack);
                 return callback();
             }
 
@@ -415,7 +441,7 @@ exports.games = {
             }
 
             // All good, make auth token!
-            makeToken(gameUsername, gameName, undefined, function (gamePerms, authToken) {
+            makeToken(gameOwner, gameName, undefined, function (gamePerms, authToken) {
                 if (!gamePerms || !authToken) {
                     return callback();
                 }
@@ -429,9 +455,10 @@ exports.games = {
      * Get user info and create a game auth token.
      * NOTE: This function won't throw errors.
      *
-     * @param {string} gameUsername - The name of the user that owns the game.
-     * @param {string} gameName - The name of the game.
-     * @param {string} username - The username.
+     * @param {string} gameOwner - The username of the game owner
+     *        (case-insensitive).
+     * @param {string} gameName - The name of the game (case-insensitive).
+     * @param {string} username - The username (case-insensitive).
      * @param {string} password - The password.
      * @param {Function} callback - Called with (userObject, authToken) if
      *        authentication is successful, or (false) if the username or
@@ -439,10 +466,10 @@ exports.games = {
      *        accessor to the game, or no arguments if there is an error.
      *        (See checkAndMakeToken below.)
      */
-    makeAuthenticatedGameToken: function (gameUsername, gameName, username, password, callback) {
+    makeAuthenticatedGameToken: function (gameOwner, gameName, username, password, callback) {
         db.collection("sergis-games").findOne({
-            username: gameUsername,
-            gameName: gameName
+            gameOwner_lowercase: gameOwner.toLowerCase(),
+            gameName_lowercase: gameName.toLowerCase()
         }, function (err, game) {
             if (err) {
                 console.error("Error accessing game in sergis-games collection: ", err.stack);
@@ -454,7 +481,9 @@ exports.games = {
                 return callback();
             }
 
-            db.collection("sergis-users").findOne({username: gameUsername}, function (err, owner) {
+            db.collection("sergis-users").findOne({
+                username_lowercase: gameOwner.toLowerCase()
+            }, function (err, owner) {
                 if (err) {
                     console.error("Error accessing user in sergis-users collection: ", err.stack);
                     return callback();
@@ -464,7 +493,9 @@ exports.games = {
                     return callback();
                 }
                 
-                db.collection("sergis-users").findOne({username: username}, function (err, user) {
+                db.collection("sergis-users").findOne({
+                    username_lowercase: username.toLowerCase()
+                }, function (err, user) {
                     if (err) {
                         console.error("Error accessing user in sergis-users collection: ", err.stack);
                         return callback();
@@ -496,9 +527,10 @@ exports.games = {
      * Create a game auth token for a user without checking authentication.
      * NOTE: This function won't throw errors.
      *
-     * @param {string} gameUsername - The name of the user that owns the game.
-     * @param {string} gameName - The name of the game.
-     * @param {string} username - The username.
+     * @param {string} gameOwner - The username of the game owner
+     *        (case-insensitive).
+     * @param {string} gameName - The name of the game (case-insensitive).
+     * @param {string} username - The username (case-insensitive).
      * @param {Function} callback - Called with (userObject, authToken) if
      *        authentication is successful, or (false) if the username is bad,
      *        or (false, false) if the user does not have access to the game,
@@ -506,10 +538,10 @@ exports.games = {
      *        doesn't have access to the game).
      *        (See checkAndMakeToken below.)
      */
-    makeGameToken: function (gameUsername, gameName, username, callback) {
+    makeGameToken: function (gameOwner, gameName, username, callback) {
         db.collection("sergis-games").findOne({
-            username: gameUsername,
-            gameName: gameName
+            gameOwner_lowercase: gameOwner.toLowerCase(),
+            gameName_lowercase: gameName.toLowerCase()
         }, function (err, game) {
             if (err) {
                 console.error("Error accessing game in sergis-games collection: ", err.stack);
@@ -521,7 +553,9 @@ exports.games = {
                 return callback();
             }
 
-            db.collection("sergis-users").findOne({username: gameUsername}, function (err, owner) {
+            db.collection("sergis-users").findOne({
+                username_lowercase: gameOwner.toLowerCase()
+            }, function (err, owner) {
                 if (err) {
                     console.error("Error accessing user in sergis-users collection: ", err.stack);
                     return callback();
@@ -531,7 +565,9 @@ exports.games = {
                     return callback();
                 }
                 
-                db.collection("sergis-users").findOne({username: username}, function (err, user) {
+                db.collection("sergis-users").findOne({
+                    username_lowercase: username.toLowerCase()
+                }, function (err, user) {
                     if (err) {
                         console.error("Error accessing user in sergis-users collection: ", err.stack);
                         return callback();
@@ -582,8 +618,8 @@ exports.games = {
             }
 
             db.collection("sergis-games").findOne({
-                username: tokenData.gameUsername,
-                gameName: tokenData.gameName
+                gameOwner_lowercase: tokenData.gameOwner.toLowerCase(),
+                gameName_lowercase: tokenData.gameName.toLowerCase()
             }, function (err, game) {
                 if (err) {
                     console.error("Error accessing sergis-games collection: ", err.stack);
@@ -719,7 +755,7 @@ function checkAndMakeToken(game, owner, user, callback) {
         owner.username == user.username) {
 
         // All good, make a token!
-        makeToken(game.username, game.gameName, user.username, function (gamePerms, authToken) {
+        makeToken(game.gameOwner, game.gameName, user.username, function (gamePerms, authToken) {
             if (!gamePerms || !authToken) {
                 return callback();
             }
@@ -736,19 +772,20 @@ function checkAndMakeToken(game, owner, user, callback) {
 /**
  * Actually make an auth token.
  *
- * @param {string} gameUsername - The name of the user that owns the game.
- * @param {string} gameName - The name of the game.
+ * @param {string} gameOwner - The username of the game owner
+ *        (case-insensitive).
+ * @param {string} gameName - The name of the game (case-insensitive).
  * @param {string} username - The username of the user (can be `undefined`).
  * @param {Function} callback - Called with (gamePerms, authToken) if
  *        successful, or no arguments if there's an error.
  *        (gamePerms is an object with "jumpingBackAllowed" and
  *        "jumpingForwardAllowed)
  */
-function makeToken(gameUsername, gameName, username, callback) {
+function makeToken(gameOwner, gameName, username, callback) {
     var token = Number(randInt(10) + "" + (new Date()).getTime() + "" + randInt(10)).toString(36);
     db.collection("sergis-games").findOne({
-        username: gameUsername,
-        gameName: gameName
+        gameOwner_lowercase: gameOwner.toLowerCase(),
+        gameName_lowercase: gameName.toLowerCase()
     }, function (err, game) {
         if (err) {
             console.error("Error accessing in sergis-games collection: ", err.stack);
@@ -761,8 +798,8 @@ function makeToken(gameUsername, gameName, username, callback) {
         
         db.collection("sergis-tokens").insert({
             token: token,
-            gameUsername: gameUsername,
-            gameName: gameName,
+            gameOwner: gameOwner.toLowerCase(),
+            gameName: gameName.toLowerCase(),
             username: username,
             state: {
                 // Default state
