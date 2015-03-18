@@ -248,7 +248,7 @@ function init() {
         // Set up error handling
         app.use(function (err, req, res, next) {
             // NOTE: It probably wouldn't be beneficial to cause any errors here.
-            console.log("--------------------------------------------------------------------------------");
+            console.error("--------------------------------------------------------------------------------");
             console.error("SerGIS Server ERROR at " + (new Date()) + ":\n" + err.stack + "\n\n");
             res.status(500);
             res.render("error.ejs", {

@@ -26,13 +26,16 @@ router.use(bodyParser.urlencoded({
     extended: true
 }));
 
-// Set up multer for POST data (multipart/form-data, used for file uploads)
+// Set up multer for POST data (multipart/form-data, used for file uploads or big things)
 router.use(multer({
     limits: {
         // Max file size: 5 MB (in bytes)
         fileSize: 1024 * 1024 * 5,
         // Max # of files per request
-        files: 1
+        files: 2,
+        // Max field size: 15 MB (in bytes)
+        // Remember, MongoDB's max document size is 16 MB
+        fieldSize: 1024 * 1024 * 15
     },
     // Store files in memory instead of on disk
     // WARNING: THIS IS DANGEROUS!
