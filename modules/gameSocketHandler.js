@@ -87,7 +87,7 @@ module.exports = function (socket, next) {
                     game.jsondata,
                     state,
                     function () {
-                        db.games.updateGameTokenData(tokenData.token, {$set: {state: state}}, function (success) {
+                        db.games.updateGameTokenData(tokenData.token, {state: state}, function (success) {
                             // Yay! (hopefully)
                         });
                     },

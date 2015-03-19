@@ -225,9 +225,7 @@ var pageHandlers = {
                     case "set-game-access":
                         if (["public", "organization", "private"].indexOf(req.body.access) != -1) {
                             db.games.update(game.gameOwner, game.gameName, {
-                                $set: {
-                                    access: req.body.access
-                                }
+                                access: req.body.access
                             }, function () {
                                 next();
                             });

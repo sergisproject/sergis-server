@@ -225,7 +225,9 @@ exports.users = {
         var afterUpdate = function () {
             db.collection("sergis-users").update({
                 username_lowercase: username.toLowerCase()
-            }, update, function (err, result) {
+            }, {
+                $set: update
+            }, function (err, result) {
                 if (err) throw err;
                 return callback();
             });
@@ -233,7 +235,7 @@ exports.users = {
         if (newPassword) {
             encryptPassword(newPassword, function (err, encryptedPassword) {
                 if (err) throw err;
-                update.encryptedPassword = encryptedPassword;
+                update.$set.encryptedPassword = encryptedPassword;
                 afterUpdate();
             });
         } else {
@@ -389,7 +391,9 @@ exports.games = {
         db.collection("sergis-games").update({
             gameOwner_lowercase: gameOwner.toLowerCase(),
             gameName_lowercase: gameName.toLowerCase()
-        }, update, function (err, result) {
+        }, {
+            $set: update
+        }, function (err, result) {
             if (err) throw err;
             return callback();
         });
@@ -641,7 +645,7 @@ exports.games = {
      *        arguments if there was an error.
      */
     updateGameTokenData: function (token, update, callback) {
-        db.collection("sergis-tokens").update({token: token}, update, function (err, result) {
+        db.collection("sergis-tokens").update({token: token}, {$set: update}, function (err, result) {
             if (err) {
                 console.error("Error updating in sergis-tokens collection: ", err.stack);
                 return callback();

@@ -286,12 +286,12 @@ var accountActions = {
      * Handle a request for the updating of a user.
      */
     "update-user": function (req, res, next, user, isMe) {
-        var $set = {};
+        var update = {};
         var newPassword;
         req.statusMessages = [];
         // Check if the display name is changed
         if (req.body.displayName && req.body.displayName != user.displayName) {
-            $set.displayName = req.body.displayName;
+            update.displayName = req.body.displayName;
             req.statusMessages.push("The display name for " + user.username + " has been updated.");
         }
         // Check if the password should be changed
@@ -305,21 +305,21 @@ var accountActions = {
         }
         // Check if the organization is changed
         if (!isMe && req.user.isAdmin && req.body.organization && req.body.organization != user.organization) {
-            $set.organization = req.body.organization;
+            update.organization = req.body.organization;
             req.statusMessages.push("The organization for " + user.username + " has been updated.");
         }
         // Check if the admin status is changed
         var oldAdminStatus = user.isAdmin ? "yup" : user.isOrganizationAdmin ? "kinda" : "nope";
         if (!isMe && req.user.isAdmin && req.body.admin && req.body.admin != oldAdminStatus) {
-            $set.isAdmin = req.body.admin == "yup";
-            $set.isOrganizationAdmin = req.body.admin == "kinda";
+            update.isAdmin = req.body.admin == "yup";
+            update.isOrganizationAdmin = req.body.admin == "kinda";
             req.statusMessages.push("The admin status for " + user.username + " has been updated.");
         }
         
         // Set the changes if there are any
-        if (JSON.stringify($set) != "{}" || newPassword) {
+        if (JSON.stringify(update) != "{}" || newPassword) {
             // Yay, there's changes to update!
-            db.users.update(user.username, {$set: $set}, newPassword, function () {
+            db.users.update(user.username, update, newPassword, function () {
                 // Re-get the user we just updated (store it in req.otherUser)
                 db.users.get(user.username, function (user) {
                     if (!user) {
@@ -550,9 +550,7 @@ var adminActions = {
             if (!organizationName) {
                 // Okay, now update the user
                 db.users.update(username, {
-                    $set: {
-                        organization: null
-                    }
+                    organization: null
                 }, null, function () {
                     // All good now!
                     req.statusMessages = ["The organization has been set to none for user \"" + username + "\"."];
@@ -573,9 +571,7 @@ var adminActions = {
                 
                 // Okay, now update the user
                 db.users.update(username, {
-                    $set: {
-                        organization: organizationName
-                    }
+                    organization: organizationName
                 }, null, function () {
                     // All good now!
                     req.statusMessages = ["The organization has been set to \"" + organizationName + "\" for user \"" + username + "\"."];
@@ -607,10 +603,8 @@ var adminActions = {
             
             // Okay, now update the user
             db.users.update(username, {
-                $set: {
-                    isAdmin: admin == "yup",
-                    isOrganizationAdmin: admin == "kinda",
-                }
+                isAdmin: admin == "yup",
+                isOrganizationAdmin: admin == "kinda",
             }, null, function () {
                 // All good now!
                 req.statusMessages = ["User \"" + username + "\" is now " + (admin == "yup" ? " an Admin." : admin == "kinda" ? "an Organization Admin." : "not an admin.")];
