@@ -246,28 +246,32 @@ var gameFunctions = {
         var breakdown = "<table><thead><tr>" +
             "<th>Question</th><th>Your Score</th><th>Possible Points</th>" +
             "</tr></thead><tbody>";
-        var i, j, score, best, pointValue, totalScore = 0;
+        var i, j, score, best, worst, pointValue, totalScore = 0;
         for (i = 0; i < jsondata.promptList.length; i++) {
             // Just skip over this if there aren't any actions at all
             if (jsondata.promptList[i].actionList && jsondata.promptList[i].actionList.length) {
-                breakdown += "<tr><td>" + (i + 1) + "</td>";
                 // Calculate score for this prompt
                 score = 0;
                 if (typeof state.userChoices[i] == "number") {
                     score += jsondata.promptList[i].actionList[state.userChoices[i]].pointValue || 0;
                 }
                 totalScore += score;
-                breakdown += "<td>" + score + "</td>";
                 // Calculate best score for this prompt
-                best = 0
+                best = 0;
+                worst = 0;
                 for (j = 0; j < jsondata.promptList[i].actionList.length; j++) {
                     pointValue = jsondata.promptList[i].actionList[j].pointValue;
-                    if (pointValue && pointValue > best) {
-                        best = pointValue;
-                    }
+                    if (pointValue && pointValue > best) best = pointValue;
+                    if (pointValue && pointValue < worst) worst = pointValue;
                 }
-                breakdown += "<td>" + best + "</td>";
-                breakdown += "</tr>";
+                // Make sure that at least one of the choices has a point value
+                // (Otherwise, it's not really important)
+                if (best != 0 || worst != 0) {
+                    breakdown += "<tr><td>" + (i + 1) + "</td>";
+                    breakdown += "<td>" + score + "</td>";
+                    breakdown += "<td>" + best + "</td>";
+                    breakdown += "</tr>";
+                }
             }
         }
         breakdown += "</tbody></table>";
