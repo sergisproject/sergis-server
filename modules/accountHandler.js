@@ -317,7 +317,7 @@ var accountActions = {
         }
         
         // Set the changes if there are any
-        if (JSON.stringify($set) != "{}") {
+        if (JSON.stringify($set) != "{}" || newPassword) {
             // Yay, there's changes to update!
             db.users.update(user.username, {$set: $set}, newPassword, function () {
                 // Re-get the user we just updated (store it in req.otherUser)
