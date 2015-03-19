@@ -217,11 +217,12 @@ exports.users = {
      *
      * @param {string} username - The username of the user to update
      *        (case-insensitive).
-     * @param {Object} update - The Mongo data to update.
+     * @param {?Object} update - The Mongo data to update.
      * @param {?string} newPassword - A new password for the user.
      * @param {Function} callback - Called when successful.
      */
     update: function (username, update, newPassword, callback) {
+        if (!update) update = {};
         var afterUpdate = function () {
             db.collection("sergis-users").update({
                 username_lowercase: username.toLowerCase()
@@ -235,7 +236,7 @@ exports.users = {
         if (newPassword) {
             encryptPassword(newPassword, function (err, encryptedPassword) {
                 if (err) throw err;
-                update.$set.encryptedPassword = encryptedPassword;
+                update.encryptedPassword = encryptedPassword;
                 afterUpdate();
             });
         } else {
