@@ -174,14 +174,6 @@ var gameFunctions = {
                 if (!jsondata.jumpingBackAllowed) {
                     // BAD!!
                     return reject("Jumping back not allowed!");
-                } else {
-                    // Check onJumpBack (this is also checked in getPreviousMapActions)
-                    if (jsondata.onJumpBack == "reset") {
-                        // Get rid of the user's "future" choices
-                        state.userChoices.splice(promptIndex, state.userChoices.length - promptIndex);
-                        updateState();
-                    }
-
                 }
             } else if (promptIndex > state.currentPromptIndex + 1) {
                 // Jumping forwards!
@@ -190,6 +182,15 @@ var gameFunctions = {
                     return reject("Jumping forward not allowed!");
                 }
             } // else: Either same promptIndex, or the next one (always allowed)
+        }
+        
+        // If we're jumping backwards, check onJumpBack (this is also checked in getPreviousMapActions)
+        if (promptIndex < state.currentPromptIndex) {
+            if (jsondata.onJumpBack == "reset") {
+                // Get rid of the user's "future" choices
+                state.userChoices.splice(promptIndex, state.userChoices.length - promptIndex);
+                updateState();
+            }
         }
 
         // If we're here, then everything's good to continue
