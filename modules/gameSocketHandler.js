@@ -246,7 +246,7 @@ var gameFunctions = {
         var breakdown = "<table><thead><tr>" +
             "<th>Question</th><th>Your Score</th><th>Possible Points</th>" +
             "</tr></thead><tbody>";
-        var i, j, score, best, worst, pointValue, totalScore = 0;
+        var i, j, score, best, worst, pointValue, title, totalScore = 0;
         for (i = 0; i < jsondata.promptList.length; i++) {
             // Just skip over this if there aren't any actions at all
             if (jsondata.promptList[i].actionList && jsondata.promptList[i].actionList.length) {
@@ -267,7 +267,10 @@ var gameFunctions = {
                 // Make sure that at least one of the choices has a point value
                 // (Otherwise, it's not really important)
                 if (best != 0 || worst != 0) {
-                    breakdown += "<tr><td>" + (i + 1) + "</td>";
+                    title = jsondata.promptList[i].prompt.title || "";
+                    if (title) title = " (" + title + ")";
+                    title = title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+                    breakdown += "<tr><td>" + (i + 1) + title + "</td>";
                     breakdown += "<td>" + score + "</td>";
                     breakdown += "<td>" + best + "</td>";
                     breakdown += "</tr>";
