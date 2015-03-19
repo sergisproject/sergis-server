@@ -13,6 +13,7 @@ Also, SerGIS Server requires a [MongoDB](https://www.mongodb.org/) server to run
 ## TODOs
 
 - Add ability to sort the tables of games, users, etc.
+- Combine all of the repeated code in local.js (sergis-client) and gameSocketHandler.js (sergis-server), based more on the sergis-server version. Put it in a single "shared" file somewhere in sergis-client. (Also, with this, make config.js vars regarding the location of stuff in sergis-client just point to the sergis-client dir and we can figure out its subdirs from there.)
 
 ## License
 
