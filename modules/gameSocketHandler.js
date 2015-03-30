@@ -150,7 +150,7 @@ var gameFunctions = {
     },
 
     getPromptCount: function (jsondata, state, updateState, resolve, reject) {
-        if (!jsondata || !jsondata.promptList) {
+        if (!jsondata || !jsondata.promptList || !jsondata.promptList.length) {
             return reject("Invalid JSON Game Data.");
         }
         
@@ -160,6 +160,12 @@ var gameFunctions = {
     getPrompt: function (jsondata, state, updateState, resolve, reject, promptIndex) {
         if (!jsondata || !jsondata.promptList) {
             return reject("Invalid JSON Game Data.");
+        }
+        
+        // Make sure the promptIndex exists
+        if (promptIndex < 0 || promptIndex >= jsondata.promptList.length) {
+            // BAD!!
+            return reject("Invalid promptIndex.");
         }
         
         // Check if promptIndex is equal to where we're expecting to go
