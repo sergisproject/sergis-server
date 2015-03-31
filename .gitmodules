@@ -1,6 +1,0 @@
-[submodule "sergis-client"]
-	path = sergis-client
-	url = https://github.com/sergisproject/sergis-client.git
-[submodule "sergis-author"]
-	path = sergis-author
-	url = https://github.com/sergisproject/sergis-author.git
