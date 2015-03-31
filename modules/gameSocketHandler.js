@@ -49,23 +49,9 @@ module.exports = function (socket, next) {
         }
         
         // Since we have a session ID, try looking up username from that
-        db.getDB().collection("sessions").findOne({_id: sessionID}, function (err, session) {
-            if (err) {
-                console.error("Error accessing sessions collection: ", err.stack);
-                return callback();
-            }
-
-            if (!session || !session.session) {
-                // Nothing useful in the session
-                return last_resort();
-            }
-            
-            var sessionUsername;
-            try {
-                sessionUsername = JSON.parse(session.session).username;
-            } catch (err) {}
-            if (!sessionUsername) {
-                // Couldn't find username in the session
+        db.getSessionByID(sessionID, function (session) {
+            if (!session || !session.username) {
+                // No session
                 return last_resort();
             }
             

@@ -247,14 +247,14 @@ var pageHandlers = {
     
     serveGame: function (req, res, next) {
         // Render page
-        return res.render(config.GAME_INDEX, {
+        return res.render(config.CLIENT_INDEX, {
             test: false,
             // lib files
-            "style.css": (config.HTTP_PREFIX || "") + "/lib/style.css",
-            "es6-promise-2.0.0.min.js": (config.HTTP_PREFIX || "") + "/lib/es6-promise-2.0.0.min.js",
-            "main.js": (config.HTTP_PREFIX || "") + "/lib/main.js",
-            "frontend-script-src": (config.HTTP_PREFIX || "") + "/lib/frontends/arcgis.js",
-            "backend-script-src": (config.HTTP_PREFIX || "") + "/lib/backends/sergis-server.js",
+            "style.css": (config.HTTP_PREFIX || "") + "/client-lib/style.css",
+            "es6-promise-2.0.0.min.js": (config.HTTP_PREFIX || "") + "/client-lib/es6-promise-2.0.0.min.js",
+            "main.js": (config.HTTP_PREFIX || "") + "/client-lib/main.js",
+            "frontend-script-src": (config.HTTP_PREFIX || "") + "/client-lib/frontends/arcgis.js",
+            "backend-script-src": (config.HTTP_PREFIX || "") + "/client-lib/backends/sergis-server.js",
 
             "socket-io-script-src": (config.SOCKET_ORIGIN || "") + (config.SOCKET_PREFIX || "") + "/socket.io/socket.io.js",
             "socket-io-origin": config.SOCKET_ORIGIN || "",

@@ -88,11 +88,17 @@ var config = module.exports = {
     /** Templates directory */
     TEMPLATES_DIR: path.join(__dirname, "templates"),
     
-    /** Web resources directory (mapped to http://this-nodejs-server/lib/...) */
-    RESOURCES_DIR: path.join(__dirname, "sergis-client", "lib"),
+    /** sergis-client resources directory (mapped to http://this-nodejs-server/client-lib/...) */
+    CLIENT_RESOURCES_DIR: path.join(__dirname, "sergis-client", "lib"),
     
     /** Path to the index.html file for sergis-client */
-    GAME_INDEX: path.join(__dirname, "sergis-client", "index.html"),
+    CLIENT_INDEX: path.join(__dirname, "sergis-client", "index.html"),
+    
+    /** sergis-author resources directory (mapped to http://this-nodejs-server/author-lib/...) */
+    AUTHOR_RESOURCES_DIR: path.join(__dirname, "sergis-author"),
+    
+    /** Path to the index.html file for sergis-author */
+    AUTHOR_INDEX: path.join(__dirname, "sergis-author", "index.html"),
 
     ///////////////////////////////////////////////////////////////////////////
     // Misc.

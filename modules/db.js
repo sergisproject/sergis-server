@@ -34,11 +34,24 @@ exports.init = function (_db) {
 };
 
 /**
- * If a reference to the actual Mongo DB is ever needed.
+ * To get a session object, in case it's ever needed.
+ * NOTE: This function won't throw errors.
+ *
+ * @param {string} sessionID - The session ID.
+ * @param {Function} callback - Called with (sessionObject), or () if there is
+ *        no matching session (or if an error occurred).
  */
-exports.getDB = function () {
-    return db;
-}
+exports.getSessionByID = function (sessionID, callback) {
+    db.collection("sessions").findOne({_id: sessionID}, function (err, session) {
+        if (err) return callback();
+
+        var sessionObject;
+        try {
+            sessionObject = JSON.parse(session.session);
+        } catch (err) {}
+        return callback(sessionObject || undefined);
+    });
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // sergis-organizations
@@ -653,6 +666,142 @@ exports.games = {
             }
 
             return callback(true);
+        });
+    }
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+// sergis-author-games, and sergis-author-tokens
+exports.author = {
+    /**
+     * Get an author game by gameOwner and gameName.
+     *
+     * @param {string} gameOwner - The username of the game owner
+     *        (case-insensitive).
+     * @param {string} gameName - The name of the game (case-insensitive).
+     * @param {Function} callback - Called with (jsondata) if successful, or
+     *        no arguments if the gameOwner/gameName is not in the database.
+     */
+    get: function (gameOwner, gameName, callback) {
+        db.collection("sergis-author-games").findOne({
+            gameOwner_lowercase: gameOwner.toLowerCase(),
+            gameName_lowercase: gameName.toLowerCase()
+        }, function (err, game) {
+            if (err) throw err;
+            if (game && game.jsondata) {
+                return callback(game.jsondata);
+            } else {
+                return callback();
+            }
+        });
+    },
+
+    /**
+     * Get all the author games by a user.
+     *
+     * @param {string} gameOwner - The username to filter by; will only include
+     *        games owned by this username (case-insensitive).
+     * @param {Function} callback - Called with an object whose keys are game
+     *        names and values are last modified dates.
+     */
+    getAll: function (gameOwner, callback) {
+        db.collection("sergis-author-games").find({
+            gameOwner_lowercase: gameOwner.toLowerCase()
+        }).toArray(function (err, games) {
+            if (err) throw err;
+            // If there are no games, we're done
+            if (games.length == 0) {
+                return callback({});
+            }
+            
+            var gameList = {};
+            games.forEach(function (game) {
+                gameList[game.gameName] = new Date(game.lastModified);
+            });
+            return callback(gameList);
+        });
+    },
+    
+    /**
+     * Create a new author game.
+     *
+     * @param {string} gameOwner - The username of the game owner.
+     * @param {string} gameName - The name of the new game.
+     * @param {Object} jsondata - The new jsondata.
+     * @param {Function} callback - Called with (true) if successful, or
+     *        (false) if the gameOwner/gameName combo is already taken.
+     */
+    create: function (gameOwner, gameName, jsondata, callback) {
+        // Make sure gameOwner/gameName combo doesn't exist
+        db.collection("sergis-author-games").findOne({
+            gameOwner_lowercase: gameOwner.toLowerCase(),
+            gameName_lowercase: gameName.toLowerCase()
+        }, function (err, game) {
+            if (err) throw err;
+            
+            if (game) {
+                // Game already exists!
+                return callback(false);
+            }
+            
+            db.collection("sergis-author-games").insert({
+                gameOwner: gameOwner,
+                gameOwner_lowercase: gameOwner.toLowerCase(),
+                gameName: gameName,
+                gameName_lowercase: gameName.toLowerCase(),
+                lastModified: (new Date()).getTime(),
+                jsondata: jsondata
+            }, function (err, game) {
+                if (err) throw err;
+
+                // We're done!!
+                return callback(true);
+            });
+        });
+    },
+    
+    /**
+     * Update an author game.
+     *
+     * @param {string} gameOwner - The username of the game owner
+     *        (case-insensitive).
+     * @param {string} gameName - The gameName of the game to update
+     *        (case-insensitive).
+     * @param {Object} jsondata - The new jsondata.
+     * @param {Function} callback - Called when successful.
+     */
+    update: function (gameOwner, gameName, jsondata, callback) {
+        db.collection("sergis-author-games").update({
+            gameOwner_lowercase: gameOwner.toLowerCase(),
+            gameName_lowercase: gameName.toLowerCase()
+        }, {
+            $set: {
+                lastModified: (new Date()).getTime(),
+                jsondata: jsondata
+            }
+        }, function (err, result) {
+            if (err) throw err;
+            return callback();
+        });
+    },
+    
+    /**
+     * Delete an author game.
+     *
+     * @param {string} gameOwner - The username of the game owner
+     *        (case-insensitive).
+     * @param {string} gameName - The gameName of the game to delete
+     *        (case-insensitive).
+     * @param {Function} callback - Called when the attempted removal is done.
+     */
+    delete: function (gameOwner, gameName, callback) {
+        db.collection("sergis-author-games").remove({
+            gameOwner_lowercase: gameOwner.toLowerCase(),
+            gameName_lowercase: gameName.toLowerCase()
+        }, function (err, result) {
+            if (err) throw err;
+            return callback();
         });
     }
 };

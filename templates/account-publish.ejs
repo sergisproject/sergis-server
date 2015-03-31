@@ -1,8 +1,7 @@
-<%- include("HEADER", {title: "SerGIS Account - " + me.username, page: "account-publish"}) %>
+<%- include("HEADER", {title: "SerGIS Account - " + me.username, page: "account-publish", nostyle: true}) %>
 
 <section>
-    <h2><%= me.displayName %></h2>
-    <h3>Publish Game</h3>
+    <h2>Publish Game</h2>
     <form action="" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="action" value="create-game">
         <input type="hidden" name="jsonkey" value="<%= jsonkey %>">

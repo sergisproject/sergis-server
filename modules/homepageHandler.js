@@ -53,9 +53,6 @@ module.exports = function (req, res, next) {
                 case "/":
                     pageHandlers.homepageGet(req, res);
                     break;
-                case "/preview":
-                    pageHandlers.previewGet(req, res);
-                    break;
                 case "/logout":
                     pageHandlers.logoutGet(req, res);
                     break;
@@ -73,20 +70,6 @@ var pageHandlers = {
     homepageGet: function (req, res) {
         res.render("homepage.ejs", {
             me: req.user,
-        });
-    },
-    
-    previewGet: function (req, res) {
-        // Serve sergis-client without changing the backend (i.e. keeping local.js).
-        // Used for the "Preview" functionality in the SerGIS Author, etc.
-        res.render(config.GAME_INDEX, {
-            test: false,
-            // lib files
-            "style.css": (config.HTTP_PREFIX || "") + "/lib/style.css",
-            "es6-promise-2.0.0.min.js": (config.HTTP_PREFIX || "") + "/lib/es6-promise-2.0.0.min.js",
-            "main.js": (config.HTTP_PREFIX || "") + "/lib/main.js",
-            "frontend-script-src": (config.HTTP_PREFIX || "") + "/lib/frontends/arcgis.js",
-            "backend-script-src": (config.HTTP_PREFIX || "") + "/lib/backends/local.js"
         });
     },
     

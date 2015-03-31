@@ -47,6 +47,15 @@ router.use(multer({
 // The page handlers for /account/
 var pageHandlers = {
     /**
+     * Throw a 405.
+     */
+    throw405: function (req, res, next) {
+        // Just throw a "Method Not Allowed"
+        req.error = {number: 405};
+        return next("route");
+    },
+    
+    /**
      * Get the account in question for an account URL, and make sure that the
      * user has permission to access.
      */
@@ -128,12 +137,43 @@ var pageHandlers = {
     },
     
     /**
-     * Handle GET requests for the publishing page.
+     * Hande GET requests for the SerGIS Author.
      */
-    publishGet: function (req, res, next) {
-        // Just throw a "Method Not Allowed"
-        req.error = {number: 405};
-        return next("route");
+    authorGet: function (req, res, next) {
+        var configs = {
+            // lib files
+            "stylesheet.css": (config.HTTP_PREFIX || "") + "/author-lib/stylesheets/stylesheet.css",
+            "author-backend-src": (config.HTTP_PREFIX || "") + "/author-lib/javascripts/author-backend_sergis-server.js",
+
+            "socket-io-script-src": (config.SOCKET_ORIGIN || "") + (config.SOCKET_PREFIX || "") + "/socket.io/socket.io.js",
+            "socket-io-origin": config.SOCKET_ORIGIN || "",
+            "socket-io-prefix": config.SOCKET_PREFIX || "",
+            "session": req.sessionID
+        };
+        // Add all the JS SRCs
+        [
+            "es6-promise-2.0.0.min.js",
+            "localforage.nopromises.min.js",
+            "author-main.js",
+            "author-ask.js",
+            "author-json.js",
+            "author-games.js",
+            "author-table.js",
+            "author-editor.js",
+            "author-action-editor.js",
+            "author-frontend-info-editor.js"
+        ].forEach(function (jsfile) {
+            configs[jsfile] = (config.HTTP_PREFIX || "") + "/author-lib/javascripts/" + jsfile;
+        });
+        // Render page
+        return res.render(config.AUTHOR_INDEX, configs);
+    },
+    
+    /**
+     * Handle POST requests for the preview page.
+     */
+    previewPost: function (req, res, next) {
+        res.end("TODO");
     },
     
     /**
@@ -186,6 +226,17 @@ var pageHandlers = {
                 gameNameCharacters: config.URL_SAFE_REGEX_CHARS
             });
         }
+    },
+    
+    /**
+     * Handle the end of POST requests after we just published a game.
+     */
+    publishDone: function (req, res, next) {
+        // Render a Congrats page
+        return res.render("account-publish-done.ejs", {
+            me: req.user,
+            gameName: req.body.gameName
+        });
     },
     
     /**
@@ -691,8 +742,14 @@ router.use(function (req, res, next) {
 router.get("", pageHandlers.account);
 router.post("", pageHandlers.accountPost, pageHandlers.account);
 
-router.get("/publish", pageHandlers.publishGet);  // so we can throw a 405
-router.post("/publish", pageHandlers.publishPost, pageHandlers.account);
+router.get("/author", pageHandlers.authorGet);
+router.post("/author", pageHandlers.authorGet);
+
+router.get("/author/preview", pageHandlers.throw405);
+router.post("/author/preview", pageHandlers.previewPost);
+
+router.get("/author/publish", pageHandlers.throw405);
+router.post("/author/publish", pageHandlers.publishPost, pageHandlers.publishDone);
 
 router.get("/admin", pageHandlers.admin);
 router.post("/admin", pageHandlers.adminPost, pageHandlers.admin);

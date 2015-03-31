@@ -29,6 +29,16 @@ var config = require("./config"),
 
 
 /**
+ * The different static file directories.
+ * The keys are the Express paths, and the values are directories.
+ */
+var STATIC_DIRECTORIES = {
+    "/client-lib": config.CLIENT_RESOURCES_DIR,
+    "/author-lib": config.AUTHOR_RESOURCES_DIR
+};
+
+
+/**
  * The different modules for the different sections of the HTTP server.
  * The keys are the Express paths, and the values are the filenames of the
  * modules in `modules/`.
@@ -47,7 +57,8 @@ var HTTP_SERVERS = {
  * of the modules in `modules/`.
  */
 var SOCKET_SERVERS = {
-    "/game": "gameSocketHandler"
+    "/game": "gameSocketHandler",
+    "/author": "authorSocketHandler"
 };
 
 
@@ -180,8 +191,12 @@ function init() {
         // Listen with the HTTP server on our port
         server.listen(config.PORT);
 
-        // Create handler for serving "/lib"
-        app.use(config.HTTP_PREFIX + "/lib", express.static(config.RESOURCES_DIR));
+        // Set up static directories
+        for (var pathDescrip in STATIC_DIRECTORIES) {
+            if (STATIC_DIRECTORIES.hasOwnProperty(pathDescrip)) {
+                app.use(config.HTTP_PREFIX + pathDescrip, express.static(STATIC_DIRECTORIES[pathDescrip]));
+            }
+        }
         
         // Set up cookie processing
         app.use(cookieParser(config.COOKIE_SIGNING_KEY || undefined));
@@ -204,9 +219,16 @@ function init() {
         app.engine("html", function (path, data, callback) {
             if (!data) data = {};
             if (!data.__set) data.__set = {};
-            data["style-simple.css"] = (config.HTTP_PREFIX || "") + "/lib/style-simple.css";
+            data["style-simple.css"] = (config.HTTP_PREFIX || "") + "/client-lib/style-simple.css";
             data.__set.renderStatic = true;
-            return indieSet.__express(path, data, callback);
+            return indieSet.__express(path, data, function (err, data) {
+                if (err) return callback(err);
+                // Make sure that there's a doctype
+                if (data && data.substring(0, data.indexOf("\n")).toLowerCase().indexOf("doctype") == -1) {
+                    data = "<!DOCTYPE html>\n" + data;
+                }
+                callback(err, data);
+            });
         });
         app.engine("ejs", function (path, data, callback) {
             if (!data) data = {};
