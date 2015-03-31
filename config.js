@@ -89,16 +89,16 @@ var config = module.exports = {
     TEMPLATES_DIR: path.join(__dirname, "templates"),
     
     /** sergis-client resources directory (mapped to http://this-nodejs-server/client-lib/...) */
-    CLIENT_RESOURCES_DIR: path.join(__dirname, "sergis-client", "lib"),
+    CLIENT_RESOURCES_DIR: path.join(__dirname, "sergis-legacy-client", "lib"),
     
     /** Path to the index.html file for sergis-client */
-    CLIENT_INDEX: path.join(__dirname, "sergis-client", "index.html"),
+    CLIENT_INDEX: path.join(__dirname, "sergis-legacy-client", "index.html"),
     
     /** sergis-author resources directory (mapped to http://this-nodejs-server/author-lib/...) */
-    AUTHOR_RESOURCES_DIR: path.join(__dirname, "sergis-author"),
+    AUTHOR_RESOURCES_DIR: path.join(__dirname, "sergis-legacy-author"),
     
     /** Path to the index.html file for sergis-author */
-    AUTHOR_INDEX: path.join(__dirname, "sergis-author", "index.html"),
+    AUTHOR_INDEX: path.join(__dirname, "sergis-legacy-author", "index.html"),
 
     ///////////////////////////////////////////////////////////////////////////
     // Misc.
