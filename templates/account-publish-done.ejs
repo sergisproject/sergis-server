@@ -1,9 +1,8 @@
 <%- include("HEADER", {title: "SerGIS Account - " + me.username, page: "account-publish-done", nostyle: true}) %>
 
 <section>
-    <h2>Publish Game</h2>
     <p>Congratulations! Your game has been published.</p>
     <p><a href="<%= httpPrefix %>/games/<%= me.username %>/<%= gameName %>" target="_blank">View Game</a></p>
 </section>
 
-<%- include("FOOTER") %>
+<%- include("FOOTER", {nostyle: true}) %>

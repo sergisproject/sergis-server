@@ -56,7 +56,7 @@ module.exports = function (socket, next) {
             }
             
             // We should be good!
-            db.games.makeGameToken(gameOwner, gameName, sessionUsername, callback);
+            db.games.makeGameToken(gameOwner, gameName, session.username, callback);
         });
     });
 

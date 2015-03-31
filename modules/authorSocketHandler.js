@@ -116,25 +116,23 @@ function initHandlers(socket, username) {
         });
     });
 
-    // previewGame function; args: [gameName] --> Object
-    socket.on("previewGame", function (args, callback) {
+    // previewGame and publishGame functions; args: [gameName] --> Object
+    function pubviewGame(type, args, callback) {
         var gameName = args[0];
         // Make sure the game exists
         db.author.get(username, gameName, function (jsondata) {
             if (!jsondata) return callback(false);
             // Okay, it's good
-            return callback(true, (config.HTTP_PREFIX || "") + "/account/author/preview?gameName=" + encodeURIComponent(gameName));
+            return callback(true, {
+                url: (config.HTTP_PREFIX || "") + "/account/author/" + type,
+                method: "POST",
+                data: {
+                    gameName: gameName
+                },
+                enctype: "multipart/form-data"
+            });
         });
-    });
-
-    // publishGame function; args: [gameName] --> string
-    socket.on("publishGame", function (args, callback) {
-        var gameName = args[0];
-        // Make sure the game exists
-        db.author.get(username, gameName, function (jsondata) {
-            if (!jsondata) return callback(false);
-            // Okay, it's good
-            return calback(true, (config.HTTP_PREFIX || "") + "/account/author/publish?gameName=" + encodeURIComponent(gameName));
-        });
-    });
+    }
+    socket.on("previewGame", pubviewGame.bind(null, "preview"));
+    socket.on("publishGame", pubviewGame.bind(null, "publish"));
 }

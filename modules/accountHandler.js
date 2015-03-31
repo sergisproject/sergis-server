@@ -170,60 +170,69 @@ var pageHandlers = {
     },
     
     /**
-     * Handle POST requests for the preview page.
+     * Handle POST requests for the preview page (coming from the author).
      */
     previewPost: function (req, res, next) {
-        res.end("TODO");
+        res.end("TODO: " + req.body.gameName);
     },
     
     /**
-     * Handle POST requests for the publishing page.
+     * Handle POST requests for the publishing page (coming from the author).
      */
     publishPost: function (req, res, next) {
         // If we're coming from the publish page
         if (req.body.action == "create-game") {
-            // Make sure that we have a valid jsonkey
-            if (!req.body.jsonkey || !req.session.publish_jsondata || !req.session.publish_jsondata.hasOwnProperty(req.body.jsonkey)) {
+            // Make sure that we have a valid game name
+            if (!req.body.authorGameName) {
                 req.error = {
                     number: 400,
-                    details: "Invalid jsonkey."
+                    details: "Invalid authorGameName."
                 };
                 return next("route");
             }
             
-            // Move control to accountActions["create-game"] to check the data and create the game
-            accountActions["create-game"](req, res, next, req.user, true, req.body.jsonkey);
+            // Get the JSON data for the game
+            db.author.get(req.user.username, req.body.authorGameName, function (jsondata) {
+                if (!jsondata) {
+                    // AHH! We don't exist!
+                    req.error = {
+                        number: 400,
+                        details: "Invalid authorGameName."
+                    };
+                    return next("route");
+                }
+                
+                // Move control to accountActions["create-game"] to check the data and create the game
+                accountActions["create-game"](req, res, next, req.user, true, jsondata);
+            });
         } else {
             // We must be coming from the author
-            // Make sure we have valid JSON data
-            var jsondata, jsonerr;
-            try {
-                jsondata = JSON.parse(req.body.jsondata);
-            } catch (err) {
-                jsondata = null;
-                jsonerr = err;
-            }
-
-            if (!jsondata) {
-                // Ahh! Invalid JSON data!
+            // Make sure the game name is good
+            if (!req.body.gameName) {
                 req.error = {
                     number: 400,
-                    details: "Invalid JSON data" + (jsonerr ? " (" + jsonerr.name + ": " + jsonerr.message + ")" : ".")
+                    details: "Invalid gameName."
                 };
-                return req.next("route");
+                return next("route");
             }
             
-            // Store the JSON data in the session
-            var jsonkey = "" + (Math.random() + Math.floor(Date.now()));
-            if (!req.session.publish_jsondata) req.session.publish_jsondata = {};
-            req.session.publish_jsondata[jsonkey] = jsondata;
-            
-            // Render the publish page
-            return res.render("account-publish.ejs", {
-                me: req.user,
-                jsonkey: jsonkey,
-                gameNamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
-                gameNameCharacters: config.URL_SAFE_REGEX_CHARS
+            db.author.get(req.user.username, req.body.gameName, function (jsondata) {
+                if (!jsondata) {
+                    // AHH! We don't exist!
+                    req.error = {
+                        number: 400,
+                        details: "Invalid gameName."
+                    };
+                    return next("route");
+                }
+
+                // Render the publish page
+                return res.render("account-publish.ejs", {
+                    me: req.user,
+                    authorGameName: req.body.gameName,
+                    gameNamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
+                    gameNameCharacters: config.URL_SAFE_REGEX_CHARS
+                });
             });
         }
     },
@@ -392,10 +401,10 @@ var accountActions = {
     /**
      * Handle a request for creating a new game under a user account.
      * Called from pageHandlers.accountPost and pageHandlers.publishPost.
-     * jsonkey is only provided from publishPost, meaning that the actual JSON
-     * data is in req.session.publish_jsondata[jsonkey].
+     * jsondata is only provided from publishPost; if it's missing, we get it
+     * from the request.
      */
-    "create-game": function (req, res, next, user, isMe, jsonkey) {
+    "create-game": function (req, res, next, user, isMe, jsondata) {
         // First, make sure everything's here and good
         if (!req.body.gameName) {
             return res.render("error-back.ejs", {
@@ -418,7 +427,7 @@ var accountActions = {
                 details: "Invalid access level."
             });
         }
-        if (!jsonkey && !req.files.jsonfile) {
+        if (!jsondata && !req.files.jsonfile) {
             return res.render("error-back.ejs", {
                 title: "SerGIS Account - " + user.username,
                 subtitle: "Error Creating Game",
@@ -438,23 +447,21 @@ var accountActions = {
             }
             
             // Now, check the JSON game data
-            var jsondata, jsonerr;
-            if (jsonkey) {
-                jsondata = req.session.publish_jsondata[jsonkey];
-            } else {
+            if (!jsondata) {
+                var jsonerr;
                 try {
                     jsondata = JSON.parse(req.files.jsonfile.buffer.toString());
                 } catch (err) {
                     jsondata = null;
                     jsonerr = err;
                 }
-            }
-            if (!jsondata) {
-                return res.render("error-back.ejs", {
-                    title: "SerGIS Account - " + user.username,
-                    subtitle: "Error Creating Game",
-                    details: "Invalid SerGIS JSON Game Data file.\n\n" + (jsonerr ? jsonerr.name + ": " + jsonerr.message : "")
-                });
+                if (!jsondata) {
+                    return res.render("error-back.ejs", {
+                        title: "SerGIS Account - " + user.username,
+                        subtitle: "Error Creating Game",
+                        details: "Invalid SerGIS JSON Game Data file.\n\n" + (jsonerr ? jsonerr.name + ": " + jsonerr.message : "")
+                    });
+                }
             }
             
             // Okay, everything should be good now!
@@ -743,7 +750,7 @@ router.get("", pageHandlers.account);
 router.post("", pageHandlers.accountPost, pageHandlers.account);
 
 router.get("/author", pageHandlers.authorGet);
-router.post("/author", pageHandlers.authorGet);
+router.post("/author", pageHandlers.authorGet); // Could be coming from a post'ed login
 
 router.get("/author/preview", pageHandlers.throw405);
 router.post("/author/preview", pageHandlers.previewPost);

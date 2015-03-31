@@ -1,22 +1,23 @@
 <%- include("HEADER", {title: "SerGIS Account - " + me.username, page: "account-publish", nostyle: true}) %>
 
 <section>
-    <h2>Publish Game</h2>
     <form action="" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="action" value="create-game">
-        <input type="hidden" name="jsonkey" value="<%= jsonkey %>">
+        <input type="hidden" name="authorGameName" value="<%= authorGameName %>">
         <table><tbody>
-            <tr><td>Game Name: </td><td><input type="text" name="gameName" required pattern="<%= gameNamePattern %>"><br><small>Must be unique, consisting only of letters, digits, and the following characters: <code><%= gameNameCharacters %></code></small></td></tr>
+            <tr><td>Game Name: </td><td><input type="text" name="gameName" value="<%= authorGameName %>" required pattern="<%= gameNamePattern %>"></td></tr>
+            <tr><td>&nbsp;</td><td><small>Must be unique, consisting only of letters, digits, and the following characters: <code><%= gameNameCharacters %></code></small></td></tr>
             <tr><td>Access Level: </td><td><select name="access">
                 <option value="public" selected>Public</option>
                 <% if (me.organization) { %>
                 <option value="organization">Organization</option>
                 <% } %>
                 <option value="private">Private</option>
-            </select><br><small>Public games are accessible by anyone.<br><% if (me.organization) { %>Organization games are accessible by anyone in <%= me.organization %>.<br><% } %>Private games are only accessible by you and administrators.</small></td></tr>
+            </select></td></tr>
+            <tr><td>&nbsp;</td><td><small>Public games are accessible by anyone.<br><% if (me.organization) { %>Organization games are accessible by anyone in <%= me.organization %>.<br><% } %>Private games are only accessible by you and administrators.</small></td></tr>
             <tr><td>&nbsp;</td><td><input type="submit" value="Create Game"></td></tr>
         </tbody></table>
     </form>
 </section>
 
-<%- include("FOOTER") %>
+<%- include("FOOTER", {nostyle: true}) %>

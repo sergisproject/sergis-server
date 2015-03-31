@@ -1,19 +1,19 @@
-# SerGIS Server
+# SerGIS Legacy Server
 
-The Node.js-based server for interaction with the SerGIS Web Client for [the SerGIS Project](http://sergisproject.github.io/)
+The Node.js-based server for interaction with the SerGIS Legacy Web Client for [the SerGIS Project](http://sergisproject.github.io/)
 
 ## Pre-reqs
 
 The server must have a recent version of [node.js](http://www.nodejs.org/) and [npm](https://npmjs.org/) (usually installed with node.js).
 
-SerGIS Server has a few node.js dependencies; to install these, run `npm install` in a terminal in the root directory of the codebase. Also, make sure the submodule in `sergis-client` is there (if you cloned the git repo, run `git submodule init` and/or `git submodule update`).
+SerGIS Server has a few node.js dependencies; to install these, run `npm install` in a terminal in the root directory of the codebase. Also, make sure the submodules in `sergis-legacy-author` and `sergis-legacy-client` are there (if you cloned the git repo, run `git submodule init` and/or `git submodule update`).
 
-Also, SerGIS Server requires a [MongoDB](https://www.mongodb.org/) server to run.
+Also, SerGIS Server requires a running [MongoDB](https://www.mongodb.org/) server.
 
 ## TODOs
 
 - Add ability to sort the tables of games, users, etc.
-- Combine all of the repeated code in local.js (sergis-client) and gameSocketHandler.js (sergis-server), based more on the sergis-server version. Put it in a single "shared" file somewhere in sergis-client. (Also, with this, make config.js vars regarding the location of stuff in sergis-client just point to the sergis-client dir and we can figure out its subdirs from there.)
+- Combine all of the repeated code in local.js (sergis-legacy-client) and gameSocketHandler.js (sergis-server), based more on the sergis-server version. Put it in a single "shared" file somewhere in sergis-client. (Also, with this, make config.js vars regarding the location of stuff in sergis-client just point to the sergis-client dir and we can figure out its subdirs from there.)
 
 ## License
 
