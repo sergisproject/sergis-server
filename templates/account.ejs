@@ -6,8 +6,8 @@
         <li><%= status %></li>
     <% }) %></ul><% } %>
     
+    <p class="titlelinks"><a href="<%= httpPrefix %>/games/<%= user.username %>"><% if (me.username == user.username) { %>My <% } %>Games<% if (me.username != user.username) { %> by <%= user.displayName %><% } %></a></p>
     <h2><%= user.displayName %></h2>
-    <p><a href="<%= httpPrefix %>/games/<%= user.username %>"><% if (me.username == user.username) { %>My <% } %>Games<% if (me.username != user.username) { %> by <%= user.displayName %><% } %></a></p>
     
     <form action="" method="POST">
         <input type="hidden" name="username" value="<%= user.username %>">
@@ -32,9 +32,9 @@
             <tr><td>&nbsp;</td><td><input type="submit" value="Update <% if (me.username != user.username) { %><%= user.displayName %><% } %>"></td></tr>
         </tbody></table>
     </form>
-    <h3>Add New Game</h3>
-    <p>The easiest way to create a new game is using the <a href="http://sergisproject.github.io/sergis-author/" target="_blank">SerGIS Prompt Author</a>. From within the Prompt Author, click the "Publish" button to publish a game that you have created.</p>
-    <p>Games can also be represented in a JSON format (in *.json files), called SerGIS JSON Game Data. If you have a SerGIS JSON Game Data file, you can upload it here:</p>
+    <h3>Manually Add Game</h3>
+    <p>The easiest way to create a new game is using the <a href="<%= httpPrefix %>">Game Author</a>. From within the Author, click the "Publish" button to publish a game that you have created.</p>
+    <p>Games can also be represented in a JSON format called <a href="http://sergisproject.github.io/legacy-docs/json.html" target="_blank">SerGIS JSON Game Data</a>. If you have a JSON file in this format, you can upload it here:</p>
     <form action="" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="username" value="<%= user.username %>">
         <input type="hidden" name="action" value="create-game">

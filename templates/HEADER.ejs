@@ -31,7 +31,7 @@ body {
         <li><a href="<%= httpPrefix %>/">Home</a></li>
         <li><a href="<%= httpPrefix %>/games">Games</a></li>
     <% if (typeof me != "undefined" && me) { %>
-        <li><a href="<%= httpPrefix %>/account/author">Author</a></li>
+        <li><a href="<%= httpPrefix %>/account/author">Game Author</a></li>
     <% } else if (page != "login") { %>
         <li><a href="<%= httpPrefix %>/account">Log In</a></li>
     <% } %>
