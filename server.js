@@ -239,12 +239,14 @@ function init() {
         // Set up automatic creation of req.user
         app.use(function (req, res, next) {
             if (req.session && req.session.username) {
-                db.users.get(req.session.username, function (user) {
-                    if (!user) {
+                db.users.get(req.session.username, function (err, user) {
+                    if (err || !user) {
                         // Bad username in session!
                         // Destroy the session
                         req.session.destroy(function (err) {
-                            if (err) throw err;
+                            if (err){
+                                console.error("ERROR DESTROYING SESSION: ", err.stack);
+                            }
                             // Now, we can just continue, since the login page will show if needed
                             return next();
                         });

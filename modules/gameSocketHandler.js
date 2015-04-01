@@ -25,12 +25,18 @@ var config = require("../config"),
 module.exports = function (socket, next) {
     // logIn handler
     socket.on("logIn", function (gameOwner, gameName, username, password, callback) {
-        db.games.makeAuthenticatedGameToken(gameOwner, gameName, username, password, callback);
+        db.games.makeAuthenticatedGameToken(gameOwner, gameName, username, password, function (err, userObject, authToken) {
+            if (err) return callback();
+            callback(userObject, authToken);
+        });
     });
 
     // logOut handler
     socket.on("logOut", function (token, callback) {
-        db.games.deleteGameToken(token, callback);
+        db.games.deleteGameToken(token, function (err, result) {
+            if (err) return callback();
+            callback(result);
+        });
     });
 
     // getUser handler
@@ -41,7 +47,10 @@ module.exports = function (socket, next) {
         
         function last_resort() {
             // Try logging in without authentication, if possible
-            db.games.makeAnonymousGameToken(gameOwner, gameName, callback);
+            db.games.makeAnonymousGameToken(gameOwner, gameName, function (err, userObject, authToken) {
+                if (err) return callback();
+                callback(userObject, authToken);
+            });
         };
         
         if (!sessionID) {
@@ -49,21 +58,28 @@ module.exports = function (socket, next) {
         }
         
         // Since we have a session ID, try looking up username from that
-        db.getSessionByID(sessionID, function (session) {
-            if (!session || !session.username) {
+        db.getSessionByID(sessionID, function (err, session) {
+            if (err || !session || !session.username) {
                 // No session
                 return last_resort();
             }
             
             // We should be good!
-            db.games.makeGameToken(gameOwner, gameName, session.username, callback);
+            db.games.makeGameToken(gameOwner, gameName, session.username, function (err, userObject, authToken) {
+                if (err) return callback();
+                callback(userObject, authToken);
+            });
         });
     });
 
     // game function handler
     socket.on("game", function (token, func, args, callback) {
         if (gameFunctions.hasOwnProperty(func) && typeof gameFunctions[func] == "function") {
-            db.games.getGameAndTokenData(token, function (game, tokenData) {
+            db.games.getGameAndTokenData(token, function (err, game, tokenData) {
+                if (err) {
+                    return callback(false, "Server error");
+                }
+                
                 if (!game || !tokenData) {
                     return callback(false, "Invalid token");
                 }
@@ -73,7 +89,7 @@ module.exports = function (socket, next) {
                     game.jsondata,
                     state,
                     function () {
-                        db.games.updateGameTokenData(tokenData.token, {state: state}, function (success) {
+                        db.games.updateGameTokenData(tokenData.token, {state: state}, function (err, success) {
                             // Yay! (hopefully)
                         });
                     },

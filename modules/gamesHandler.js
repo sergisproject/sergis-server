@@ -31,14 +31,24 @@ router.use(bodyParser.urlencoded({
 var pageHandlers = {
     checkGame: function (req, res, next) {
         var username = req.params.username, gameName = req.params.gameName;
-        db.users.get(username, function (owner) {
+        db.users.get(username, function (err, owner) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             if (!owner) {
                 // Owner doesn't exist
                 req.error = {number: 404};
                 return next("route");
             }
             
-            db.games.get(username, gameName, function (game) {
+            db.games.get(username, gameName, function (err, game) {
+                if (err) {
+                    req.error = {number: 500};
+                    return next("route");
+                }
+
                 if (!game) {
                     // Game doesn't exist!
                     req.error = {number: 404};
@@ -56,7 +66,12 @@ var pageHandlers = {
         // List ALL the games that we have access to
         var gamesByAccess = [];
         // First, get all the public games
-        db.games.getAll(null, null, "public", function (publicGames) {
+        db.games.getAll(null, null, "public", function (err, publicGames) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             // Add the public games
             gamesByAccess.push({
                 name: "Public Games",
@@ -77,7 +92,12 @@ var pageHandlers = {
             // Get all the user's private games, or all the private games if we're admin,
             // or all the private games in our organization if we're an organization admin
             db.games.getAll((req.user.isAdmin || (req.user.isOrganizationAdmin && req.user.organization)) ? null : req.user.username,
-                            req.user.isOrganizationAdmin ? req.user.organization : null, "private", function (privateGames) {
+                            req.user.isOrganizationAdmin ? req.user.organization : null, "private", function (err, privateGames) {
+                if (err) {
+                    req.error = {number: 500};
+                    return next("route");
+                }
+
                 // Add the private games
                 gamesByAccess.push({
                     name: "Private Games",
@@ -96,7 +116,12 @@ var pageHandlers = {
                 
                 // Nope, they have an organization; find all the organization games
                 // (All if we're admin, or just the ones in our organization if we're not)
-                db.games.getAll(null, req.user.isAdmin ? null : req.user.organization, "organization", function (organizationGames) {
+                db.games.getAll(null, req.user.isAdmin ? null : req.user.organization, "organization", function (err, organizationGames) {
+                    if (err) {
+                        req.error = {number: 500};
+                        return next("route");
+                    }
+
                     // Insert it between the public and private games
                     gamesByAccess.splice(1, 0, {
                         name: "Organization Games",
@@ -117,7 +142,12 @@ var pageHandlers = {
     
     listGames: function (req, res, next) {
         // Make sure username exists
-        db.users.get(req.params.username, function (user) {
+        db.users.get(req.params.username, function (err, user) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             if (!user) {
                 // Lol, he doesn't exist
                 req.error = {status: 404};
@@ -191,8 +221,9 @@ var pageHandlers = {
             // Now, actually load the games
             Object.keys(gameListsByAccessLevel).forEach(function (access) {
                 if (gameListsByAccessLevel[access]) {
-                    db.games.getAll(user.username, null, access, function (games) {
-                        gameListsByAccessLevel[access] = games;
+                    db.games.getAll(user.username, null, access, function (err, games) {
+                        // Fail silently on error
+                        gameListsByAccessLevel[access] = err ? false : games;
                         checkGameLists();
                     });
                 }
@@ -202,7 +233,12 @@ var pageHandlers = {
     
     listGamesPost: function (req, res, next) {
         // Make sure username exists
-        db.users.get(req.params.username, function (user) {
+        db.users.get(req.params.username, function (err, user) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             if (!user || user.username !== req.body.username) {
                 // Invalid request
                 return next();
@@ -215,7 +251,12 @@ var pageHandlers = {
                 return next();
             }
             
-            db.games.get(user.username, req.body.gameName, function (game) {
+            db.games.get(user.username, req.body.gameName, function (err, game) {
+                if (err) {
+                    req.error = {number: 500};
+                    return next("route");
+                }
+
                 if (!game) {
                     // Invalid game
                     return next();
@@ -226,14 +267,24 @@ var pageHandlers = {
                         if (["public", "organization", "private"].indexOf(req.body.access) != -1) {
                             db.games.update(game.gameOwner, game.gameName, {
                                 access: req.body.access
-                            }, function () {
+                            }, function (err) {
+                                if (err) {
+                                    req.error = {number: 500};
+                                    return next("route");
+                                }
+
                                 next();
                             });
                             return;
                         }
                         break;
                     case "delete-game":
-                        db.games.delete(game.gameOwner, game.gameName, function () {
+                        db.games.delete(game.gameOwner, game.gameName, function (err) {
+                            if (err) {
+                                req.error = {number: 500};
+                                return next("route");
+                            }
+
                             next();
                         });
                         return;

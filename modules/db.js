@@ -26,6 +26,28 @@ var HASH_NUM_ITERATIONS = 10000;
 var HASH_DERIVED_KEY_LENGTH = 30;
 
 
+/******************************************************************************
+ ** NOTE REGARDING CALLBACKS IN THIS FILE:
+ **   Each callback is called with 2 parameters: error, data.
+ **   If an error occurred, `error` is truthy.
+ **     (The error automatically reported to the Error Console.)
+ **   If no error occurred, `error` is null and `data` is populated.
+ **     (Some functions have multiple `data` arguments.)
+ ******************************************************************************/
+
+
+/**
+ * Handle a database error.
+ *
+ * @param {string} whereAreWe - The function or area where the error occurred.
+ * @param {Error} err - The error that occurred.
+ * @param {Array} [data] - Any extra data, such as parameters.
+ */
+function dbError(whereAreWe, err, data) {
+    console.error("DATABASE ERROR in " + whereAreWe + (data ? " (" + data.join(", ") + ")" : "") + ": ", err.stack);
+}
+
+
 /**
  * Store a reference to the Mongo database.
  */
@@ -35,21 +57,22 @@ exports.init = function (_db) {
 
 /**
  * To get a session object, in case it's ever needed.
- * NOTE: This function won't throw errors.
  *
  * @param {string} sessionID - The session ID.
- * @param {Function} callback - Called with (sessionObject), or () if there is
- *        no matching session (or if an error occurred).
+ * @param {Function} callback - Called with the session object.
  */
 exports.getSessionByID = function (sessionID, callback) {
     db.collection("sessions").findOne({_id: sessionID}, function (err, session) {
-        if (err) return callback();
+        if (err) {
+            dbError("getSessionById", err, [sessionID]);
+            return callback(err);
+        }
 
         var sessionObject;
         try {
             sessionObject = JSON.parse(session.session);
         } catch (err) {}
-        return callback(sessionObject || undefined);
+        return callback(null, sessionObject || undefined);
     });
 };
 
@@ -59,13 +82,17 @@ exports.organizations = {
     /**
      * Get a list of all the possible user organizations as strings.
      *
-     * @param {Function} callback - Called with ([organizationName,
-     *        organizationName, ...]).
+     * @param {Function} callback - Called with an array of the organization
+     *        names.
      */
     getAll: function (callback) {
         db.collection("sergis-organizations").find({}).toArray(function (err, organizations) {
-            if (err) throw err;
-            return callback(organizations.map(function (organization) {
+            if (err) {
+                dbError("organizations.getAll", err);
+                return callback(err);
+            }
+            
+            return callback(null, organizations.map(function (organization) {
                 return organization.name;
             }));
         });
@@ -75,12 +102,16 @@ exports.organizations = {
      * Get a specific organization.
      *
      * @param {string} organizationName - The name of the organization.
-     * @param {Function} callback - Called with (organization).
+     * @param {Function} callback - Called with the organization object.
      */
     get: function (organizationName, callback) {
         db.collection("sergis-organizations").find({name: organizationName}, function (err, organization) {
-            if (err) throw err;
-            return callback(organization);
+            if (err) {
+                dbError("organizations.get", err, [organizationName]);
+                return callback(err);
+            }
+            
+            return callback(null, organization);
         });
     },
 
@@ -92,20 +123,27 @@ exports.organizations = {
      */
     create: function (organizationName, callback) {
         db.collection("sergis-organizations").findOne({name: organizationName}, function (err, organization) {
-            if (err) throw err;
+            if (err) {
+                dbError("organizations.create", err, [organizationName]);
+                return callback(err);
+            }
             
             if (organization) {
                 // Whoopsie, it's already in there
                 // Just pretend it's brand new
-                return callback(organization);
+                return callback(null, organization);
             }
 
             // Add it in
             db.collection("sergis-organizations").insert({
                 name: organizationName
             }, function (err, organization) {
-                if (err) throw err;
-                return callback(organization);
+                if (err) {
+                    dbError("organizations.create::insert", err, [organizationName]);
+                    return callback(err);
+                }
+                
+                return callback(null, organization);
             });
         });
     }
@@ -118,19 +156,19 @@ exports.users = {
      * Get a user by username without checking the password.
      *
      * @param {string} username - The user's username (case-insensitive).
-     * @param {Function} callback - Called with (userObject) if successful, or no
-     *        arguments if the username is not in the database.
+     * @param {Function} callback - Called with the userObject if successful,
+     *        or no data if the username is not in the database.
      */
     get: function (username, callback) {
         db.collection("sergis-users").findOne({
             username_lowercase: username.toLowerCase()
         }, function (err, user) {
-            if (err) throw err;
-            if (user) {
-                return callback(user);
-            } else {
-                return callback();
+            if (err) {
+                dbError("users.get", err, [username]);
+                return callback(err);
             }
+            
+            return callback(null, user || undefined);
         });
     },
 
@@ -138,18 +176,26 @@ exports.users = {
      * Get all the users, optionally filtered by an organization.
      *
      * @param {?string} organization - The organization used to filter.
-     * @param {Function} callback - Called with ([userObject, userObject, ...]).
+     * @param {Function} callback - Called with an array of the user objects.
      */
     getAll: function (organization, callback) {
         if (organization) {
             db.collection("sergis-users").find({organization: organization}).toArray(function (err, users) {
-                if (err) throw err;
-                return callback(users);
+                if (err) {
+                    dbError("users.getAll", err, [organization]);
+                    return callback(err);
+                }
+
+                return callback(null, users);
             });
         } else {
             db.collection("sergis-users").find({}).toArray(function (err, users) {
-                if (err) throw err;
-                return callback(users);
+                if (err) {
+                    dbError("users.getAll", err);
+                    return callback(err);
+                }
+
+                return callback(null, users);
             });
         }
     },
@@ -160,22 +206,29 @@ exports.users = {
      * @param {string} username - The username of the user trying to log in
      *        (case-insensitive).
      * @param {string} password - The password of the user trying to log in.
-     * @param {Function} callback - Called with (userObject) if successful, or
-     *        (false) if the username or password was incorrect.
+     * @param {Function} callback - Called with the userObject if successful,
+     *        or false if the username or password was incorrect.
      */
     check: function (username, password, callback) {
         db.collection("sergis-users").findOne({
             username_lowercase: username.toLowerCase()
         }, function (err, user) {
-            if (err) throw err;
+            if (err) {
+                dbError("users.check", err, [username]);
+                return callback(err);
+            }
 
             if (!user) {
-                return callback(false);
+                return callback(null, false);
             }
 
             checkPassword(password, user.encryptedPassword, function (err, isCorrect) {
-                if (err) throw err;
-                return callback(isCorrect ? user : false);
+                if (err) {
+                    dbError("users.check::check", err, [username]);
+                    return callback(err);
+                }
+
+                return callback(null, isCorrect ? user : false);
             });
         });
     },
@@ -189,23 +242,29 @@ exports.users = {
      * @param {?string} organization - The new user's organization (or null).
      * @param {string} admin - The new user's admin status ("yup", "kinda", or
      *        "nope". Default is "nope")
-     * @param {Function} callback - Called with (userObject) if successful, or
-     *        (false) if the username is already taken.
+     * @param {Function} callback - Called with the userObject if successful,
+     *        or false if the username is already taken.
      */
     create: function (username, password, displayName, organization, admin, callback) {
         // Make sure username doesn't exist
         db.collection("sergis-users").findOne({
             username_lowercase: username.toLowerCase()
         }, function (err, user) {
-            if (err) throw err;
+            if (err) {
+                dbError("users.create", err, [username]);
+                return callback(err);
+            }
             
             if (user) {
                 // Username already exists!
-                return callback(false);
+                return callback(null, false);
             }
             
             encryptPassword(password, function (err, encryptedPassword) {
-                if (err) throw err;
+                if (err) {
+                    dbError("users.create::encrypt", err, [username]);
+                    return callback(err);
+                }
                 
                 db.collection("sergis-users").insert({
                     username: username,
@@ -216,10 +275,13 @@ exports.users = {
                     isAdmin: admin == "yup",
                     isOrganizationAdmin: admin == "kinda"
                 }, function (err, user) {
-                    if (err) throw err;
+                    if (err) {
+                        dbError("users.get::insert", err, [username]);
+                        return callback(err);
+                    }
                     
                     // We're done!!
-                    return callback(user);
+                    return callback(null, user);
                 });
             });
         });
@@ -242,13 +304,21 @@ exports.users = {
             }, {
                 $set: update
             }, function (err, result) {
-                if (err) throw err;
-                return callback();
+                if (err) {
+                    dbError("users.update", err, [username]);
+                    return callback(err);
+                }
+
+                return callback(null);
             });
         };
         if (newPassword) {
             encryptPassword(newPassword, function (err, encryptedPassword) {
-                if (err) throw err;
+                if (err) {
+                    dbError("users.update::encrypt", err, [username]);
+                    return callback(err);
+                }
+
                 update.encryptedPassword = encryptedPassword;
                 afterUpdate();
             });
@@ -268,8 +338,12 @@ exports.users = {
         db.collection("sergis-users").remove({
             username_lowercase: username.toLowerCase()
         }, function (err, result) {
-            if (err) throw err;
-            return callback();
+            if (err) {
+                dbError("users.delete", err, [username]);
+                return callback(err);
+            }
+
+            return callback(null);
         });
     }
 };
@@ -283,19 +357,23 @@ exports.games = {
      * @param {string} gameOwner - The username of the game owner
      *        (case-insensitive).
      * @param {string} gameName - The name of the game (case-insensitive).
-     * @param {Function} callback - Called with (gameObject) if successful, or
-     *        no arguments if the gameOwner/gameName is not in the database.
+     * @param {Function} callback - Called with the gameObject if successful,
+     *        or no arguments if the gameOwner/gameName is not in the database.
      */
     get: function (gameOwner, gameName, callback) {
         db.collection("sergis-games").findOne({
             gameOwner_lowercase: gameOwner.toLowerCase(),
             gameName_lowercase: gameName.toLowerCase()
         }, function (err, game) {
-            if (err) throw err;
+            if (err) {
+                dbError("games.get", err, [gameOwner, gameName]);
+                return callback(err);
+            }
+            
             if (game) {
-                return callback(game);
+                return callback(null, game);
             } else {
-                return callback();
+                return callback(null);
             }
         });
     },
@@ -309,17 +387,21 @@ exports.games = {
      *        include games whose owner is part of this organization).
      * @param {?string} access - The access level to filter with (will only
      *        include games with this exact access level).
-     * @param {Function} callback - Called with ([gameObject, gameObject, ...]).
+     * @param {Function} callback - Called with an array of the game objects.
      */
     getAll: function (gameOwner, organization, access, callback) {
         var criteria = {};
         if (gameOwner) criteria.gameOwner_lowercase = gameOwner.toLowerCase();
         if (access) criteria.access = access;
         db.collection("sergis-games").find(criteria).toArray(function (err, games) {
-            if (err) throw err;
+            if (err) {
+                dbError("games.getAll", err);
+                return callback(err);
+            }
+            
             // If there are no games, we're done
             if (games.length == 0) {
-                return callback([]);
+                return callback(null, []);
             }
             
             // It's not our lucky day... we have to check each game's owner
@@ -330,7 +412,7 @@ exports.games = {
             var gameAddedToList = function () {
                 if (++done >= total) {
                     // We're all done!
-                    callback(organizationGames);
+                    callback(null, organizationGames);
                 }
             };
 
@@ -338,13 +420,17 @@ exports.games = {
                 db.collection("sergis-users").findOne({
                     username_lowercase: game.gameOwner.toLowerCase()
                 }, function (err, user) {
-                    if (err) throw err;
-
-                    if (!organization || user.organization === organization) {
-                        // Yay, we found one!
-                        // Add the display name to it
-                        game.ownerDisplayName = user.displayName;
-                        organizationGames.push(game);
+                    if (err) {
+                        dbError("games.getAll::find", err);
+                        //return callback(err);
+                        // We don't want to return; just finish processing the rest
+                    } else {
+                        if (!organization || user.organization === organization) {
+                            // Yay, we found one!
+                            // Add the display name to it
+                            game.ownerDisplayName = user.displayName;
+                            organizationGames.push(game);
+                        }
                     }
                     gameAddedToList();
                 });
@@ -359,8 +445,8 @@ exports.games = {
      * @param {string} gameName - The name of the new game.
      * @param {string} access - The access level for the game.
      * @param {Object} jsondata - The json data for the game.
-     * @param {Function} callback - Called with (gameObject) if successful, or
-     *        (false) if the gameOwner/gameName combo is already taken.
+     * @param {Function} callback - Called with the gameObject if successful,
+     *        or false if the gameOwner/gameName combo is already taken.
      */
     create: function (gameOwner, gameName, access, jsondata, callback) {
         // Make sure gameOwner/gameName combo doesn't exist
@@ -368,11 +454,14 @@ exports.games = {
             gameOwner_lowercase: gameOwner.toLowerCase(),
             gameName_lowercase: gameName.toLowerCase()
         }, function (err, game) {
-            if (err) throw err;
+            if (err) {
+                dbError("games.create", err, [gameOwner, gameName]);
+                return callback(err);
+            }
             
             if (game) {
                 // Game already exists!
-                return callback(false);
+                return callback(null, false);
             }
             
             db.collection("sergis-games").insert({
@@ -383,10 +472,13 @@ exports.games = {
                 access: access,
                 jsondata: jsondata
             }, function (err, game) {
-                if (err) throw err;
+                if (err) {
+                    dbError("games.create::insert", err, [gameOwner, gameName]);
+                    return callback(err);
+                }
 
                 // We're done!!
-                return callback(game);
+                return callback(null, game);
             });
         });
     },
@@ -408,8 +500,12 @@ exports.games = {
         }, {
             $set: update
         }, function (err, result) {
-            if (err) throw err;
-            return callback();
+            if (err) {
+                dbError("games.update", err, [gameOwner, gameName]);
+                return callback(err);
+            }
+            
+            return callback(null);
         });
     },
     
@@ -427,21 +523,23 @@ exports.games = {
             gameOwner_lowercase: gameOwner.toLowerCase(),
             gameName_lowercase: gameName.toLowerCase()
         }, function (err, result) {
-            if (err) throw err;
-            return callback();
+            if (err) {
+                dbError("games.delete", err, [gameOwner, gameName]);
+                return callback(err);
+            }
+            
+            return callback(null);
         });
     },
     
     /**
      * Create a game auth token without user authentication.
-     * NOTE: This function won't throw errors.
      *
      * @param {string} gameOwner - The username of the game owner
      *        (case-insensitive).
      * @param {string} gameName - The name of the game (case-insensitive).
      * @param {Function} callback - Called with (userObject, authToken) if the
-     *        game is public, or (false) is authentication is needed, or no
-     *        arguments if there is an error.
+     *        game is public, or (false) is authentication is needed.
      */
     makeAnonymousGameToken: function (gameOwner, gameName, callback) {
         db.collection("sergis-games").findOne({
@@ -449,29 +547,22 @@ exports.games = {
             gameName_lowercase: gameName.toLowerCase()
         }, function (err, game) {
             if (err) {
-                console.error("Error accessing \"" + gameOwner + "\"/\"" + gameName + "\" in sergis-games collection: ", err.stack);
-                return callback();
+                dbError("games.makeAnonymousGameToken", err, [gameOwner, gameName]);
+                return callback(err);
             }
 
             if (!game || game.access != "public") {
                 // Either bad game name, or user is not allowed to access
-                return callback(false);
+                return callback(null, false);
             }
 
             // All good, make auth token!
-            makeToken(gameOwner, gameName, undefined, function (gamePerms, authToken) {
-                if (!gamePerms || !authToken) {
-                    return callback();
-                }
-
-                return callback(gamePerms, authToken);
-            });
+            makeToken(gameOwner, gameName, undefined, callback);
         });
     },
 
     /**
      * Get user info and create a game auth token.
-     * NOTE: This function won't throw errors.
      *
      * @param {string} gameOwner - The username of the game owner
      *        (case-insensitive).
@@ -490,47 +581,50 @@ exports.games = {
             gameName_lowercase: gameName.toLowerCase()
         }, function (err, game) {
             if (err) {
-                console.error("Error accessing game in sergis-games collection: ", err.stack);
-                return callback();
+                dbError("games.makeAuthenticatedGameToken", err, [gameOwner, gameName, username]);
+                return callback(err);
             }
-
+            
             if (!game) {
                 // Bad game name
-                return callback();
+                return callback(null);
             }
 
             db.collection("sergis-users").findOne({
                 username_lowercase: gameOwner.toLowerCase()
             }, function (err, owner) {
                 if (err) {
-                    console.error("Error accessing user in sergis-users collection: ", err.stack);
-                    return callback();
+                    dbError("games.makeAuthenticatedGameToken::1", err, [gameOwner, gameName, username]);
+                    return callback(err);
                 }
+
                 if (!owner) {
                     // Lol, the game owner doesn't exist anymore
-                    return callback();
+                    return callback(null);
                 }
                 
                 db.collection("sergis-users").findOne({
                     username_lowercase: username.toLowerCase()
                 }, function (err, user) {
                     if (err) {
-                        console.error("Error accessing user in sergis-users collection: ", err.stack);
-                        return callback();
+                        dbError("games.makeAuthenticatedGameToken::2", err, [gameOwner, gameName, username]);
+                        return callback(err);
                     }
+
                     if (!user) {
                         // Bad username
-                        return callback(false);
+                        return callback(null, false);
                     }
 
                     checkPassword(password, user.encryptedPassword, function (err, isCorrect) {
                         if (err) {
-                            console.error("Error checking encrypted password: ", err.stack);
-                            return callback();
+                            dbError("games.makeAuthenticatedGameToken::3", err, [gameOwner, gameName, username]);
+                            return callback(err);
                         }
+
                         if (!isCorrect) {
                             // Good username, bad password
-                            return callback(false);
+                            return callback(null, false);
                         }
 
                         // Now, pass the control to checkAndMakeToken
@@ -543,7 +637,6 @@ exports.games = {
     
     /**
      * Create a game auth token for a user without checking authentication.
-     * NOTE: This function won't throw errors.
      *
      * @param {string} gameOwner - The username of the game owner
      *        (case-insensitive).
@@ -552,8 +645,8 @@ exports.games = {
      * @param {Function} callback - Called with (userObject, authToken) if
      *        authentication is successful, or (false) if the username is bad,
      *        or (false, false) if the user does not have access to the game,
-     *        or no arguments if there is an error (including if the user
-     *        doesn't have access to the game).
+     *        or no arguments if the user doesn't have access to the game or
+     *        there is a data error.
      *        (See checkAndMakeToken below.)
      */
     makeGameToken: function (gameOwner, gameName, username, callback) {
@@ -562,37 +655,39 @@ exports.games = {
             gameName_lowercase: gameName.toLowerCase()
         }, function (err, game) {
             if (err) {
-                console.error("Error accessing game in sergis-games collection: ", err.stack);
-                return callback();
+                dbError("games.makeGameToken", err, [gameOwner, gameName, username]);
+                return callback(err);
             }
-
+            
             if (!game) {
                 // Bad game name
-                return callback();
+                return callback(null);
             }
 
             db.collection("sergis-users").findOne({
                 username_lowercase: gameOwner.toLowerCase()
             }, function (err, owner) {
                 if (err) {
-                    console.error("Error accessing user in sergis-users collection: ", err.stack);
-                    return callback();
+                    dbError("games.makeGameToken::1", err, [gameOwner, gameName, username]);
+                    return callback(err);
                 }
+
                 if (!owner) {
                     // Bad owner
-                    return callback();
+                    return callback(null);
                 }
                 
                 db.collection("sergis-users").findOne({
                     username_lowercase: username.toLowerCase()
                 }, function (err, user) {
                     if (err) {
-                        console.error("Error accessing user in sergis-users collection: ", err.stack);
-                        return callback();
+                        dbError("games.makeGameToken::2", err, [gameOwner, gameName, username]);
+                        return callback(err);
                     }
+
                     if (!user) {
                         // Bad username
-                        return callback(false);
+                        return callback(null, false);
                     }
 
                     // Now, pass the control to checkAndMakeToken
@@ -604,68 +699,63 @@ exports.games = {
 
     /**
      * Delete a game auth token (i.e., log a user out of a game).
-     * NOTE: This function won't throw errors.
      *
      * @param {string} token - The auth token.
-     * @param {Function} callback - Called with (true) if successful, or no
-     *        arguments if there was an error.
+     * @param {Function} callback - Called with true if successful.
      */
     deleteGameToken: function (token, callback) {
         db.collection("sergis-tokens").remove({token: token}, function (err, result) {
             if (err) {
-                console.error("Error removing from sergis-tokens collection: ", err.stack);
-                return callback();
+                dbError("games.deleteGameToken", err);
+                return callback(err);
             }
-            return callback(true);
+            
+            return callback(null, true);
         });
     },
 
     /**
      * Get data from the token database and the corresponding game.
-     * NOTE: This function won't throw errors.
      *
      * @param {string} token - The token to look up.
-     * @param {Function} callback - Called with (game, tokenData) if successful,
-     *        or no arguments if there was an error.
+     * @param {Function} callback - Called with (game, tokenData).
      */
     getGameAndTokenData: function (token, callback) {
         db.collection("sergis-tokens").findOne({token: token}, function (err, tokenData) {
             if (err) {
-                console.error("Error accessing sergis-tokens collection: ", err.stack);
-                return callback();
+                dbError("games.getGameAndTokenData", err);
+                return callback(err);
             }
-
+            
             db.collection("sergis-games").findOne({
                 gameOwner_lowercase: tokenData.gameOwner.toLowerCase(),
                 gameName_lowercase: tokenData.gameName.toLowerCase()
             }, function (err, game) {
                 if (err) {
-                    console.error("Error accessing sergis-games collection: ", err.stack);
-                    return callback();
+                    dbError("games.getGameAndTokenData", err);
+                    return callback(err);
                 }
 
-                return callback(game, tokenData);
+                return callback(null, game, tokenData);
             });
         });
     },
 
     /**
      * Update data in the token database.
-     * NOTE: This function won't throw errors.
      *
      * @param {string} token - The token to update.
      * @param {Object} update - The object to tell MongoDB what to update.
-     * @param {Function} callback - Called with (true) if successful, or no
-     *        arguments if there was an error.
+     * @param {Function} callback - Called with (true) if successful.
      */
     updateGameTokenData: function (token, update, callback) {
         db.collection("sergis-tokens").update({token: token}, {$set: update}, function (err, result) {
             if (err) {
-                console.error("Error updating in sergis-tokens collection: ", err.stack);
-                return callback();
+                dbError("games.updateGameTokenData", err);
+                return callback(err);
             }
-
-            return callback(true);
+            
+            return callback(null, true);
         });
     }
 };
@@ -680,19 +770,23 @@ exports.author = {
      * @param {string} gameOwner - The username of the game owner
      *        (case-insensitive).
      * @param {string} gameName - The name of the game (case-insensitive).
-     * @param {Function} callback - Called with (jsondata) if successful, or
-     *        no arguments if the gameOwner/gameName is not in the database.
+     * @param {Function} callback - Called with jsondata if successful, or
+     *        no data if the gameOwner/gameName is not in the database.
      */
     get: function (gameOwner, gameName, callback) {
         db.collection("sergis-author-games").findOne({
             gameOwner_lowercase: gameOwner.toLowerCase(),
             gameName_lowercase: gameName.toLowerCase()
         }, function (err, game) {
-            if (err) throw err;
+            if (err) {
+                dbError("author.get", err, [gameOwner, gameName]);
+                return callback(err);
+            }
+            
             if (game && game.jsondata) {
-                return callback(game.jsondata);
+                return callback(null, game.jsondata);
             } else {
-                return callback();
+                return callback(null);
             }
         });
     },
@@ -709,17 +803,21 @@ exports.author = {
         db.collection("sergis-author-games").find({
             gameOwner_lowercase: gameOwner.toLowerCase()
         }).toArray(function (err, games) {
-            if (err) throw err;
+            if (err) {
+                dbError("author.getAll", err, [gameOwner]);
+                return callback(err);
+            }
+            
             // If there are no games, we're done
             if (games.length == 0) {
-                return callback({});
+                return callback(null, {});
             }
             
             var gameList = {};
             games.forEach(function (game) {
                 gameList[game.gameName] = new Date(game.lastModified);
             });
-            return callback(gameList);
+            return callback(null, gameList);
         });
     },
     
@@ -729,8 +827,8 @@ exports.author = {
      * @param {string} gameOwner - The username of the game owner.
      * @param {string} gameName - The name of the new game.
      * @param {Object} jsondata - The new jsondata.
-     * @param {Function} callback - Called with (true) if successful, or
-     *        (false) if the gameOwner/gameName combo is already taken.
+     * @param {Function} callback - Called with true if successful, or
+     *        false if the gameOwner/gameName combo is already taken.
      */
     create: function (gameOwner, gameName, jsondata, callback) {
         // Make sure gameOwner/gameName combo doesn't exist
@@ -738,11 +836,14 @@ exports.author = {
             gameOwner_lowercase: gameOwner.toLowerCase(),
             gameName_lowercase: gameName.toLowerCase()
         }, function (err, game) {
-            if (err) throw err;
+            if (err) {
+                dbError("author.create", err, [gameOwner, gameName]);
+                return callback(err);
+            }
             
             if (game) {
                 // Game already exists!
-                return callback(false);
+                return callback(null, false);
             }
             
             db.collection("sergis-author-games").insert({
@@ -753,10 +854,13 @@ exports.author = {
                 lastModified: (new Date()).getTime(),
                 jsondata: jsondata
             }, function (err, game) {
-                if (err) throw err;
+                if (err) {
+                    dbError("author.create::insert", err, [gameOwner, gameName]);
+                    return callback(err);
+                }
 
                 // We're done!!
-                return callback(true);
+                return callback(null, true);
             });
         });
     },
@@ -781,8 +885,12 @@ exports.author = {
                 jsondata: jsondata
             }
         }, function (err, result) {
-            if (err) throw err;
-            return callback();
+            if (err) {
+                dbError("author.update", err, [gameOwner, gameName]);
+                return callback(err);
+            }
+            
+            return callback(null);
         });
     },
     
@@ -800,8 +908,12 @@ exports.author = {
             gameOwner_lowercase: gameOwner.toLowerCase(),
             gameName_lowercase: gameName.toLowerCase()
         }, function (err, result) {
-            if (err) throw err;
-            return callback();
+            if (err) {
+                dbError("author.delete", err, [gameOwner, gameName]);
+                return callback(err);
+            }
+            
+            return callback(null);
         });
     }
 };
@@ -893,9 +1005,9 @@ function checkPassword(password, encryptedPassword, callback) {
  * @param {object} game - The game from sergis-games.
  * @param {object} owner - The owner of the game from sergis-users.
  * @param {object} user - The logged-in user from sergis-users.
- * @param {Function} callback - Called with (userObject, authToken) if
- *        authentication is successful, or (false, false) if the user does not
- *        have access to the game, or no arguments if there is an error.
+ * @param {Function} callback - Called with (null, userObject, authToken) if
+ *        authentication is successful, or (null, false, false) if the user
+ *        does not have access to the game, or (err) if there is an error.
  */
 function checkAndMakeToken(game, owner, user, callback) {
     // Is this user allowed to access this game?
@@ -909,17 +1021,10 @@ function checkAndMakeToken(game, owner, user, callback) {
         owner.username == user.username) {
 
         // All good, make a token!
-        makeToken(game.gameOwner, game.gameName, user.username, function (gamePerms, authToken) {
-            if (!gamePerms || !authToken) {
-                return callback();
-            }
-
-            gamePerms.displayName = user.displayName;
-            return callback(gamePerms, authToken);
-        });
+        makeToken(game.gameOwner, game.gameName, user.username, callback);
     } else {
         // No access for you!
-        return callback(false, false);
+        return callback(null, false, false);
     }
 }
 
@@ -930,8 +1035,9 @@ function checkAndMakeToken(game, owner, user, callback) {
  *        (case-insensitive).
  * @param {string} gameName - The name of the game (case-insensitive).
  * @param {string} username - The username of the user (can be `undefined`).
- * @param {Function} callback - Called with (gamePerms, authToken) if
- *        successful, or no arguments if there's an error.
+ * @param {Function} callback - Called with (null, gamePerms, authToken) if
+ *        successful, or (err) if there's an error, or no arguments if something
+ *        didn't exist.
  *        (gamePerms is an object with "jumpingBackAllowed" and
  *        "jumpingForwardAllowed)
  */
@@ -942,12 +1048,12 @@ function makeToken(gameOwner, gameName, username, callback) {
         gameName_lowercase: gameName.toLowerCase()
     }, function (err, game) {
         if (err) {
-            console.error("Error accessing in sergis-games collection: ", err.stack);
-            return callback();
+            dbError("makeToken", err, [gameOwner, gameName]);
+            return callback(err);
         }
         
         if (!game) {
-            return callback();
+            return callback(null);
         }
         
         db.collection("sergis-tokens").insert({
@@ -964,10 +1070,11 @@ function makeToken(gameOwner, gameName, username, callback) {
             }
         }, function (err, result) {
             if (err) {
-                console.error("Error inserting into sergis-tokens collection: ", err.stack);
-                return callback();
+                dbError("makeToken::insert", err, [gameOwner, gameName]);
+                return callback(err);
             }
-            return callback({
+            
+            return callback(null, {
                 jumpingBackAllowed: !!game.jsondata.jumpingBackAllowed,
                 jumpingForwardAllowed: !!game.jsondata.jumpingForwardAllowed,
                 buttons: [

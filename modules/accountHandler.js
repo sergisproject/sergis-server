@@ -53,7 +53,12 @@ var pageHandlers = {
     checkAccount: function (req, res, next) {
         var otherUsername = req.params.username;
         // Let's get the data on the account that we're trying to open
-        db.users.get(otherUsername, function (otherUser) {
+        db.users.get(otherUsername, function (err, otherUser) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             // Now, are we sure that this other user exists?
             if (!otherUser) {
                 // Nope! Send a 404 if we're admin, 403 otherwise.
@@ -85,7 +90,12 @@ var pageHandlers = {
         // it, whether it originally came from req.user or req.otherUser.
         var user = req.otherUser || req.user;
         // Get the organization list, in case we need it
-        db.organizations.getAll(function (organizations) {
+        db.organizations.getAll(function (err, organizations) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             return res.render("account.ejs", {
                 me: req.user,
                 user: user,
@@ -186,7 +196,12 @@ var pageHandlers = {
             return next("route");
         }
 
-        db.author.get(req.user.username, req.body.gameName, function (jsondata) {
+        db.author.get(req.user.username, req.body.gameName, function (err, jsondata) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             if (!jsondata) {
                 // AHH! We don't exist!
                 req.error = {
@@ -236,7 +251,12 @@ var pageHandlers = {
             }
             
             // Get the JSON data for the game
-            db.author.get(req.user.username, req.body.authorGameName, function (jsondata) {
+            db.author.get(req.user.username, req.body.authorGameName, function (err, jsondata) {
+                if (err) {
+                    req.error = {number: 500};
+                    return next("route");
+                }
+
                 if (!jsondata) {
                     // AHH! We don't exist!
                     req.error = {
@@ -260,7 +280,12 @@ var pageHandlers = {
                 return next("route");
             }
             
-            db.author.get(req.user.username, req.body.gameName, function (jsondata) {
+            db.author.get(req.user.username, req.body.gameName, function (err, jsondata) {
+                if (err) {
+                    req.error = {number: 500};
+                    return next("route");
+                }
+
                 if (!jsondata) {
                     // AHH! We don't exist!
                     req.error = {
@@ -305,9 +330,19 @@ var pageHandlers = {
         
         // Yup, the user actually gotst some rights
         // Let's get them something to look at
-        db.users.getAll((req.user.isOrganizationAdmin && req.user.organization) ? req.user.organization : null, function (users) {
+        db.users.getAll((req.user.isOrganizationAdmin && req.user.organization) ? req.user.organization : null, function (err, users) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             // Get the organization list too
-            db.organizations.getAll(function (organizations) {
+            db.organizations.getAll(function (err, organizations) {
+                if (err) {
+                    req.error = {number: 500};
+                    return next("route");
+                }
+
                 // Now, render all that shit
                 return res.render("admin.ejs", {
                     me: req.user,
@@ -423,9 +458,19 @@ var accountActions = {
         // Set the changes if there are any
         if (JSON.stringify(update) != "{}" || newPassword) {
             // Yay, there's changes to update!
-            db.users.update(user.username, update, newPassword, function () {
+            db.users.update(user.username, update, newPassword, function (err) {
+                if (err) {
+                    req.error = {number: 500};
+                    return next("route");
+                }
+
                 // Re-get the user we just updated (store it in req.otherUser)
-                db.users.get(user.username, function (user) {
+                db.users.get(user.username, function (err, user) {
+                    if (err) {
+                        req.error = {number: 500};
+                        return next("route");
+                    }
+
                     if (!user) {
                         // Ahh! He's gone!
                         req.error = {status: 500};
@@ -480,7 +525,12 @@ var accountActions = {
         }
 
         // Next, make sure the game name isn't taken
-        db.games.get(user.username, req.body.gameName, function (game) {
+        db.games.get(user.username, req.body.gameName, function (err, game) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             if (game) {
                 // Ahh! Game with this gameOwner/gameName combo already exists!
                 return res.render("error-back.ejs", {
@@ -509,7 +559,12 @@ var accountActions = {
             }
             
             // Okay, everything should be good now!
-            db.games.create(user.username, req.body.gameName, req.body.access, jsondata, function (game) {
+            db.games.create(user.username, req.body.gameName, req.body.access, jsondata, function (err, game) {
+                if (err) {
+                    req.error = {number: 500};
+                    return next("route");
+                }
+
                 req.statusMessages = [game ? (req.body.gameName + " created successfully!") : "Error creating game."];
                 return next();
             });
@@ -526,11 +581,18 @@ var accountActions = {
             return next();
         }
         
-        db.users.delete(user.username, function () {
+        db.users.delete(user.username, function (err) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             if (isMe) {
                 // We deleted ourselves
                 req.session.destroy(function (err) {
-                    if (err) throw err;
+                    if (err) {
+                        console.error("ERROR DESTROYING SESSION: ", err.stack);
+                    }
                     // Just redirect to the home page
                     return res.redirect((config.HTTP_PREFIX || "") + "/");
                 });
@@ -568,7 +630,12 @@ var adminActions = {
         }
 
         // Finally... create the account
-        db.users.create(username, password, displayName, organization, admin, function (user) {
+        db.users.create(username, password, displayName, organization, admin, function (err, user) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             if (user === false) {
                 // Error...
                 return res.render("error-back.ejs", {
@@ -588,7 +655,12 @@ var adminActions = {
      * Handle a request for the deletion of a user.
      */
     "delete-user": function (req, res, next, username, organization) {
-        db.users.get(username, function (user) {
+        db.users.get(username, function (err, user) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             if (!user) {
                 // Well, our job is practically done for us
                 return next();
@@ -609,7 +681,12 @@ var adminActions = {
             }
             
             // All good!
-            db.users.delete(username, function () {
+            db.users.delete(username, function (err) {
+                if (err) {
+                    req.error = {number: 500};
+                    return next("route");
+                }
+
                 req.statusMessages = ["User \"" + username + "\" has been deleted."];
                 return next();
             });
@@ -628,7 +705,12 @@ var adminActions = {
             });
         }
         
-        db.organizations.create(organizationName, function (organization) {
+        db.organizations.create(organizationName, function (err, organization) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             req.statusMessages = ["Oranization \"" + organizationName + "\" has been created."];
             return next();
         });
@@ -639,7 +721,12 @@ var adminActions = {
      */
     "set-user-organization": function (req, res, next, username, organizationName) {
         // Make sure username is A-Ok
-        db.users.get(username, function (user) {
+        db.users.get(username, function (err, user) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             if (!user) {
                 return res.render("error-back.ejs", {
                     title: "SerGIS Server Admin",
@@ -653,7 +740,12 @@ var adminActions = {
                 // Okay, now update the user
                 db.users.update(username, {
                     organization: null
-                }, null, function () {
+                }, null, function (err) {
+                    if (err) {
+                        req.error = {number: 500};
+                        return next("route");
+                    }
+
                     // All good now!
                     req.statusMessages = ["The organization has been set to none for user \"" + username + "\"."];
                     return next();
@@ -662,7 +754,12 @@ var adminActions = {
             }
             
             // Since we need to, let's make sure organizationName is A-Ok
-            db.organizations.get(organizationName, function (organization) {
+            db.organizations.get(organizationName, function (err, organization) {
+                if (err) {
+                    req.error = {number: 500};
+                    return next("route");
+                }
+
                 if (!organization) {
                     return res.render("error-back.ejs", {
                         title: "SerGIS Server Admin",
@@ -674,7 +771,12 @@ var adminActions = {
                 // Okay, now update the user
                 db.users.update(username, {
                     organization: organizationName
-                }, null, function () {
+                }, null, function (err) {
+                    if (err) {
+                        req.error = {number: 500};
+                        return next("route");
+                    }
+
                     // All good now!
                     req.statusMessages = ["The organization has been set to \"" + organizationName + "\" for user \"" + username + "\"."];
                     return next();
@@ -688,7 +790,12 @@ var adminActions = {
      */
     "set-user-admin": function (req, res, next, username, admin) {
         // Make sure the username is A-Ok
-        db.users.get(username, function (user) {
+        db.users.get(username, function (err, user) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             if (!user) {
                 return res.render("error-back.ejs", {
                     title: "SerGIS Server Admin",
@@ -707,7 +814,12 @@ var adminActions = {
             db.users.update(username, {
                 isAdmin: admin == "yup",
                 isOrganizationAdmin: admin == "kinda",
-            }, null, function () {
+            }, null, function (err) {
+                if (err) {
+                    req.error = {number: 500};
+                    return next("route");
+                }
+
                 // All good now!
                 req.statusMessages = ["User \"" + username + "\" is now " + (admin == "yup" ? " an Admin." : admin == "kinda" ? "an Organization Admin." : "not an admin.")];
                 return next();
@@ -738,7 +850,12 @@ router.use(function (req, res, next) {
         req.session.username = undefined;
         req.user = undefined;
         // See if it's valid
-        db.users.check(req.body.username, req.body.password, function (user) {
+        db.users.check(req.body.username, req.body.password, function (err, user) {
+            if (err) {
+                req.error = {number: 500};
+                return next("route");
+            }
+            
             if (user) {
                 // Yay! Correct!
                 // Re-add any pre-login POST data
