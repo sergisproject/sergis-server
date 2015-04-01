@@ -75,7 +75,9 @@ var pageHandlers = {
     
     logoutGet: function (req, res) {
         req.session.destroy(function (err) {
-            if (err) throw err;
+            if (err) {
+                console.error("ERROR DESTROYING SESSION: ", err.stack);
+            }
             
             // We're probably good now!
             res.redirect(config.HTTP_PREFIX + "/");
