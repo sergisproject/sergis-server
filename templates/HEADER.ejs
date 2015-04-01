@@ -32,13 +32,17 @@ body {
         <li><a href="<%= httpPrefix %>/games">Games</a></li>
     <% if (typeof me != "undefined" && me) { %>
         <li><a href="<%= httpPrefix %>/account/author">Author</a></li>
-        <li><a href="<%= httpPrefix %>/games/<%= me.username %>">My Games</a></li>
-        <li><a href="<%= httpPrefix %>/account">My Account</a></li>
-        <% if (me.isAdmin || me.isOrganizationAdmin) { %><li><a href="<%= httpPrefix %>/account/admin">Admin</a></li><% } %>
-        <li><a href="<%= httpPrefix %>/logout">Log Out</a></li>
     <% } else if (page != "login") { %>
         <li><a href="<%= httpPrefix %>/account">Log In</a></li>
     <% } %>
     </ul>
+    <% if (typeof me != "undefined" && me) { %>
+    <ul>
+        <li><a href="<%= httpPrefix %>/games/<%= me.username %>">My Games</a></li>
+        <li><a href="<%= httpPrefix %>/account">My Account</a></li>
+        <% if (me.isAdmin || me.isOrganizationAdmin) { %><li><a href="<%= httpPrefix %>/account/admin">Admin</a></li><% } %>
+        <li><a href="<%= httpPrefix %>/logout">Log Out</a></li>
+    </ul>
+    <% } %>
 </header>
 <% } %>
