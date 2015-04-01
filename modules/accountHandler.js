@@ -47,15 +47,6 @@ router.use(multer({
 // The page handlers for /account/
 var pageHandlers = {
     /**
-     * Throw a 405.
-     */
-    throw405: function (req, res, next) {
-        // Just throw a "Method Not Allowed"
-        req.error = {number: 405};
-        return next("route");
-    },
-    
-    /**
      * Get the account in question for an account URL, and make sure that the
      * user has permission to access.
      */
@@ -170,10 +161,63 @@ var pageHandlers = {
     },
     
     /**
+     * Handle GET requests for the publishing page
+     */
+    previewGet: function (req, res, next) {
+        // Just throw a "Method Not Allowed"
+        req.error = {
+            number: 405,
+            details: "Try clicking the \"Preview\" button in the SerGIS Author again."
+        };
+        return next("route");
+    },
+    
+    /**
      * Handle POST requests for the preview page (coming from the author).
      */
     previewPost: function (req, res, next) {
-        res.end("TODO: " + req.body.gameName);
+        // We must be coming from the author
+        // Make sure the game name is good
+        if (!req.body.gameName) {
+            req.error = {
+                number: 400,
+                details: "Invalid gameName."
+            };
+            return next("route");
+        }
+
+        db.author.get(req.user.username, req.body.gameName, function (jsondata) {
+            if (!jsondata) {
+                // AHH! We don't exist!
+                req.error = {
+                    number: 400,
+                    details: "Invalid gameName."
+                };
+                return next("route");
+            }
+
+            // Render page
+            return res.render(config.CLIENT_INDEX, {
+                // NOTE: `test` is written to a JS block!
+                test: 'var SERGIS_JSON_DATA = ' + JSON.stringify(jsondata).replace(/<\/script>/g, '</scr" + "ipt>') + ';',
+
+                // lib files
+                "style.css": (config.HTTP_PREFIX || "") + "/client-lib/style.css",
+                "es6-promise-2.0.0.min.js": (config.HTTP_PREFIX || "") + "/client-lib/es6-promise-2.0.0.min.js",
+                "main.js": (config.HTTP_PREFIX || "") + "/client-lib/main.js",
+                "frontend-script-src": (config.HTTP_PREFIX || "") + "/client-lib/frontends/arcgis.js",
+                "backend-script-src": (config.HTTP_PREFIX || "") + "/client-lib/backends/local.js"
+            });
+        });
+    },
+    
+    /**
+     * Handle GET requests for the publishing page (throw a 405).
+     */
+    publishGet: function (req, res, next) {
+        // Just throw a "Method Not Allowed"
+        req.error = {number: 405};
+        return next("route");
     },
     
     /**
@@ -752,10 +796,10 @@ router.post("", pageHandlers.accountPost, pageHandlers.account);
 router.get("/author", pageHandlers.authorGet);
 router.post("/author", pageHandlers.authorGet); // Could be coming from a post'ed login
 
-router.get("/author/preview", pageHandlers.throw405);
+router.get("/author/preview", pageHandlers.previewGet);
 router.post("/author/preview", pageHandlers.previewPost);
 
-router.get("/author/publish", pageHandlers.throw405);
+router.get("/author/publish", pageHandlers.publishGet);
 router.post("/author/publish", pageHandlers.publishPost, pageHandlers.publishDone);
 
 router.get("/admin", pageHandlers.admin);
