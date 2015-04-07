@@ -278,6 +278,12 @@ var pageHandlers = {
                             return;
                         }
                         break;
+                    case "download-game":
+                        // Lolz, this one's funny (we don't call next())
+                        res.set("Content-Type", "application/json");
+                        res.set("Content-Disposition", "attachment; filename=" + game.gameName + ".json");
+                        res.send(game.jsondata);
+                        return;
                     case "delete-game":
                         db.games.delete(game.gameOwner, game.gameName, function (err) {
                             if (err) {
@@ -315,25 +321,6 @@ var pageHandlers = {
             "session": req.sessionID,
             "logoutUrl": (config.HTTP_PREFIX || "") + "/logout"
         });
-    },
-    
-    editGame: function (req, res, next) {
-        // Is the user treading in territory where they're not allowed?
-        if (req.owner.username != req.user.username &&
-            !req.user.isAdmin &&
-            (!req.user.isOrganizationAdmin || !req.user.organization || req.user.organization !== req.owner.organization)) {
-            // Yup, you're not allowed here
-            req.error = {number: 403};
-            return next("route");
-        }
-        
-        req.error = {number: 406};
-        return next("route");
-    },
-    
-    editGamePost: function (req, res, next) {
-        req.error = {number: 406};
-        return next("route");
     }
 };
 
@@ -347,6 +334,3 @@ router.get("/:username", pageHandlers.listGames);
 router.post("/:username", pageHandlers.listGamesPost, pageHandlers.listGames);
 
 router.get("/:username/:gameName", pageHandlers.checkGame, pageHandlers.serveGame);
-
-//router.get("/:username/:gameName/edit", pageHandlers.checkGame, pageHandlers.editGame);
-//router.post("/:username/:gameName/edit", pageHandlers.checkGame, pageHandlers.editGamePost, pageHandlers.editGame);

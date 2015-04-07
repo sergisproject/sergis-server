@@ -14,16 +14,14 @@
     <tr>
         <th>Game Name</th>
         <th>Game Owner</th>
-        <th>&nbsp;</th>
     </tr>
     </thead>
 
     <tbody>
     <% gameObj.games.forEach(function (game) { %>
     <tr>
-        <td><i><%= game.gameName %></i></td>
-        <td><a href="<%= httpPrefix %>/games/<%= game.gameOwner %>"><%= game.ownerDisplayName || game.gameOwner %></a></td>
-        <td><a href="<%= httpPrefix %>/games/<%= game.gameOwner %>/<%= game.gameName %>">Play Game</a></td>
+        <td><a href="<%= httpPrefix %>/games/<%= game.gameOwner %>/<%= game.gameName %>" title="Play <%= game.gameName %>"><b><%= game.gameName %></b></a></td>
+        <td><a href="<%= httpPrefix %>/games/<%= game.gameOwner %>" title="View all games by <%= game.gameOwner %>"><%= game.ownerDisplayName || game.gameOwner %></a></td>
     </tr>
     <% }) %>
     </tbody>

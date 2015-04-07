@@ -16,9 +16,6 @@
         <th>Game Name</th>
         <% if (canEditGames) { %>
         <th>Access Level</th>
-        <% } %>
-        <th>&nbsp;</th>
-        <% if (canEditGames) { %>
         <th>&nbsp;</th>
         <% } %>
     </tr>
@@ -27,7 +24,7 @@
     <tbody>
     <% gameObj.games.forEach(function (game) { %>
     <tr>
-        <td><i><%= game.gameName %></i></td>
+        <td><a href="<%= httpPrefix %>/games/<%= user.username %>/<%= game.gameName %>" title="Play <%= game.gameName %>"><b><%= game.gameName %></b></a></td>
         <% if (canEditGames) { %>
         <td>
             <form action="" method="POST">
@@ -42,15 +39,18 @@
                 <input type="submit" value="Update">
             </form>
         </td>
-        <% } %>
-        <td><a href="<%= httpPrefix %>/games/<%= user.username %>/<%= game.gameName %>">Play Game</a><% if (canEditGames) { /* <br><a href="{{httpPrefix}}/games/{{user.username}}/{{game.gameName}}/edit">Edit Game</a> */ } %></td>
-        <% if (canEditGames) { %>
         <td>
+            <form action="" method="POST" target="_blank">
+                <input type="hidden" name="action" value="download-game">
+                <input type="hidden" name="username" value="<%= user.username %>">
+                <input type="hidden" name="gameName" value="<%= game.gameName %>">
+                <input type="submit" value="Download JSON">
+            </form>
             <form action="" method="POST" class="formcheckers-delete-check" data-name="<%= game.gameName %>">
                 <input type="hidden" name="action" value="delete-game">
                 <input type="hidden" name="username" value="<%= user.username %>">
                 <input type="hidden" name="gameName" value="<%= game.gameName %>">
-                <input type="submit" value="Delete">
+                <input type="submit" value="Delete Game">
             </form>
         </td>
         <% } %>
