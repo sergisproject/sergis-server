@@ -91,13 +91,25 @@ var config = module.exports = {
     /** sergis-client resources directory (mapped to http://this-nodejs-server/client-lib/...) */
     CLIENT_RESOURCES_DIR: path.join(__dirname, "sergis-legacy-client", "lib"),
     
-    /** Path to the index.html file for sergis-client */
+    /** sergis-client JavaScript files to concatenate and minify (in this order) */
+    CLIENT_RESOURCES_JS: ["main.js", "frontends/arcgis.js", "backends/sergis-server.js"],
+    CLIENT_RESOURCES_JS_LOCAL: ["main.js", "frontends/arcgis.js", "backends/local.js"],
+    
+    /** sergis-client index file (path to index.html) */
     CLIENT_INDEX: path.join(__dirname, "sergis-legacy-client", "index.html"),
     
     /** sergis-author resources directory (mapped to http://this-nodejs-server/author-lib/...) */
     AUTHOR_RESOURCES_DIR: path.join(__dirname, "sergis-legacy-author"),
     
-    /** Path to the index.html file for sergis-author */
+    /** sergis-author JavaScript files to concatenate and minify (in this order) */
+    AUTHOR_RESOURCES_JS: [
+        "author-main.js", "author-ask.js",
+        "author-json.js", "author-games.js", "author-table.js",
+        "author-editor.js", "author-action-editor.js", "author-frontend-info-editor.js",
+        "author-backend_sergis-server.js"
+    ],
+    
+    /** sergis-author index file (path to index.html) */
     AUTHOR_INDEX: path.join(__dirname, "sergis-legacy-author", "index.html"),
 
     ///////////////////////////////////////////////////////////////////////////

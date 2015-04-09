@@ -309,10 +309,9 @@ var pageHandlers = {
             // lib files
             "style.css": (config.HTTP_PREFIX || "") + "/client-lib/style.css",
             "es6-promise-2.0.0.min.js": (config.HTTP_PREFIX || "") + "/client-lib/es6-promise-2.0.0.min.js",
-            "main.js": (config.HTTP_PREFIX || "") + "/client-lib/main.js",
-            "frontend-script-src": (config.HTTP_PREFIX || "") + "/client-lib/frontends/arcgis.js",
-            "backend-script-src": (config.HTTP_PREFIX || "") + "/client-lib/backends/sergis-server.js",
+            "client-js-src": config.HTTP_PREFIX + "/static/client.js",
 
+            "no-minified": false,
             "socket-io-script-src": (config.SOCKET_ORIGIN || "") + (config.SOCKET_PREFIX || "") + "/socket.io/socket.io.js",
             "socket-io-origin": config.SOCKET_ORIGIN || "",
             "socket-io-prefix": config.SOCKET_PREFIX || "",

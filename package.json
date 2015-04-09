@@ -28,7 +28,8 @@
     "indie-set": "1.0.x",
     "ejs": "2.3.x",
     "mongodb": "1.4.x",
-    "connect-mongo": "0.7.x"
+    "connect-mongo": "0.7.x",
+    "uglify-js": "2.4.x"
   },
   "repository": {
     "type": "git",

@@ -141,33 +141,20 @@ var pageHandlers = {
      * Hande GET requests for the SerGIS Author.
      */
     authorGet: function (req, res, next) {
-        var configs = {
+        // Render page
+        return res.render(config.AUTHOR_INDEX, {
             // lib files
             "stylesheet.css": (config.HTTP_PREFIX || "") + "/author-lib/stylesheets/stylesheet.css",
-            "author-backend-src": (config.HTTP_PREFIX || "") + "/author-lib/javascripts/author-backend_sergis-server.js",
+            "es6-promise-2.0.0.min.js": config.HTTP_PREFIX + "/author-lib/javascripts/es6-promise-2.0.0.min.js",
+            "localforage.nopromises.min.js": config.HTTP_PREFIX + "/author-lib/javascripts/localforage.nopromises.min.js",
+            "author-js-src": (config.HTTP_PREFIX || "") + "/static/author.js",
 
+            "no-minified": false,
             "socket-io-script-src": (config.SOCKET_ORIGIN || "") + (config.SOCKET_PREFIX || "") + "/socket.io/socket.io.js",
             "socket-io-origin": config.SOCKET_ORIGIN || "",
             "socket-io-prefix": config.SOCKET_PREFIX || "",
             "session": req.sessionID
-        };
-        // Add all the JS SRCs
-        [
-            "es6-promise-2.0.0.min.js",
-            "localforage.nopromises.min.js",
-            "author-main.js",
-            "author-ask.js",
-            "author-json.js",
-            "author-games.js",
-            "author-table.js",
-            "author-editor.js",
-            "author-action-editor.js",
-            "author-frontend-info-editor.js"
-        ].forEach(function (jsfile) {
-            configs[jsfile] = (config.HTTP_PREFIX || "") + "/author-lib/javascripts/" + jsfile;
         });
-        // Render page
-        return res.render(config.AUTHOR_INDEX, configs);
     },
     
     /**
@@ -219,9 +206,8 @@ var pageHandlers = {
                 // lib files
                 "style.css": (config.HTTP_PREFIX || "") + "/client-lib/style.css",
                 "es6-promise-2.0.0.min.js": (config.HTTP_PREFIX || "") + "/client-lib/es6-promise-2.0.0.min.js",
-                "main.js": (config.HTTP_PREFIX || "") + "/client-lib/main.js",
-                "frontend-script-src": (config.HTTP_PREFIX || "") + "/client-lib/frontends/arcgis.js",
-                "backend-script-src": (config.HTTP_PREFIX || "") + "/client-lib/backends/local.js"
+                "client-js-src": config.HTTP_PREFIX + "/static/client.local.js",
+                "no-minified": false
             });
         });
     },

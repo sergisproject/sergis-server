@@ -29,7 +29,7 @@ var config = require("./config"),
 
 
 /**
- * The different static file directories.
+ * The different plain static file directories.
  * The keys are the Express paths, and the values are directories.
  */
 var STATIC_DIRECTORIES = {
@@ -44,6 +44,7 @@ var STATIC_DIRECTORIES = {
  * modules in `modules/`.
  */
 var HTTP_SERVERS = {
+    "/static": "staticHandler",
     "/games": "gamesHandler",
     "/account": "accountHandler",
     // This one catches everything else
