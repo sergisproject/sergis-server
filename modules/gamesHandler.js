@@ -77,6 +77,7 @@ var pageHandlers = {
                 name: "Public Games",
                 description: "Public games are accessible by anyone.",
                 access: "public",
+                organizationColumn: false,
                 none: "No public games.",
                 games: publicGames
             });
@@ -103,6 +104,7 @@ var pageHandlers = {
                     name: "Private Games",
                     description: "Private games are only accessible by their creator and administrators.",
                     access: "private",
+                    organizationColumn: false,
                     none: "No private games.",
                     games: privateGames
                 });
@@ -127,6 +129,7 @@ var pageHandlers = {
                         name: "Organization Games",
                         description: "Organization games are only accessible to other people in " + (req.user.isAdmin ? "the creator's organization and administrators" : req.user.organization) + ".",
                         access: "organization",
+                        organizationColumn: !!req.user.isAdmin,
                         none: "No organization games.",
                         games: organizationGames
                     });

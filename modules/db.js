@@ -427,8 +427,9 @@ exports.games = {
                     } else {
                         if (!organization || user.organization === organization) {
                             // Yay, we found one!
-                            // Add the display name to it
+                            // Add some user info to it
                             game.ownerDisplayName = user.displayName;
+                            game.ownerOrganization = user.organization;
                             organizationGames.push(game);
                         }
                     }

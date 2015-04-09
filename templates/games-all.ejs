@@ -13,7 +13,8 @@
     <thead>
     <tr>
         <th>Game Name</th>
-        <th>Game Owner</th>
+        <th>Game Owner</th><% if (gameObj.organizationColumn) { %>
+        <th>Organization</th><% } %>
     </tr>
     </thead>
 
@@ -22,6 +23,7 @@
     <tr>
         <td><a href="<%= httpPrefix %>/games/<%= game.gameOwner %>/<%= game.gameName %>" title="Play <%= game.gameName %>"><b><%= game.gameName %></b></a></td>
         <td><a href="<%= httpPrefix %>/games/<%= game.gameOwner %>" title="View all games by <%= game.gameOwner %>"><%= game.ownerDisplayName || game.gameOwner %></a></td>
+        <% if (gameObj.organizationColumn) { %><td><%= game.ownerOrganization %></td><% } %>
     </tr>
     <% }) %>
     </tbody>
