@@ -220,7 +220,7 @@ function init() {
         app.engine("html", function (path, data, callback) {
             if (!data) data = {};
             if (!data.__set) data.__set = {};
-            data["style-simple.css"] = (config.HTTP_PREFIX || "") + "/client-lib/style-simple.css";
+            data["style-simple.css"] = config.HTTP_PREFIX + "/client-lib/style-simple.css";
             data.__set.renderStatic = true;
             return indieSet.__express(path, data, function (err, data) {
                 if (err) return callback(err);
@@ -233,7 +233,7 @@ function init() {
         });
         app.engine("ejs", function (path, data, callback) {
             if (!data) data = {};
-            data["httpPrefix"] = (config.HTTP_PREFIX || "");
+            data["httpPrefix"] = config.HTTP_PREFIX;
             return ejs.renderFile(path, data, callback);
         });
         
@@ -266,7 +266,7 @@ function init() {
         // Create handlers for our other page servers (see HTTP_SERVERS above)
         for (var pathDescrip in HTTP_SERVERS) {
             if (HTTP_SERVERS.hasOwnProperty(pathDescrip)) {
-                app.use((config.HTTP_PREFIX || "") + pathDescrip, require("./modules/pageServers/" + HTTP_SERVERS[pathDescrip]));
+                app.use(config.HTTP_PREFIX + pathDescrip, require("./modules/pageServers/" + HTTP_SERVERS[pathDescrip]));
             }
         }
         

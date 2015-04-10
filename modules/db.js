@@ -1081,7 +1081,7 @@ function makeToken(gameOwner, gameName, username, callback) {
                 buttons: [
                     {
                         label: "Home",
-                        action: (config.HTTP_PREFIX || "") + "/"
+                        action: config.HTTP_PREFIX + "/"
                     }
                 ]
             }, token);

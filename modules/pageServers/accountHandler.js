@@ -144,15 +144,15 @@ var pageHandlers = {
         // Render page
         return res.render(config.AUTHOR_INDEX, {
             // lib files
-            "stylesheet.css": (config.HTTP_PREFIX || "") + "/author-lib/stylesheets/stylesheet.css",
+            "stylesheet.css": config.HTTP_PREFIX + "/author-lib/stylesheets/stylesheet.css",
             "es6-promise-2.0.0.min.js": config.HTTP_PREFIX + "/author-lib/javascripts/es6-promise-2.0.0.min.js",
             "localforage.nopromises.min.js": config.HTTP_PREFIX + "/author-lib/javascripts/localforage.nopromises.min.js",
-            "author-js-src": (config.HTTP_PREFIX || "") + "/static/author.js",
+            "author-js-src": config.HTTP_PREFIX + "/static/author.js",
 
             "no-minified": false,
-            "socket-io-script-src": (config.SOCKET_ORIGIN || "") + (config.SOCKET_PREFIX || "") + "/socket.io/socket.io.js",
-            "socket-io-origin": config.SOCKET_ORIGIN || "",
-            "socket-io-prefix": config.SOCKET_PREFIX || "",
+            "socket-io-script-src": config.SOCKET_ORIGIN + config.SOCKET_PREFIX + "/socket.io/socket.io.js",
+            "socket-io-origin": config.SOCKET_ORIGIN,
+            "socket-io-prefix": config.SOCKET_PREFIX,
             "session": req.sessionID
         });
     },
@@ -204,8 +204,8 @@ var pageHandlers = {
                 test: 'var SERGIS_JSON_DATA = ' + JSON.stringify(jsondata).replace(/<\/script>/g, '</scr" + "ipt>') + ';',
 
                 // lib files
-                "style.css": (config.HTTP_PREFIX || "") + "/client-lib/style.css",
-                "es6-promise-2.0.0.min.js": (config.HTTP_PREFIX || "") + "/client-lib/es6-promise-2.0.0.min.js",
+                "style.css": config.HTTP_PREFIX + "/client-lib/style.css",
+                "es6-promise-2.0.0.min.js": config.HTTP_PREFIX + "/client-lib/es6-promise-2.0.0.min.js",
                 "client-js-src": config.HTTP_PREFIX + "/static/client.local.js",
                 "no-minified": false
             });
@@ -580,11 +580,11 @@ var accountActions = {
                         console.error("ERROR DESTROYING SESSION: ", err.stack);
                     }
                     // Just redirect to the home page
-                    return res.redirect((config.HTTP_PREFIX || "") + "/");
+                    return res.redirect(config.HTTP_PREFIX + "/");
                 });
             } else {
                 // We deleted somebody else, so just redirect to admin page
-                return res.redirect((config.HTTP_PREFIX || "") + "/account/admin");
+                return res.redirect(config.HTTP_PREFIX + "/account/admin");
             }
         });
     }

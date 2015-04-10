@@ -131,7 +131,7 @@ function initHandlers(socket, username) {
             if (err || !jsondata) return callback(false);
             // Okay, it's good
             return callback(true, {
-                url: (config.HTTP_PREFIX || "") + "/account/author/" + type,
+                url: config.HTTP_PREFIX + "/account/author/" + type,
                 method: "POST",
                 data: {
                     gameName: gameName

@@ -310,18 +310,18 @@ var pageHandlers = {
         return res.render(config.CLIENT_INDEX, {
             test: false,
             // lib files
-            "style.css": (config.HTTP_PREFIX || "") + "/client-lib/style.css",
-            "es6-promise-2.0.0.min.js": (config.HTTP_PREFIX || "") + "/client-lib/es6-promise-2.0.0.min.js",
+            "style.css": config.HTTP_PREFIX + "/client-lib/style.css",
+            "es6-promise-2.0.0.min.js": config.HTTP_PREFIX + "/client-lib/es6-promise-2.0.0.min.js",
             "client-js-src": config.HTTP_PREFIX + "/static/client.js",
 
             "no-minified": false,
-            "socket-io-script-src": (config.SOCKET_ORIGIN || "") + (config.SOCKET_PREFIX || "") + "/socket.io/socket.io.js",
-            "socket-io-origin": config.SOCKET_ORIGIN || "",
-            "socket-io-prefix": config.SOCKET_PREFIX || "",
+            "socket-io-script-src": config.SOCKET_ORIGIN + config.SOCKET_PREFIX + "/socket.io/socket.io.js",
+            "socket-io-origin": config.SOCKET_ORIGIN,
+            "socket-io-prefix": config.SOCKET_PREFIX,
             "gameOwner": req.game.gameOwner,
             "gameName": req.game.gameName,
             "session": req.sessionID,
-            "logoutUrl": (config.HTTP_PREFIX || "") + "/logout"
+            "logoutUrl": config.HTTP_PREFIX + "/logout"
         });
     }
 };
