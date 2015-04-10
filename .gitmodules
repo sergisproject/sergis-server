@@ -1,6 +1,0 @@
-[submodule "sergis-legacy-author"]
-	path = sergis-legacy-author
-	url = https://github.com/sergisproject/sergis-legacy-author
-[submodule "sergis-legacy-client"]
-	path = sergis-legacy-client
-	url = https://github.com/sergisproject/sergis-legacy-client
