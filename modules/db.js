@@ -1040,7 +1040,7 @@ function checkAndMakeToken(game, owner, user, callback) {
  *        successful, or (err) if there's an error, or no arguments if something
  *        didn't exist.
  *        (gamePerms is an object with "jumpingBackAllowed" and
- *        "jumpingForwardAllowed)
+ *        "jumpingForwardAllowed, etc.)
  */
 function makeToken(gameOwner, gameName, username, callback) {
     var token = Number(randInt(10) + "" + (new Date()).getTime() + "" + randInt(10)).toString(36);
@@ -1078,12 +1078,8 @@ function makeToken(gameOwner, gameName, username, callback) {
             return callback(null, {
                 jumpingBackAllowed: !!game.jsondata.jumpingBackAllowed,
                 jumpingForwardAllowed: !!game.jsondata.jumpingForwardAllowed,
-                buttons: [
-                    {
-                        label: "Home",
-                        action: config.HTTP_PREFIX + "/"
-                    }
-                ]
+                layout: game.jsondata.layout,
+                homeURL: config.HTTP_PREFIX + "/games"
             }, token);
         });
     });
