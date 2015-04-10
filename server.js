@@ -41,7 +41,7 @@ var STATIC_DIRECTORIES = {
 /**
  * The different modules for the different sections of the HTTP server.
  * The keys are the Express paths, and the values are the filenames of the
- * modules in `modules/`.
+ * modules in `modules/pageServers/`.
  */
 var HTTP_SERVERS = {
     "/static": "staticHandler",
@@ -55,7 +55,7 @@ var HTTP_SERVERS = {
 /**
  * The different modules for the different sections of the Socket.IO WebSockets
  * server. The keys are the socket namespaces, and the values are the filenames
- * of the modules in `modules/`.
+ * of the modules in `modules/socketServers/`.
  */
 var SOCKET_SERVERS = {
     "/game": "gameSocketHandler",
@@ -266,7 +266,7 @@ function init() {
         // Create handlers for our other page servers (see HTTP_SERVERS above)
         for (var pathDescrip in HTTP_SERVERS) {
             if (HTTP_SERVERS.hasOwnProperty(pathDescrip)) {
-                app.use((config.HTTP_PREFIX || "") + pathDescrip, require("./modules/" + HTTP_SERVERS[pathDescrip]));
+                app.use((config.HTTP_PREFIX || "") + pathDescrip, require("./modules/pageServers/" + HTTP_SERVERS[pathDescrip]));
             }
         }
         
@@ -317,8 +317,7 @@ function init() {
         // Create handlers for all our socket servers (see SOCKET_SERVERS above)
         for (var pathDescrip in SOCKET_SERVERS) {
             if (SOCKET_SERVERS.hasOwnProperty(pathDescrip)) {
-                //io.of(pathDescrip).on("connection", require("./modules/socketServers/" + SOCKET_SERVERS[pathDescrip]));
-                io.of(pathDescrip).use(require("./modules/" + SOCKET_SERVERS[pathDescrip]));
+                io.of(pathDescrip).use(require("./modules/socketServers/" + SOCKET_SERVERS[pathDescrip]));
             }
         }
     }
