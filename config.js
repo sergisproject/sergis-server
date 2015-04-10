@@ -89,17 +89,17 @@ var config = module.exports = {
     TEMPLATES_DIR: path.join(__dirname, "templates"),
     
     /** sergis-client resources directory (mapped to http://this-nodejs-server/client-lib/...) */
-    CLIENT_RESOURCES_DIR: path.join(__dirname, "sergis-legacy-client", "lib"),
+    CLIENT_RESOURCES_DIR: path.join(__dirname, "sergis-client", "lib"),
     
     /** sergis-client JavaScript files to concatenate and minify (in this order) */
     CLIENT_RESOURCES_JS: ["main.js", "frontends/arcgis.js", "backends/sergis-server.js"],
     CLIENT_RESOURCES_JS_LOCAL: ["main.js", "frontends/arcgis.js", "backends/local.js"],
     
     /** sergis-client index file (path to index.html) */
-    CLIENT_INDEX: path.join(__dirname, "sergis-legacy-client", "index.html"),
+    CLIENT_INDEX: path.join(__dirname, "sergis-client", "index.html"),
     
     /** sergis-author resources directory (mapped to http://this-nodejs-server/author-lib/...) */
-    AUTHOR_RESOURCES_DIR: path.join(__dirname, "sergis-legacy-author"),
+    AUTHOR_RESOURCES_DIR: path.join(__dirname, "sergis-author"),
     
     /** sergis-author JavaScript files to concatenate and minify (in this order) */
     AUTHOR_RESOURCES_JS: [
@@ -110,7 +110,7 @@ var config = module.exports = {
     ],
     
     /** sergis-author index file (path to index.html) */
-    AUTHOR_INDEX: path.join(__dirname, "sergis-legacy-author", "index.html"),
+    AUTHOR_INDEX: path.join(__dirname, "sergis-author", "index.html"),
 
     ///////////////////////////////////////////////////////////////////////////
     // Misc.
