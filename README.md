@@ -15,7 +15,11 @@ Also, SerGIS Server requires a running [MongoDB](https://www.mongodb.org/) serve
 - Add ability to sort the tables of games, users, etc.
 - As Full Admin, on the Admin page, add ability to filter users by organization.
 - Combine all of the repeated code in local.js (sergis-client) and gameSocketHandler.js (sergis-server), based more on the sergis-server version. Put it in a single "shared" file somewhere in sergis-client. (Also, with this, make config.js vars regarding the location of stuff in sergis-client just point to the sergis-client dir and we can figure out its subdirs from there.)
+- Add ability to change the name of existing games (if either we own the game, or we're an admin)
 - Add ability to edit existing games (if either we own the game, or if we're an admin)
+- For the "Publish" page (that's shown in the Author), give the user 2 radio button choices:
+      [*]  Create new game: ____________
+      [ ]  Overwrite existing game: [--dropdown-w/-existing-games--]
 
 ## License
 
