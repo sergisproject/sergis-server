@@ -31,13 +31,16 @@ module.exports = function (socket, next) {
         });
     });
 
-    // logOut handler
+    /*
+    // TODO: Do this on "end game"
+    // (old "logOut" handler)
     socket.on("logOut", function (token, callback) {
         db.games.deleteGameToken(token, function (err, result) {
             if (err) return callback();
             callback(result);
         });
     });
+    */
 
     // getUser handler
     socket.on("getUser", function (gameOwner, gameName, sessionID, callback) {
@@ -119,7 +122,7 @@ var gameFunctions = {
         }
         
         var actions = [],
-            nonMapActions = ["explain", "goto", "logout"];
+            nonMapActions = ["explain", "goto"];
 
         var pushActions = function (promptIndex) {
             // If onJumpBack=="hide", make sure that we don't show "future" happenings (and make sure a choice exists)
