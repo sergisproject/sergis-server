@@ -16,7 +16,7 @@ var express = require("express"),
     UglifyJS = require("uglify-js");
 
 // our modules
-var config = require("../config");
+var config = require("../../config");
 
 // The router for /static/
 var router = module.exports = express.Router();

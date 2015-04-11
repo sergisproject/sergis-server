@@ -14,8 +14,8 @@ var express = require("express"),
     bodyParser = require("body-parser");
 
 // our modules
-var config = require("../config"),
-    db = require("./db");
+var config = require("../../config"),
+    db = require("../db");
 
 // The router for /game/
 var router = module.exports = express.Router();

@@ -15,8 +15,8 @@ var express = require("express"),
     multer = require("multer");
 
 // our modules
-var config = require("../config"),
-    db = require("./db");
+var config = require("../../config"),
+    db = require("../db");
 
 // The router for /account/
 var router = module.exports = express.Router();

@@ -10,8 +10,8 @@
 // sergis-author
 
 // our modules
-var config = require("../config"),
-    db = require("./db");
+var config = require("../../config"),
+    db = require("../db");
 
 
 /**

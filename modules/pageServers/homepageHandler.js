@@ -12,8 +12,8 @@
 var express = require("express");
 
 // our modules
-var config = require("../config"),
-    db = require("./db");
+var config = require("../../config"),
+    db = require("../db");
 
 // Common error titles
 var ERROR_TITLES = {
