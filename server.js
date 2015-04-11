@@ -77,7 +77,8 @@ function initExitHandlers() {
     try {
         process.stdin.resume();
     } catch (err) {
-        console.error("Error listening on stdin: ", err.stack);
+        // This might happen if we're not running from a terminal or something
+        //console.error("Error listening on stdin: ", err.stack);
     }
 
     // Catch app closing
