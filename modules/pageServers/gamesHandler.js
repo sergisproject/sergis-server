@@ -9,6 +9,9 @@
 // This file handles everything having to do with serving games through
 // sergis-client.
 
+// node modules
+var path = require("path");
+
 // required modules
 var express = require("express"),
     bodyParser = require("body-parser");
