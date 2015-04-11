@@ -31,17 +31,6 @@ module.exports = function (socket, next) {
         });
     });
 
-    /*
-    // TODO: Do this on "end game"
-    // (old "logOut" handler)
-    socket.on("logOut", function (token, callback) {
-        db.games.deleteGameToken(token, function (err, result) {
-            if (err) return callback();
-            callback(result);
-        });
-    });
-    */
-
     // getUser handler
     socket.on("getUser", function (gameOwner, gameName, sessionID, callback) {
         if (!gameOwner || !gameName) {
@@ -122,7 +111,7 @@ var gameFunctions = {
         }
         
         var actions = [],
-            nonMapActions = ["explain", "goto"];
+            nonMapActions = ["explain", "endGame", "goto"];
 
         var pushActions = function (promptIndex) {
             // If onJumpBack=="hide", make sure that we don't show "future" happenings (and make sure a choice exists)
@@ -290,12 +279,18 @@ var gameFunctions = {
             }
         }
         breakdown += "</tbody></table>";
-        return resolve([
-            {"type": "html", "value": "<h3>Congratulations!</h3>"},
-            {"type": "text", "value": "You have completed SerGIS."},
-            {"type": "html", "value": "Your total score was: <b>" + totalScore + "</b>"},
-            {"type": "text", "value": "Scoring breakdown:"},
-            {"type": "html", "value": breakdown}
-        ]);
+        
+        // We're done, so delete the game token
+        db.games.deleteGameToken(token, function (err, result) {
+            if (err) return reject();
+            
+            return resolve([
+                {"type": "html", "value": "<h3>Congratulations!</h3>"},
+                {"type": "text", "value": "You have completed SerGIS."},
+                {"type": "html", "value": "Your total score was: <b>" + totalScore + "</b>"},
+                {"type": "text", "value": "Scoring breakdown:"},
+                {"type": "html", "value": breakdown}
+            ]);
+        });
     }
 };
