@@ -307,7 +307,7 @@ var pageHandlers = {
     
     serveGame: function (req, res, next) {
         // Render page
-        return res.render(config.CLIENT_INDEX, {
+        return res.render(path.join(config.SERGIS_CLIENT, "index.html"), {
             test: false,
             // lib files
             "style.css": config.HTTP_PREFIX + "/client-lib/style.css",

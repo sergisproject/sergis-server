@@ -33,8 +33,8 @@ var config = require("./config"),
  * The keys are the Express paths, and the values are directories.
  */
 var STATIC_DIRECTORIES = {
-    "/client-lib": config.CLIENT_RESOURCES_DIR,
-    "/author-lib": config.AUTHOR_RESOURCES_DIR
+    "/client-lib": path.join(config.SERGIS_CLIENT, "lib"),
+    "/author-lib": config.SERGIS_AUTHOR
 };
 
 

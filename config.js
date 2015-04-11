@@ -54,7 +54,7 @@ var argdata = [
 var config = module.exports = {
     /**
      * Default server port.
-     * @type {number}
+     * @type {number|string}
      */
     PORT: process.env.PORT || 3000,
     
@@ -129,38 +129,34 @@ var config = module.exports = {
     TEMPLATES_DIR: path.join(__dirname, "templates"),
     
     /**
-     * sergis-client resources directory.
-     * (mapped to http://this-nodejs-server/client-lib/...)
+     * sergis-client directory.
+     * Used for serving "lib" (at /client-lib/...) and using index.html.
      * @type {string}
      */
-    CLIENT_RESOURCES_DIR: path.join(__dirname, "sergis-client", "lib"),
+    SERGIS_CLIENT: path.join(__dirname, "sergis-client"),
     
     /**
      * sergis-client JavaScript files to concatenate and minify (in this order)
      * if the sergis-server backend is used.
      * @type {Array.<string>}
      */
-    CLIENT_RESOURCES_JS: ["main.js", "frontends/arcgis.js", "backends/sergis-server.js"],
+    CLIENT_RESOURCES_JS: ["main.js", "frontends/arcgis.js",
+                          "backends/sergis-server.js"],
     
     /**
      * sergis-client JavaScript files to concatenate and minify (in this order)
      * if the local backend is used.
      * @type {Array.<string>}
      */
-    CLIENT_RESOURCES_JS_LOCAL: ["main.js", "frontends/arcgis.js", "backends/local.js"],
+    CLIENT_RESOURCES_JS_LOCAL: ["main.js", "frontends/arcgis.js",
+                                "backends/game-common.js", "backends/local.js"],
     
     /**
-     * sergis-client index file (path to index.html).
+     * sergis-author directory.
+     * Used for serving at /author-lib/... and using index.html.
      * @type {string}
      */
-    CLIENT_INDEX: path.join(__dirname, "sergis-client", "index.html"),
-    
-    /**
-     * sergis-author resources directory.
-     * (mapped to http://this-nodejs-server/author-lib/...)
-     * @type {string}
-     */
-    AUTHOR_RESOURCES_DIR: path.join(__dirname, "sergis-author"),
+    SERGIS_AUTHOR: path.join(__dirname, "sergis-author"),
     
     /**
      * sergis-author JavaScript files to concatenate and minify (in this order).
@@ -172,15 +168,15 @@ var config = module.exports = {
         "author-editor.js", "author-action-editor.js", "author-frontend-info-editor.js",
         "author-backend_sergis-server.js"
     ],
-    
-    /**
-     * sergis-author index file (path to index.html).
-     * @type {string}
-     */
-    AUTHOR_INDEX: path.join(__dirname, "sergis-author", "index.html"),
 
     ///////////////////////////////////////////////////////////////////////////
     // Misc.
+    
+    /**
+     * Whether to enable minification of scripts for author and client.
+     * @type {boolean}
+     */
+    MINIFY_JS: true,
     
     /**
      * Whether to temporarily disable login and assume everyone is a logged-in

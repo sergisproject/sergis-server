@@ -9,6 +9,9 @@
 // This file handles everything having to do with serving account and
 // administrative pages for sergis-server.
 
+// node modules
+var path = require("path");
+
 // required modules
 var express = require("express"),
     bodyParser = require("body-parser"),
@@ -142,7 +145,7 @@ var pageHandlers = {
      */
     authorGet: function (req, res, next) {
         // Render page
-        return res.render(config.AUTHOR_INDEX, {
+        return res.render(path.join(config.SERGIS_AUTHOR, "index.html"), {
             // lib files
             "stylesheet.css": config.HTTP_PREFIX + "/author-lib/stylesheets/stylesheet.css",
             "es6-promise-2.0.0.min.js": config.HTTP_PREFIX + "/author-lib/javascripts/es6-promise-2.0.0.min.js",
@@ -199,7 +202,7 @@ var pageHandlers = {
             }
 
             // Render page
-            return res.render(config.CLIENT_INDEX, {
+            return res.render(path.join(config.SERGIS_CLIENT, "index.html"), {
                 // NOTE: `test` is written to a JS block!
                 test: 'var SERGIS_JSON_DATA = ' + JSON.stringify(jsondata).replace(/<\/script>/g, '</scr" + "ipt>') + ';',
 
