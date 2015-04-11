@@ -1022,7 +1022,13 @@ function checkAndMakeToken(game, owner, user, callback) {
         owner.username == user.username) {
 
         // All good, make a token!
-        makeToken(game.gameOwner, game.gameName, user.username, callback);
+        makeToken(game.gameOwner, game.gameName, user.username, function (err, gamePerms, authToken) {
+            if (err) return callback(err);
+            // Add display name
+            gamePerms.displayName = user.displayName;
+            // And, send it on back
+            callback(null, gamePerms, authToken);
+        });
     } else {
         // No access for you!
         return callback(null, false, false);
