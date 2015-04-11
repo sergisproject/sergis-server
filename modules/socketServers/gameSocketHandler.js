@@ -281,7 +281,9 @@ var gameFunctions = {
         breakdown += "</tbody></table>";
         
         // We're done, so delete the game token
+        console.log("DELETING GAME TOKEN: " + token);
         db.games.deleteGameToken(token, function (err, result) {
+            console.log("DELETED GAME TOKEN: ", err, result);
             if (err) return reject();
             
             return resolve([
