@@ -78,15 +78,26 @@ module.exports = function (socket, next) {
 
                 var state = tokenData.state;
                 gameFunctions[func].apply(game, [
+                    // jsondata
                     game.jsondata,
+                    // state
                     state,
+                    // updateState
                     function () {
                         db.games.updateGameTokenData(tokenData.token, {state: state}, function (err, success) {
                             // Yay! (hopefully)
                         });
                     },
+                    // resolve
                     function (data) { callback(true, data); },
-                    function (data) { callback(false, data); }
+                    // reject
+                    function (data) { callback(false, data); },
+                    // deleteSession
+                    function (callback) {
+                        db.games.deleteGameToken(token, function (err, result) {
+                            callback(err);
+                        });
+                    }
                 ].concat(args));
             });
         } else {
@@ -239,7 +250,7 @@ var gameFunctions = {
         return resolve(actions);
     },
 
-    getGameOverContent: function (jsondata, state, updateState, resolve, reject) {
+    getGameOverContent: function (jsondata, state, updateState, resolve, reject, deleteSession) {
         if (!jsondata || !jsondata.promptList) {
             return reject("Invalid JSON Game Data.");
         }
@@ -281,9 +292,7 @@ var gameFunctions = {
         breakdown += "</tbody></table>";
         
         // We're done, so delete the game token
-        console.log("DELETING GAME TOKEN: " + token);
-        db.games.deleteGameToken(token, function (err, result) {
-            console.log("DELETED GAME TOKEN: ", err, result);
+        deleteSession(token, function (err) {
             if (err) return reject();
             
             return resolve([
