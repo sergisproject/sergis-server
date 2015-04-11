@@ -20,6 +20,12 @@ Also, SerGIS Server requires a running [MongoDB](https://www.mongodb.org/) serve
 - For the "Publish" page (that's shown in the Author), give the user 2 radio button choices:
       [*]  Create new game: ____________
       [ ]  Overwrite existing game: [--dropdown-w/-existing-games--]
+- Add new access level: "Unlisted" (only shows up in game listings for game owner and admins, but anyone with the link can access)
+- Make all POST pages redirect to corresponding GET pages
+    `makeRedirector(path) -> (function(req, res, next) -> res.redirect(path))`
+- Use Mongoose and Promises for db stuff
+    - Find out when node started supporting promises and require at least that version in package.json
+- Allow game owners and admins to change names of existing games (and store old names for purpose of redirection)
 
 ## License
 
