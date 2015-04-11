@@ -83,21 +83,21 @@ module.exports = function (socket, next) {
                     // state
                     state,
                     // updateState
-                    function () {
-                        db.games.updateGameTokenData(tokenData.token, {state: state}, function (err, success) {
-                            // Yay! (hopefully)
-                        });
+                    function (shouldDeleteSession, callback) {
+                        if (shouldDeleteSession) {
+                            db.games.deleteGameToken(token, function (err, result) {
+                                callback(err);
+                            });
+                        } else {
+                            db.games.updateGameTokenData(tokenData.token, {state: state}, function (err, success) {
+                                // Yay! (hopefully)
+                            });
+                        }
                     },
                     // resolve
                     function (data) { callback(true, data); },
                     // reject
-                    function (data) { callback(false, data); },
-                    // deleteSession
-                    function (callback) {
-                        db.games.deleteGameToken(token, function (err, result) {
-                            callback(err);
-                        });
-                    }
+                    function (data) { callback(false, data); }
                 ].concat(args));
             });
         } else {
@@ -250,7 +250,7 @@ var gameFunctions = {
         return resolve(actions);
     },
 
-    getGameOverContent: function (jsondata, state, updateState, resolve, reject, deleteSession) {
+    getGameOverContent: function (jsondata, state, updateState, resolve, reject) {
         if (!jsondata || !jsondata.promptList) {
             return reject("Invalid JSON Game Data.");
         }
@@ -292,7 +292,7 @@ var gameFunctions = {
         breakdown += "</tbody></table>";
         
         // We're done, so delete the game token
-        deleteSession(token, function (err) {
+        updateState(true, function (err) {
             if (err) return reject();
             
             return resolve([
