@@ -1069,6 +1069,7 @@ function makeToken(gameOwner, gameName, username, callback) {
             gameName: gameName.toLowerCase(),
             username: username,
             state: {
+                gameName: game.gameName,
                 // Default state
                 currentPromptIndex: null,
                 nextAllowedPromptIndex: null,
