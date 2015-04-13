@@ -18,7 +18,8 @@ var express = require("express"),
 
 // our modules
 var config = require("../../config"),
-    db = require("../db");
+    db = require("../db"),
+    accounts = require("../accounts");
 
 // The router for /game/
 var router = module.exports = express.Router();
@@ -155,7 +156,7 @@ var pageHandlers = {
             }
             
             if (!user) {
-                // Lol, he doesn't exist
+                // Lol, user doesn't exist
                 req.error = {status: 404};
                 return next("route");
             }
@@ -238,60 +239,25 @@ var pageHandlers = {
     },
     
     listGamesPost: function (req, res, next) {
-        // Make sure username exists
-        db.users.get(req.params.username, function (err, user) {
+        // We know that both req.user and req.otherUser are set,
+        // and req.user has permission to modify req.otherUser's stuff
+        db.games.get(req.otherUser.username, req.body.gameName, function (err, game) {
             if (err) {
                 req.error = {number: 500};
                 return next("route");
             }
-            
-            if (!user || user.username !== req.body.username) {
-                // Invalid request
+
+            if (!game) {
+                // Invalid game
                 return next();
             }
-            
-            if (!req.user || (!req.user.isAdmin &&
-                              (!req.user.isOrganizationAdmin || req.user.organization !== user.organization) &&
-                              req.user.username != user.username)) {
-                // Either nobody logged in, or user ain't allowed to edit
-                return next();
-            }
-            
-            db.games.get(user.username, req.body.gameName, function (err, game) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
 
-                if (!game) {
-                    // Invalid game
-                    return next();
-                }
-                
-                switch (req.body.action) {
-                    case "set-game-access":
-                        if (["public", "organization", "private"].indexOf(req.body.access) != -1) {
-                            db.games.update(game.gameOwner, game.gameName, {
-                                access: req.body.access
-                            }, function (err) {
-                                if (err) {
-                                    req.error = {number: 500};
-                                    return next("route");
-                                }
-
-                                next();
-                            });
-                            return;
-                        }
-                        break;
-                    case "download-game":
-                        // Lolz, this one's funny (we don't call next())
-                        res.set("Content-Type", "application/json");
-                        res.set("Content-Disposition", "attachment; filename=" + game.gameName + ".json");
-                        res.send(game.jsondata);
-                        return;
-                    case "delete-game":
-                        db.games.delete(game.gameOwner, game.gameName, function (err) {
+            switch (req.body.action) {
+                case "set-game-access":
+                    if (["public", "organization", "private"].indexOf(req.body.access) != -1) {
+                        db.games.update(game.gameOwner, game.gameName, {
+                            access: req.body.access
+                        }, function (err) {
                             if (err) {
                                 req.error = {number: 500};
                                 return next("route");
@@ -300,11 +266,28 @@ var pageHandlers = {
                             next();
                         });
                         return;
-                }
-                
-                // If we're still here, we didn't do anything
-                return next();
-            });
+                    }
+                    break;
+                case "download-game":
+                    // Lolz, this one's funny (we don't call next())
+                    res.set("Content-Type", "application/json");
+                    res.set("Content-Disposition", "attachment; filename=" + game.gameName + ".json");
+                    res.send(game.jsondata);
+                    return;
+                case "delete-game":
+                    db.games.delete(game.gameOwner, game.gameName, function (err) {
+                        if (err) {
+                            req.error = {number: 500};
+                            return next("route");
+                        }
+
+                        next();
+                    });
+                    return;
+            }
+
+            // If we're still here, we didn't do anything
+            return next();
         });
     },
     
@@ -332,10 +315,11 @@ var pageHandlers = {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Set up all the page handler routing
+router.use(accounts.checkUser);
 
 router.get("", pageHandlers.listAllGames);
 
 router.get("/:username", pageHandlers.listGames);
-router.post("/:username", pageHandlers.listGamesPost, pageHandlers.listGames);
+router.post("/:username", accounts.requireLogin, accounts.requireOtherAccountAccess, pageHandlers.listGamesPost, pageHandlers.listGames);
 
 router.get("/:username/:gameName", pageHandlers.checkGame, pageHandlers.serveGame);

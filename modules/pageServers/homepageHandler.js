@@ -13,7 +13,11 @@ var express = require("express");
 
 // our modules
 var config = require("../../config"),
-    db = require("../db");
+    db = require("../db"),
+    accounts = require("../accounts");
+
+// The router for /
+var router = module.exports = express.Router();
 
 // Common error titles
 var ERROR_TITLES = {
@@ -25,47 +29,9 @@ var ERROR_TITLES = {
     500: "Internal Server Error"
 };
 
-// Initialize everything
-module.exports = function (req, res, next) {
-    // Check if the session says we should serve an error
-    if (req.error) {
-        var number = req.error.number || 404,
-            title = req.error.title,
-            details = req.error.details || "";
-        req.error = null;
-        if (!title) {
-            if (ERROR_TITLES[number]) {
-                title = ERROR_TITLES[number];
-            } else {
-                title = "SerGIS Error";
-            }
-        }
-        // Serve the error
-        pageHandlers.error(req, res, number, title, details);
-        // Don't do anything else
-        return;
-    }
 
-    // I'm probably posessed by a demon right now, because I just made SWITCH-LOOP-CEPTION
-    switch (req.method) {
-        case "GET":
-            switch (req.path) {
-                case "/":
-                    pageHandlers.homepageGet(req, res);
-                    break;
-                case "/logout":
-                    pageHandlers.logoutGet(req, res);
-                    break;
-                default:
-                    pageHandlers.error(req, res, 404, "Not Found");
-            }
-            break;
-        default:
-            pageHandlers.error(req, res, 405, "Method Not Allowed");
-    }
-};
-
-
+////////////////////////////////////////////////////////////////////////////////
+// The page handlers for /
 var pageHandlers = {
     homepageGet: function (req, res) {
         res.render("homepage.ejs", {
@@ -85,6 +51,14 @@ var pageHandlers = {
     },
     
     error: function (req, res, number, title, details) {
+        if (!number) number = 404;
+        if (!title) {
+            if (ERROR_TITLES[number]) {
+                title = ERROR_TITLES[number];
+            } else {
+                title = "SerGIS Error";
+            }
+        }
         res.status(number);
         res.render("error.ejs", {
             me: req.user,
@@ -94,3 +68,34 @@ var pageHandlers = {
         });
     }
 };
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Set up all the page handler routing
+router.use(accounts.checkUser);
+
+router.use(function (req, res, next) {
+    // Check if the session says we should serve an error
+    if (req.error) {
+        var number = req.error.number || 404,
+            title = req.error.title,
+            details = req.error.details || "";
+        req.error = null;
+        // Serve the error
+        pageHandlers.error(req, res, number, title, details);
+        // Don't do anything else
+        return;
+    }
+    return next();
+});
+
+router.get("/logout", pageHandlers.logoutGet);
+router.get("", pageHandlers.homepageGet);
+
+// 404's and 405's for things not handles by anything else
+router.get("*", function (req, res, next) {
+    pageHandlers.error(req, res, 404);
+});
+router.all("*", function (req, res, next) {
+    pageHandlers.error(req, res, 405);
+});

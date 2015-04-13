@@ -11,7 +11,15 @@
 body {
     background: transparent;
     font-size: 1.2em;
-    font-face: sans-serif;
+    font-family: sans-serif;
+}
+
+input, select {
+    font-size: 1em;
+}
+
+td {
+    padding: 5px;
 }
 </style>
 <% } %>
@@ -31,7 +39,7 @@ body {
         <li><a href="<%= httpPrefix %>/">Home</a></li>
         <li><a href="<%= httpPrefix %>/games">Games</a></li>
     <% if (typeof me != "undefined" && me) { %>
-        <li><a href="<%= httpPrefix %>/account/author">Game Author</a></li>
+        <li><a href="<%= httpPrefix %>/author">Game Author</a></li>
     <% } else if (page != "login") { %>
         <li><a href="<%= httpPrefix %>/account">Log In</a></li>
     <% } %>

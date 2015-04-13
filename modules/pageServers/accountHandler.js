@@ -19,7 +19,8 @@ var express = require("express"),
 
 // our modules
 var config = require("../../config"),
-    db = require("../db");
+    db = require("../db"),
+    accounts = require("../accounts");
 
 // The router for /account/
 var router = module.exports = express.Router();
@@ -49,39 +50,6 @@ router.use(multer({
 ////////////////////////////////////////////////////////////////////////////////
 // The page handlers for /account/
 var pageHandlers = {
-    /**
-     * Get the account in question for an account URL, and make sure that the
-     * user has permission to access.
-     */
-    checkAccount: function (req, res, next) {
-        var otherUsername = req.params.username;
-        // Let's get the data on the account that we're trying to open
-        db.users.get(otherUsername, function (err, otherUser) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
-            // Now, are we sure that this other user exists?
-            if (!otherUser) {
-                // Nope! Send a 404 if we're admin, 403 otherwise.
-                req.error = {number: user.isAdmin ? 404 : 403};
-                return next("route");
-            }
-
-            // Alrighty, now, do we have permission to access him?
-            if (!req.user.isAdmin && !(req.user.isOrganizationAdmin && req.user.organization == otherUser.organization)) {
-                // Not allowed! Send along a good ol' 403
-                req.error = {number: 403};
-                return next("route");
-            }
-
-            // Alrighty, finally, yes, we do have permission to access this guy, no matter who he is
-            req.otherUser = otherUser;
-            return next();
-        });
-    },
-    
     /**
      * Show info on an account.
      * (If we're here, then we know that we have permission.)
@@ -117,7 +85,6 @@ var pageHandlers = {
     accountPost: function (req, res, next) {
         // Double-check
         var user = req.otherUser || req.user;
-        var isMe = user.username == req.user.username;
         if (user.username.toLowerCase() != req.body.username.toLowerCase()) {
             req.error = {number: 400};
             return next("route");
@@ -126,184 +93,18 @@ var pageHandlers = {
         // Now, are we trying to do something specific?
         switch (req.body.action) {
             case "update-user":
-                accountActions["update-user"](req, res, next, user, isMe);
+                accountActions["update-user"](req, res, next, user);
                 return;
             case "create-game":
-                accountActions["create-game"](req, res, next, user, isMe);
+                accountActions["create-game"](req, res, next, user);
                 return;
             case "delete-user":
-                accountActions["delete-user"](req, res, next, user, isMe);
+                accountActions["delete-user"](req, res, next, user);
                 return;
         }
         
         // Never mind, it's possible that we came here w/o doing anything
         next();
-    },
-    
-    /**
-     * Hande GET requests for the SerGIS Author.
-     */
-    authorGet: function (req, res, next) {
-        // Render page
-        return res.render(path.join(config.SERGIS_AUTHOR, "index.html"), {
-            // lib files
-            "stylesheet.css": config.HTTP_PREFIX + "/author-lib/stylesheets/stylesheet.css",
-            "es6-promise-2.0.0.min.js": config.HTTP_PREFIX + "/author-lib/javascripts/es6-promise-2.0.0.min.js",
-            "localforage.nopromises.min.js": config.HTTP_PREFIX + "/author-lib/javascripts/localforage.nopromises.min.js",
-            "author-js-src": config.HTTP_PREFIX + "/static/author.js",
-
-            "no-minified": false,
-            "socket-io-script-src": config.SOCKET_ORIGIN + config.SOCKET_PREFIX + "/socket.io/socket.io.js",
-            "socket-io-origin": config.SOCKET_ORIGIN,
-            "socket-io-prefix": config.SOCKET_PREFIX,
-            "session": req.sessionID
-        });
-    },
-    
-    /**
-     * Handle GET requests for the publishing page
-     */
-    previewGet: function (req, res, next) {
-        // Just throw a "Method Not Allowed"
-        req.error = {
-            number: 405,
-            details: "Try clicking the \"Preview\" button in the SerGIS Author again."
-        };
-        return next("route");
-    },
-    
-    /**
-     * Handle POST requests for the preview page (coming from the author).
-     */
-    previewPost: function (req, res, next) {
-        // We must be coming from the author
-        // Make sure the game name is good
-        if (!req.body.gameName) {
-            req.error = {
-                number: 400,
-                details: "Invalid gameName."
-            };
-            return next("route");
-        }
-
-        db.author.get(req.user.username, req.body.gameName, function (err, jsondata) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
-            if (!jsondata) {
-                // AHH! We don't exist!
-                req.error = {
-                    number: 400,
-                    details: "Invalid gameName."
-                };
-                return next("route");
-            }
-
-            // Render page
-            return res.render(path.join(config.SERGIS_CLIENT, "index.html"), {
-                // NOTE: `test` is written to a JS block!
-                test: 'var SERGIS_JSON_DATA = ' + JSON.stringify(jsondata).replace(/<\/script>/g, '</scr" + "ipt>') + ';',
-
-                // lib files
-                "style.css": config.HTTP_PREFIX + "/client-lib/style.css",
-                "es6-promise-2.0.0.min.js": config.HTTP_PREFIX + "/client-lib/es6-promise-2.0.0.min.js",
-                "client-js-src": config.HTTP_PREFIX + "/static/client.local.js",
-                "no-minified": false
-            });
-        });
-    },
-    
-    /**
-     * Handle GET requests for the publishing page (throw a 405).
-     */
-    publishGet: function (req, res, next) {
-        // Just throw a "Method Not Allowed"
-        req.error = {number: 405};
-        return next("route");
-    },
-    
-    /**
-     * Handle POST requests for the publishing page (coming from the author).
-     */
-    publishPost: function (req, res, next) {
-        // If we're coming from the publish page
-        if (req.body.action == "create-game") {
-            // Make sure that we have a valid game name
-            if (!req.body.authorGameName) {
-                req.error = {
-                    number: 400,
-                    details: "Invalid authorGameName."
-                };
-                return next("route");
-            }
-            
-            // Get the JSON data for the game
-            db.author.get(req.user.username, req.body.authorGameName, function (err, jsondata) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
-                if (!jsondata) {
-                    // AHH! We don't exist!
-                    req.error = {
-                        number: 400,
-                        details: "Invalid authorGameName."
-                    };
-                    return next("route");
-                }
-                
-                // Move control to accountActions["create-game"] to check the data and create the game
-                accountActions["create-game"](req, res, next, req.user, true, jsondata);
-            });
-        } else {
-            // We must be coming from the author
-            // Make sure the game name is good
-            if (!req.body.gameName) {
-                req.error = {
-                    number: 400,
-                    details: "Invalid gameName."
-                };
-                return next("route");
-            }
-            
-            db.author.get(req.user.username, req.body.gameName, function (err, jsondata) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
-                if (!jsondata) {
-                    // AHH! We don't exist!
-                    req.error = {
-                        number: 400,
-                        details: "Invalid gameName."
-                    };
-                    return next("route");
-                }
-
-                // Render the publish page
-                return res.render("account-publish.ejs", {
-                    me: req.user,
-                    authorGameName: req.body.gameName,
-                    gameNamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
-                    gameNameCharacters: config.URL_SAFE_REGEX_CHARS
-                });
-            });
-        }
-    },
-    
-    /**
-     * Handle the end of POST requests after we just published a game.
-     */
-    publishDone: function (req, res, next) {
-        // Render a Congrats page
-        return res.render("account-publish-done.ejs", {
-            me: req.user,
-            gameName: req.body.gameName
-        });
     },
     
     /**
@@ -394,15 +195,6 @@ var pageHandlers = {
         
         // Never mind, it's possible that we came here w/o doing anything
         next();
-    },
-    
-    /**
-     * Serve login page.
-     */
-    login: function (req, res, next, loginErrorMsg) {
-        return res.render("account-login.ejs", {
-            error: loginErrorMsg || false
-        });
     }
 };
 
@@ -413,15 +205,17 @@ var accountActions = {
     /**
      * Handle a request for the updating of a user.
      */
-    "update-user": function (req, res, next, user, isMe) {
+    "update-user": function (req, res, next, user) {
         var update = {};
         var newPassword;
         req.statusMessages = [];
+        
         // Check if the display name is changed
         if (req.body.displayName && req.body.displayName != user.displayName) {
             update.displayName = req.body.displayName;
             req.statusMessages.push("The display name for " + user.username + " has been updated.");
         }
+        
         // Check if the password should be changed
         if (req.body.password1 && req.body.password2) {
             if (req.body.password1 == req.body.password2) {
@@ -431,14 +225,16 @@ var accountActions = {
                 req.statusMessages.push("ERROR: New passwords did not match.");
             }
         }
-        // Check if the organization is changed
-        if (!isMe && req.user.isAdmin && req.body.organization && req.body.organization != user.organization) {
+        
+        // Check if the organization is changed (admin only)
+        if (req.user.isAdmin && req.body.organization && req.body.organization != user.organization) {
             update.organization = req.body.organization;
             req.statusMessages.push("The organization for " + user.username + " has been updated.");
         }
-        // Check if the admin status is changed
+        
+        // Check if the admin status is changed (admin only)
         var oldAdminStatus = user.isAdmin ? "yup" : user.isOrganizationAdmin ? "kinda" : "nope";
-        if (!isMe && req.user.isAdmin && req.body.admin && req.body.admin != oldAdminStatus) {
+        if (req.user.username != user.username && req.user.isAdmin && req.body.admin && req.body.admin != oldAdminStatus) {
             update.isAdmin = req.body.admin == "yup";
             update.isOrganizationAdmin = req.body.admin == "kinda";
             req.statusMessages.push("The admin status for " + user.username + " has been updated.");
@@ -478,86 +274,10 @@ var accountActions = {
     
     /**
      * Handle a request for creating a new game under a user account.
-     * Called from pageHandlers.accountPost and pageHandlers.publishPost.
-     * jsondata is only provided from publishPost; if it's missing, we get it
-     * from the request.
      */
-    "create-game": function (req, res, next, user, isMe, jsondata) {
-        // First, make sure everything's here and good
-        if (!req.body.gameName) {
-            return res.render("error-back.ejs", {
-                title: "SerGIS Account - " + user.username,
-                subtitle: "Error Creating Game",
-                details: "Game name is missing."
-            });
-        }
-        if (!config.URL_SAFE_REGEX.test(req.body.gameName)) {
-            return res.render("error-back.ejs", {
-                title: "SerGIS Account - " + user.username,
-                subtitle: "Error Creating Game",
-                details: "Invalid game name. Game names may consist of any letters, digits, and the following characters: " + config.URL_SAFE_REGEX_CHARS
-            });
-        }
-        if (!req.body.access || ["public", "organization", "private"].indexOf(req.body.access) == -1) {
-            return res.render("error-back.ejs", {
-                title: "SerGIS Account - " + user.username,
-                subtitle: "Error Creating Game",
-                details: "Invalid access level."
-            });
-        }
-        if (!jsondata && !req.files.jsonfile) {
-            return res.render("error-back.ejs", {
-                title: "SerGIS Account - " + user.username,
-                subtitle: "Error Creating Game",
-                details: "No SerGIS JSON Game Data file has been provided."
-            });
-        }
-
-        // Next, make sure the game name isn't taken
-        db.games.get(user.username, req.body.gameName, function (err, game) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
-            if (game) {
-                // Ahh! Game with this gameOwner/gameName combo already exists!
-                return res.render("error-back.ejs", {
-                    title: "SerGIS Account - " + user.username,
-                    subtitle: "Error Creating Game",
-                    details: (isMe ? "You" : "This Account") + " already has a game named \"" + req.body.gameName + "\". Game names must be unique."
-                });
-            }
-            
-            // Now, check the JSON game data
-            if (!jsondata) {
-                var jsonerr;
-                try {
-                    jsondata = JSON.parse(req.files.jsonfile.buffer.toString());
-                } catch (err) {
-                    jsondata = null;
-                    jsonerr = err;
-                }
-                if (!jsondata) {
-                    return res.render("error-back.ejs", {
-                        title: "SerGIS Account - " + user.username,
-                        subtitle: "Error Creating Game",
-                        details: "Invalid SerGIS JSON Game Data file.\n\n" + (jsonerr ? jsonerr.name + ": " + jsonerr.message : "")
-                    });
-                }
-            }
-            
-            // Okay, everything should be good now!
-            db.games.create(user.username, req.body.gameName, req.body.access, jsondata, function (err, game) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
-                req.statusMessages = [game ? (req.body.gameName + " created successfully!") : "Error creating game."];
-                return next();
-            });
-        });
+    "create-game": function (req, res, next, user) {
+        // Pass control to accounts.createGame
+        accounts.createGame(req, res, next, user, req.body.gameName, req.body.access);
     },
     
     /**
@@ -576,7 +296,7 @@ var accountActions = {
                 return next("route");
             }
             
-            if (isMe) {
+            if (req.user.username == user.username) {
                 // We deleted ourselves
                 req.session.destroy(function (err) {
                     if (err) {
@@ -819,97 +539,20 @@ var adminActions = {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Set up login
-router.use(function (req, res, next) {
-    // Test admin account, if we don't have any accounts in the database yet
-    if (config.ASSUME_ADMIN) {
-        // WARNING: EVERYONE IS AN ADMIN! EXTREMELY UNSAFE!!
-        req.user = {
-            username: "TempAdmin",
-            username_lowercase: "tempadmin",
-            encryptedPassword: "",
-            displayName: "WARNING: Set ASSUME_ADMIN to false in config.js",
-            isAdmin: true
-        };
-    }
-    
-    // Is it a login request?
-    if (req.method == "POST" && req.body.login == "account-login") {
-        // Kill any previous account that the user might have been logged in to
-        req.session.username = undefined;
-        req.user = undefined;
-        // See if it's valid
-        db.users.check(req.body.username, req.body.password, function (err, user) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
-            if (user) {
-                // Yay! Correct!
-                // Re-add any pre-login POST data
-                var postData = req.session.preLoginPostData;
-                if (postData && postData.length) {
-                    for (var i = 0; i < postData.length; i++) {
-                        req.body[postData[i][0]] = postData[i][1];
-                    }
-                    req.session.preLoginPostData = undefined;
-                }
-
-                // Store the username in the session
-                req.session.username = user.username;
-
-                // Store the user with the request
-                req.user = user;
-
-                // Continue on our merry way
-                return next();
-            } else if (user === false) {
-                // Bad username/password
-                pageHandlers.login(req, res, next, "Username or password incorrect.");
-            } else {
-                // Error!
-                req.error = {number: 500};
-                return next("route");
-            }
-        });
-    } else if (!req.user) {
-        // No user session!!
-        // Store any POST data coming to this page before we show the login page
-        if (req.body) {
-            var postData = [];
-            for (var item in req.body) {
-                if (req.body.hasOwnProperty(item)) {
-                    postData.push([item, req.body[item]]);
-                }
-            }
-            req.session.preLoginPostData = postData;
-        }
-        // Serve login page
-        pageHandlers.login(req, res, next);
-    } else {
-        // Everything's good; just continue on our merry way!
-        return next();
-    }
-});
-
-
-////////////////////////////////////////////////////////////////////////////////
 // Set up all the page handler routing
+router.use(accounts.checkUser);
+router.use(accounts.requireLogin);
+
 router.get("", pageHandlers.account);
 router.post("", pageHandlers.accountPost, pageHandlers.account);
 
-router.get("/author", pageHandlers.authorGet);
-router.post("/author", pageHandlers.authorGet); // Could be coming from a post'ed login
-
-router.get("/author/preview", pageHandlers.previewGet);
-router.post("/author/preview", pageHandlers.previewPost);
-
-router.get("/author/publish", pageHandlers.publishGet);
-router.post("/author/publish", pageHandlers.publishPost, pageHandlers.publishDone);
+router.get("/author", function (req, res, next) {
+    // Redirect from old author URL
+    res.redirect(config.HTTP_PREFIX + "/author");
+});
 
 router.get("/admin", pageHandlers.admin);
 router.post("/admin", pageHandlers.adminPost, pageHandlers.admin);
 
-router.get("/admin/:username", pageHandlers.checkAccount, pageHandlers.account);
-router.post("/admin/:username", pageHandlers.checkAccount, pageHandlers.accountPost, pageHandlers.account);
+router.get("/admin/:username", accounts.requireOtherAccountAccess, pageHandlers.account);
+router.post("/admin/:username", accounts.requireOtherAccountAccess, pageHandlers.accountPost, pageHandlers.account);

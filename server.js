@@ -47,6 +47,7 @@ var HTTP_SERVERS = {
     "/static": "staticHandler",
     "/games": "gamesHandler",
     "/account": "accountHandler",
+    "/author": "authorHandler",
     // This one catches everything else
     "/": "homepageHandler"
 };
@@ -236,32 +237,6 @@ function init() {
             if (!data) data = {};
             data["httpPrefix"] = config.HTTP_PREFIX;
             return ejs.renderFile(path, data, callback);
-        });
-        
-        // Set up automatic creation of req.user
-        app.use(function (req, res, next) {
-            if (req.session && req.session.username) {
-                db.users.get(req.session.username, function (err, user) {
-                    if (err || !user) {
-                        // Bad username in session!
-                        // Destroy the session
-                        req.session.destroy(function (err) {
-                            if (err){
-                                console.error("ERROR DESTROYING SESSION: ", err.stack);
-                            }
-                            // Now, we can just continue, since the login page will show if needed
-                            return next();
-                        });
-                    }
-                    // All good; store the user with the request.
-                    req.user = user;
-                    // And, continue on our merry way
-                    return next();
-                });
-            } else {
-                // No user
-                return next();
-            }
         });
 
         // Create handlers for our other page servers (see HTTP_SERVERS above)

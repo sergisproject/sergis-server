@@ -131,12 +131,12 @@ function initHandlers(socket, username) {
             if (err || !jsondata) return callback(false);
             // Okay, it's good
             return callback(true, {
-                url: config.HTTP_PREFIX + "/account/author/" + type,
+                url: config.HTTP_PREFIX + "/author/" + type,
                 method: "POST",
                 data: {
                     gameName: gameName
                 },
-                enctype: "multipart/form-data"
+                enctype: "application/x-www-form-urlencoded"
             });
         });
     }
