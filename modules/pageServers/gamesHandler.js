@@ -296,8 +296,8 @@ var pageHandlers = {
         return res.render(path.join(config.SERGIS_CLIENT, "index.html"), {
             test: false,
             // lib files
-            "style.css": config.HTTP_PREFIX + "/client-lib/style.css",
-            "es6-promise-2.0.0.min.js": config.HTTP_PREFIX + "/client-lib/es6-promise-2.0.0.min.js",
+            "style.css": config.CLIENT_STATIC + "/style.css",
+            "es6-promise-2.0.0.min.js": config.CLIENT_STATIC + "/es6-promise-2.0.0.min.js",
             "client-js-src": config.HTTP_PREFIX + "/static/client.js",
 
             "no-minified": false,

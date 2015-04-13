@@ -39,9 +39,9 @@ var pageHandlers = {
         // Render page
         return res.render(path.join(config.SERGIS_AUTHOR, "index.html"), {
             // lib files
-            "stylesheet.css": config.HTTP_PREFIX + "/author-lib/stylesheets/stylesheet.css",
-            "es6-promise-2.0.0.min.js": config.HTTP_PREFIX + "/author-lib/javascripts/es6-promise-2.0.0.min.js",
-            "localforage.nopromises.min.js": config.HTTP_PREFIX + "/author-lib/javascripts/localforage.nopromises.min.js",
+            "stylesheet.css": config.AUTHOR_STATIC + "/stylesheets/stylesheet.css",
+            "es6-promise-2.0.0.min.js": config.AUTHOR_STATIC + "/javascripts/es6-promise-2.0.0.min.js",
+            "localforage.nopromises.min.js": config.AUTHOR_STATIC + "/javascripts/localforage.nopromises.min.js",
             "author-js-src": config.HTTP_PREFIX + "/static/author.js",
 
             "no-minified": false,
@@ -98,8 +98,8 @@ var pageHandlers = {
                 test: 'var SERGIS_JSON_DATA = ' + JSON.stringify(jsondata).replace(/<\/script>/g, '</scr" + "ipt>') + ';',
 
                 // lib files
-                "style.css": config.HTTP_PREFIX + "/client-lib/style.css",
-                "es6-promise-2.0.0.min.js": config.HTTP_PREFIX + "/client-lib/es6-promise-2.0.0.min.js",
+                "style.css": config.CLIENT_STATIC + "/style.css",
+                "es6-promise-2.0.0.min.js": config.CLIENT_STATIC + "/es6-promise-2.0.0.min.js",
                 "client-js-src": config.HTTP_PREFIX + "/static/client.local.js",
                 "no-minified": false
             });

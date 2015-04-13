@@ -222,7 +222,7 @@ function init() {
         app.engine("html", function (path, data, callback) {
             if (!data) data = {};
             if (!data.__set) data.__set = {};
-            data["style-simple.css"] = config.HTTP_PREFIX + "/client-lib/style-simple.css";
+            data["style-simple.css"] = config.CLIENT_STATIC + "/style-simple.css";
             data.__set.renderStatic = true;
             return indieSet.__express(path, data, function (err, data) {
                 if (err) return callback(err);
@@ -236,6 +236,7 @@ function init() {
         app.engine("ejs", function (path, data, callback) {
             if (!data) data = {};
             data["httpPrefix"] = config.HTTP_PREFIX;
+            data["CLIENT_STATIC"] = config.CLIENT_STATIC;
             return ejs.renderFile(path, data, callback);
         });
 

@@ -130,6 +130,15 @@ var config = module.exports = {
     TEMPLATES_DIR: path.join(__dirname, "templates"),
     
     /**
+     * Alternate HTTP path for the SerGIS Client static files
+     * (i.e. the sergis-client/lib).
+     * If not provided (empty string), defaults to /client-lib/ (served through
+     * node.js). This is set at the bottom of this file.
+     * @type {string}
+     */
+    CLIENT_STATIC: "",
+    
+    /**
      * sergis-client directory.
      * Used for serving "lib" (at /client-lib/...) and using index.html.
      * @type {string}
@@ -151,6 +160,15 @@ var config = module.exports = {
      */
     CLIENT_RESOURCES_JS_LOCAL: ["main.js", "frontends/arcgis.js",
                                 "backends/game-common.js", "backends/local.js"],
+    
+    /**
+     * Alternate HTTP path for the SerGIS Author static files
+     * (i.e. the sergis-author directory).
+     * If not provided (empty string), defaults to /author-lib/ (served through
+     * node.js). This is set at the bottom of this file.
+     * @type {string}
+     */
+    AUTHOR_STATIC: "",
     
     /**
      * sergis-author directory.
@@ -205,3 +223,11 @@ var config = module.exports = {
      */
     argdata: argdata
 };
+
+// Check CLIENT_STATIC
+if (!config.CLIENT_STATIC) config.CLIENT_STATIC = config.HTTP_PREFIX + "/client-lib/";
+if (config.CLIENT_STATIC.substr(-1) == "/") config.CLIENT_STATIC = config.CLIENT_STATIC.slice(0, -1);
+
+// Check AUTHOR_STATIC
+if (!config.AUTHOR_STATIC) config.AUTHOR_STATIC = config.HTTP_PREFIX + "/author-lib/";
+if (config.AUTHOR_STATIC.substr(-1) == "/") config.AUTHOR_STATIC = config.AUTHOR_STATIC.slice(0, -1);
