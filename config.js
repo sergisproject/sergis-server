@@ -39,6 +39,7 @@ var args = {};
  * @type Array.<Array.<String>>
  */
 var argdata = [
+    ["start", "Start both the HTTP server and the socket server."],
     ["start-http-server", "Start the HTTP server."],
     ["start-socket-server", "Start the socket server."],
     ["http-server-origin=http://hostname:post", "Origin for the HTTP server (if separate from the socket server)"],
@@ -78,13 +79,13 @@ var config = module.exports = {
      * Whether to start the HTTP server.
      * @type {boolean}
      */
-    ENABLE_HTTP_SERVER: !!args["start-http-server"],
+    ENABLE_HTTP_SERVER: !!(args["start-http-server"] || args["start"]),
     
     /**
      * Whether to start the WebSockets (socket.io) server.
      * @type {boolean}
      */
-    ENABLE_SOCKET_SERVER: !!args["start-socket-server"],
+    ENABLE_SOCKET_SERVER: !!(args["start-socket-server"] || args["start"]),
     
     /**
      * Origin for the HTTP server.
