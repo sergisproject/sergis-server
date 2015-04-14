@@ -157,7 +157,7 @@ exports.migrateFromPlainMongo = function () {
     
     return Promise.resolve(models.User.find({}).exec()).then(function (users) {
         users.forEach(function (u) {
-            userIdsByName[u._id] = u.username_lowercase;
+            userIdsByName[u.username_lowercase] = u._id;
         });
     }).then(function () {
         return new Promise(function (resolve, reject) {
