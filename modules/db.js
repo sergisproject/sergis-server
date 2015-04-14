@@ -154,10 +154,14 @@ exports.getSessionByID = function (sessionID) {
 exports.migrateFromPlainMongo = function () {
     var organizationIdsByName = {};
     var userIdsByName = {};
-    var gameIdsByName = {};
     
-    return Promise.resolve().then(function () {
+    return Promise.resolve(models.User.find({}).exec()).then(function (users) {
+        users.forEach(function (u) {
+            userIdsByName[u._id] = u.username_lowercase;
+        });
+    }).then(function () {
         return new Promise(function (resolve, reject) {
+            console.log("DROPPING COLLECTION authorgames: " + db.collection("authorgames").drop());
             //
             // Migrate sergis-author-games
             //
@@ -169,7 +173,7 @@ exports.migrateFromPlainMongo = function () {
                     var newItem = new models.AuthorGame({
                         name: item.gameName,
                         name_lowercase: item.gameName.toLowerCase(),
-                        owner: userIdsByName[item.gameOwner],
+                        owner: userIdsByName[item.gameOwner.toLowerCase()],
                         jsondata: item.jsondata
                     });
                     promises.push(newItem.save());
@@ -178,10 +182,6 @@ exports.migrateFromPlainMongo = function () {
             });
         });
     }).then(function () {
-        return {
-            organizations: organizationIdsByName,
-            users: userIdsByName,
-            games: gameIdsByName
-        };
+        return "done";
     });
 };
