@@ -71,11 +71,17 @@ module.exports = function (mongoose) {
                 return reject();
             }
             
+            // Re-get the game with the JSON data
+            resolve(db.models.Game.findById(game._id)
+                          .select("+jsondata")
+                          .lean(true)
+                          .exec());
+        }).then(function (game) {
             var token = Number(randInt(10) + "" + (new Date()).getTime() + "" + randInt(10)).toString(36);
             var gameToken = new GameToken({
                 token: token,
-                game: game,
-                user: user,
+                game: game._id,
+                user: user._id,
                 state: {
                     gameName: game.name,
                     // Default state
