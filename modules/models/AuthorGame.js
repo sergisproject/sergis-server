@@ -34,7 +34,6 @@ module.exports = function (mongoose) {
         name_lowercase: {
             type: String,
             required: true,
-            unique: true,
             validator: function (value) {
                 return config.URL_SAFE_REGEX.test(value);
             }
