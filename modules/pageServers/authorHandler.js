@@ -79,6 +79,7 @@ var pageHandlers = {
 
         db.models.AuthorGame.findById(req.body.id)
                             .select("jsondata")
+                            .lean(true)
                             .exec().then(function (game) {
             if (!game) {
                 // AHH! We don't exist!
@@ -132,6 +133,7 @@ var pageHandlers = {
             // Get the JSON data for the game
             db.models.AuthorGame.findById(req.body.authorGameID)
                                 .select("jsondata")
+                                .lean(true)
                                 .exec().then(function (game) {
                 if (!game) {
                     // AHH! We don't exist!
@@ -159,7 +161,6 @@ var pageHandlers = {
             }
             
             db.models.AuthorGame.findById(req.body.id)
-                                .select("name")
                                 .exec().then(function (game) {
                 if (!game) {
                     // AHH! We don't exist!

@@ -38,7 +38,7 @@ var pageHandlers = {
         var user;
         // Get the game owner
         db.models.User.findOne({username_lowercase: username.toLowerCase()})
-                      .select("")
+                      .select("_id")
                       .exec().then(function (_user) {
             user = _user;
             if (!user) {
@@ -49,7 +49,7 @@ var pageHandlers = {
             
             // Get the game
             return db.models.Game.findOne({owner: user._id, name_lowercase: gameName.toLowerCase()})
-                                 .select("")
+                                 .select("_id")
                                  .exec();
         }).then(function (game) {
             if (!game) {
@@ -275,7 +275,14 @@ var pageHandlers = {
                     // Lolz, this one's funny (we don't call next())
                     res.set("Content-Type", "application/json");
                     res.set("Content-Disposition", "attachment; filename=" + game.name + ".json");
-                    res.send(game.jsondata);
+                    db.models.Game.findById(game._id)
+                                  .select("jsondata")
+                                  .lean(true)
+                                  .exec().then(function (game) {
+                        res.send(game.jsondata);
+                    }, function (err) {
+                        next(err);
+                    });
                     return;
                 case "delete-game":
                     game.remove().then(function () {

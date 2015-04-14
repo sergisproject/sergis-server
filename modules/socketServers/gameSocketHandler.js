@@ -116,7 +116,11 @@ module.exports = function (socket, next) {
     socket.on("game", function (token, func, args, callback) {
         if (gameCommon.hasOwnProperty(func) && typeof gameCommon[func] == "function") {
             var gameToken, data;
-            Promise.resolve(db.models.GameToken.findOne({token: token}).populate("game").exec()).then(function (_gameToken) {
+            Promise.resolve(db.models.GameToken.findOne({token: token}).populate({
+                path: "game",
+                select: "+jsondata",
+                options: {lean: true}
+            }).exec()).then(function (_gameToken) {
                 gameToken = _gameToken;
                 if (!gameToken) {
                     callback(false, "Invalid token");

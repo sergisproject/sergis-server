@@ -37,7 +37,7 @@ module.exports = function (socket, next) {
     // init handler
     socket.on("init", function (sessionID, callback) {
         if (!sessionID) {
-            callback(false);
+            callback(false, "Invalid session.");
             return;
         }
         
@@ -45,7 +45,7 @@ module.exports = function (socket, next) {
         db.getSessionByID(sessionID).then(function (session) {
             if (!session || !session.username) {
                 // Nothing useful in the session
-                callback(false);
+                callback(false, "Invalid session.");
                 return;
             }
             
@@ -76,7 +76,6 @@ function initHandlers(socket, username) {
         // getGameList function; args: [] --> Object<string, Date>
         socket.on("getGameList", function (args, callback) {
             db.models.AuthorGame.find({owner: user._id})
-                                .select("name lastModified")
                                 .exec().then(function (games) {
                 var gameList = {};
                 games.forEach(function (game) {
@@ -94,6 +93,7 @@ function initHandlers(socket, username) {
             var gameName = args[0];
             db.models.AuthorGame.findOne({owner: user._id, name_lowercase: gameName.toLowerCase()})
                                 .select("jsondata")
+                                .lean(true)
                                 .exec().then(function (game) {
                 callback(!!game.jsondata, game.jsondata || undefined);
             }, function (err) {
@@ -107,7 +107,7 @@ function initHandlers(socket, username) {
             var gameName = args[0], jsondata = args[1];
             // Try looking it up
             db.models.AuthorGame.findOne({owner: user._id, name_lowercase: gameName.toLowerCase()})
-                                .select("")
+                                .select("_id")
                                 .exec().then(function (game) {
                 if (game) {
                     // Update the required fields
@@ -136,7 +136,7 @@ function initHandlers(socket, username) {
         socket.on("renameGame", function (args, callback) {
             var gameName = args[0], newGameName = args[1];
             db.models.AuthorGame.findOne({owner: user._id, name_lowercase: gameName.toLowerCase()})
-                                .select("")
+                                .select("_id")
                                 .exec().then(function (game) {
                 game.name = newGameName;
                 game.name_lowercase = newGameName.toLowerCase();
@@ -184,9 +184,9 @@ function initHandlers(socket, username) {
             var gameName = args[0];
             // Make sure the game exists
             db.models.AuthorGame.findOne({owner: user._id, name_lowercase: gameName.toLowerCase()})
-                                .select("")
+                                .select("_id")
                                 .exec().then(function (game) {
-                if (!game) return callback(false);
+                if (!game) return callback(false, "Invalid game name.");
                 // Okay, it's good
                 callback(true, {
                     url: config.HTTP_PREFIX + "/author/" + type,

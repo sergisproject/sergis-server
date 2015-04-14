@@ -49,7 +49,8 @@ module.exports = function (mongoose) {
         
         // The JSON data
         jsondata: {
-            type: Schema.Types.Mixed
+            type: Schema.Types.Mixed,
+            select: false
         },
         
         // The date that it was created

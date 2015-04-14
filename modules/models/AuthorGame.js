@@ -41,7 +41,8 @@ module.exports = function (mongoose) {
         
         // The JSON data for the game
         jsondata: {
-            type: Schema.Types.Mixed
+            type: Schema.Types.Mixed,
+            select: false
         },
         
         // The date that it was created
