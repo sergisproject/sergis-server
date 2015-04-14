@@ -43,14 +43,14 @@ module.exports = function (socket, next) {
         
         // Since we have a session ID, try looking up username from that
         db.getSessionByID(sessionID).then(function (session) {
-            if (!session || !session.username) {
+            if (!session || !session.user_id) {
                 // Nothing useful in the session
                 callback(false, "Invalid session.");
                 return;
             }
             
             // Initialize the rest of the handlers
-            initHandlers(socket, session.username);
+            initHandlers(socket, session.user_id);
             callback(true);
         }, function (err) {
             reportError(err);
@@ -66,8 +66,8 @@ module.exports = function (socket, next) {
 /**
  * Initialize all of the game storage-related handlers for a socket instance.
  */
-function initHandlers(socket, username) {
-    db.models.User.findOne({username_lowercase: username.toLowerCase()}, function (err, user) {
+function initHandlers(socket, user_id) {
+    db.models.User.findById(user_id, function (err, user) {
         if (!user) {
             // =(
             return;
