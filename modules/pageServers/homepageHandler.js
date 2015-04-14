@@ -92,23 +92,6 @@ router.use(function (req, res, next) {
 router.get("/logout", pageHandlers.logoutGet);
 router.get("", pageHandlers.homepageGet);
 
-
-
-////////////////////////////////////////////////////////////////////////////////
-// TODO: TEMPORARY MIGRATION TOOL
-router.get("/MONGO_MONGOOSE_MIGRATE", function (req, res, next) {
-    db.migrateFromPlainMongo().then(function (results) {
-        res.header("Content-Type", "text/plain");
-        res.end("SUCCESS:\n\n" + JSON.stringify(results, null, 4));
-    }).catch(function (err) {
-        res.header("Content-Type", "text/plain");
-        res.end("ERROR:\n\n" + err);
-    });
-});
-////////////////////////////////////////////////////////////////////////////////
-
-
-
 // 404's and 405's for things not handles by anything else
 router.get("*", function (req, res, next) {
     pageHandlers.error(req, res, 404);
