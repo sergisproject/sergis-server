@@ -99,9 +99,9 @@ module.exports = function (mongoose) {
                     displayName: user ? user.name : undefined
                 }
             });
-            resolve(gameToken.save().then(function () {
+            return gameToken.save().then(function () {
                 return gameToken;
-            }));
+            });
         });
     };
     
