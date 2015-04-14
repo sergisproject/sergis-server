@@ -21,7 +21,6 @@ var path = require("path");
 // NOTE: require'd below if needed:
 // express, express-sessions, connect-mongo, http, socket.io, cookie-parser,
 // coffee-script/register, indie-set, ejs
-var MongoClient = require("mongodb").MongoClient;
 
 // our modules
 var config = require("./config");
