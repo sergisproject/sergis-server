@@ -6,7 +6,7 @@
         <li><%= status %></li>
     <% }) %></ul><% } %>
     
-    <% if (me.isAdmin) { %>
+    <% if (me.isFullAdmin) { %>
     <form action="" method="POST">
         <input type="hidden" name="action" value="create-organization">
         <h2>Create Organization</h2>
@@ -22,13 +22,13 @@
         <h2>Create User<% if (organization) { %> in <%= organization %><% } %></h2>
         <table><tbody>
             <tr><td>Username: </td><td><input type="text" name="username" required pattern="<%= usernamePattern %>"><br><small>Must be unique, consisting only of letters, digits, and the following characters: <code><%= usernameCharacters %></code></small></td></tr>
-            <tr><td>Display Name: </td><td><input type="text" name="displayName" required></td></tr>
+            <tr><td>Display Name: </td><td><input type="text" name="name" required></td></tr>
             <tr><td>Password: </td><td><input type="text" id="new-user-password" name="password" autocomplete="off" required> <button class="password-generator" data-input-elem="new-user-password" data-message-elem="new-user-password-message" style="display: none;">Generate Password</button><br><small id="new-user-password-message"></small></td></tr>
-            <% if (me.isAdmin) { %>
+            <% if (me.isFullAdmin) { %>
             <tr><td>Organization: </td><td><select name="organization">
                 <option value="" selected>(none)</option>
                 <% organizations.forEach(function (org) { %>
-                <option value="<%= org %>"><%= org %></option>
+                <option value="<%= org._id %>"><%= org.name %></option>
                 <% }) %>
             </select> <small>(optional)</small></td></tr>
             <tr><td>Admin Status: </td><td><select name="admin">
@@ -50,7 +50,7 @@
     <tr>
         <th>Username</th>
         <th>Display Name</th>
-        <% if (me.isAdmin) { %>
+        <% if (me.isFullAdmin) { %>
         <th>Organization</th>
         <th>Admin Status</th>
         <% } %>
@@ -63,8 +63,8 @@
     <% users.forEach(function (user) { %>
     <tr>
         <td><i><%= user.username %></i></td>
-        <td><%= user.displayName %></td>
-        <% if (me.isAdmin) { %>
+        <td><%= user.name %></td>
+        <% if (me.isFullAdmin) { %>
         <td>
             <form action="" method="POST">
                 <input type="hidden" name="action" value="set-user-organization">
@@ -72,7 +72,7 @@
                 <select name="organization" class="formcheckers-select-auto-submit">
                     <option value=""<% if (!user.organization) { %> selected<% } %>>(none)</option>
                     <% organizations.forEach(function (org) { %>
-                    <option value="<%= org %>"<% if (user.organization==org) { %> selected<% } %>><%= org %></option>
+                    <option value="<%= org._id %>"<% if (user.organization && user.organization.equals(org)) { %> selected<% } %>><%= org.name %></option>
                     <% }) %>
                 </select>
                 <input type="submit" value="Update">
@@ -84,9 +84,9 @@
                 <input type="hidden" name="action" value="set-user-admin">
                 <input type="hidden" name="username" value="<%= user.username %>">
                 <select name="admin" class="formcheckers-select-auto-submit">
-                    <option value="nope"<% if (!user.isAdmin && !user.isOrganizationAdmin) { %> selected<% } %>>Not Admin</option>
-                    <option value="kinda"<% if (!user.isAdmin && user.isOrganizationAdmin) { %> selected<% } %>>Organization Admin</option>
-                    <option value="yup"<% if (user.isAdmin) { %> selected<% } %>>Full Admin</option>
+                    <option value="nope"<% if (!user.isFullAdmin && !user.isOrganizationAdmin) { %> selected<% } %>>Not Admin</option>
+                    <option value="kinda"<% if (!user.isFullAdmin && user.isOrganizationAdmin) { %> selected<% } %>>Organization Admin</option>
+                    <option value="yup"<% if (user.isFullAdmin) { %> selected<% } %>>Full Admin</option>
                 </select>
                 <input type="submit" value="Update">
             </form>
@@ -94,9 +94,9 @@
         </td>
         <% } %>
         <td><a href="<%= httpPrefix %>/account/admin/<%= user.username %>">View Details</a><br><a href="<%= httpPrefix %>/games/<%= user.username %>">View Games</a></td>
-        <% if (me.username != user.username && !user.isAdmin) { %>
+        <% if (me.username != user.username && !user.isFullAdmin) { %>
         <td>
-            <form action="" method="POST" class="formcheckers-delete-check" data-name="<%= user.displayName %>">
+            <form action="" method="POST" class="formcheckers-delete-check" data-name="<%= user.name %>">
                 <input type="hidden" name="action" value="delete-user">
                 <input type="hidden" name="username" value="<%= user.username %>">
                 <input type="submit" value="Delete">

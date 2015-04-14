@@ -37,7 +37,7 @@ var pageHandlers = {
      */
     authorGet: function (req, res, next) {
         // Render page
-        return res.render(path.join(config.SERGIS_AUTHOR, "index.html"), {
+        res.render(path.join(config.SERGIS_AUTHOR, "index.html"), {
             // lib files
             "stylesheet.css": config.AUTHOR_STATIC + "/stylesheets/stylesheet.css",
             "es6-promise-2.0.0.min.js": config.AUTHOR_STATIC + "/javascripts/es6-promise-2.0.0.min.js",
@@ -69,33 +69,30 @@ var pageHandlers = {
      */
     previewPost: function (req, res, next) {
         // Make sure the game name is good
-        if (!req.body.gameName) {
+        if (!req.body.id) {
             req.error = {
                 number: 400,
-                details: "Invalid gameName."
+                details: "Invalid game ID."
             };
             return next("route");
         }
 
-        db.author.get(req.user.username, req.body.gameName, function (err, jsondata) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
-            if (!jsondata) {
+        db.models.AuthorGame.findById(req.body.id)
+                            .select("jsondata")
+                            .exec().then(function (game) {
+            if (!game) {
                 // AHH! We don't exist!
                 req.error = {
                     number: 400,
-                    details: "Invalid gameName."
+                    details: "Invalid game ID."
                 };
                 return next("route");
             }
-
+            
             // Render page
-            return res.render(path.join(config.SERGIS_CLIENT, "index.html"), {
+            res.render(path.join(config.SERGIS_CLIENT, "index.html"), {
                 // NOTE: `test` is written to a JS block!
-                test: 'var SERGIS_JSON_DATA = ' + JSON.stringify(jsondata).replace(/<\/script>/g, '</scr" + "ipt>') + ';',
+                test: 'var SERGIS_JSON_DATA = ' + JSON.stringify(game.jsondata).replace(/<\/script>/g, '</scr" + "ipt>') + ';',
 
                 // lib files
                 "style.css": config.CLIENT_STATIC + "/style.css",
@@ -103,6 +100,8 @@ var pageHandlers = {
                 "client-js-src": config.HTTP_PREFIX + "/static/client.local.js",
                 "no-minified": false
             });
+        }, function (err) {
+            next(err);
         });
     },
     
@@ -121,67 +120,66 @@ var pageHandlers = {
     publishPost: function (req, res, next) {
         // If we're coming from the publish page
         if (req.body.action == "create-game") {
-            // Make sure that we have a valid game name
-            if (!req.body.authorGameName) {
+            // Make sure that we have a valid game ID
+            if (!req.body.authorGameID) {
                 req.error = {
                     number: 400,
-                    details: "Invalid authorGameName."
+                    details: "Invalid authorGameID."
                 };
                 return next("route");
             }
             
             // Get the JSON data for the game
-            db.author.get(req.user.username, req.body.authorGameName, function (err, jsondata) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
-                if (!jsondata) {
+            db.models.AuthorGame.findById(req.body.authorGameID)
+                                .select("jsondata")
+                                .exec().then(function (game) {
+                if (!game) {
                     // AHH! We don't exist!
                     req.error = {
                         number: 400,
-                        details: "Invalid authorGameName."
+                        details: "Invalid gameAuthorID."
                     };
                     return next("route");
                 }
                 
                 // Move control to accounts.createGame to check the data and create the game
-                accounts.createGame(req, res, next, req.user, req.body.gameName, req.body.access, jsondata, true);
+                accounts.createGame(req, res, next, req.user, req.body.gameName, req.body.access, game.jsondata, true);
+            }, function (err) {
+                next(err);
             });
         } else {
             // We must be coming right from the author (not the publish page)
-            // Make sure the game name is good
-            if (!req.body.gameName) {
+            // Make sure the game ID is good
+            if (!req.body.id) {
                 req.error = {
                     number: 400,
-                    details: "Invalid gameName."
+                    details: "Invalid game ID."
                 };
                 return next("route");
             }
             
-            db.author.get(req.user.username, req.body.gameName, function (err, jsondata) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
-                if (!jsondata) {
+            db.models.AuthorGame.findById(req.body.id)
+                                .select("name")
+                                .exec().then(function (game) {
+                if (!game) {
                     // AHH! We don't exist!
                     req.error = {
                         number: 400,
-                        details: "Invalid gameName."
+                        details: "Invalid game ID."
                     };
                     return next("route");
                 }
 
                 // Render the publish page
-                return res.render("author-publish.ejs", {
+                res.render("author-publish.ejs", {
                     me: req.user,
-                    authorGameName: req.body.gameName,
+                    authorGameID: game._id,
+                    authorGameName: game.name,
                     gameNamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
                     gameNameCharacters: config.URL_SAFE_REGEX_CHARS
                 });
+            }, function (err) {
+                next(err);
             });
         }
     },
@@ -191,7 +189,7 @@ var pageHandlers = {
      */
     publishDone: function (req, res, next) {
         // Render a Congrats page
-        return res.render("author-publish-done.ejs", {
+        res.render("author-publish-done.ejs", {
             me: req.user,
             gameName: req.body.gameName
         });

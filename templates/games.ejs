@@ -2,7 +2,7 @@
 
 <section>
     <h2><% if (me && me.username == user.username) { %>My Games
-    <% } else { %>Games by <%= user.displayName %><% } %></h2>
+    <% } else { %>Games by <%= user.name %><% } %></h2>
 
     <% gamesByAccess.forEach(function (gameObj) { %>
     <h3 class="has-description"><%= gameObj.name %></h3>
@@ -24,13 +24,13 @@
     <tbody>
     <% gameObj.games.forEach(function (game) { %>
     <tr>
-        <td><a href="<%= httpPrefix %>/games/<%= user.username %>/<%= game.gameName %>" title="Play <%= game.gameName %>"><b><%= game.gameName %></b></a></td>
+        <td><a href="<%= httpPrefix %>/games/<%= user.username %>/<%= game.name %>" title="Play <%= game.name %>"><b><%= game.name %></b></a></td>
         <% if (canEditGames) { %>
         <td>
             <form action="" method="POST">
                 <input type="hidden" name="action" value="set-game-access">
                 <input type="hidden" name="username" value="<%= user.username %>">
-                <input type="hidden" name="gameName" value="<%= game.gameName %>">
+                <input type="hidden" name="game" value="<%= game._id %>">
                 <select name="access" class="formcheckers-select-auto-submit">
                     <option value="public"<% if (game.access == "public") { %> selected<% } %>>Public</option>
                     <% if (user.organization || game.access == "organization") { %><option value="organization"<% if (game.access == "organization") { %> selected<% } %>>Organization</option><% } %>
@@ -43,13 +43,13 @@
             <form action="" method="POST" target="_blank">
                 <input type="hidden" name="action" value="download-game">
                 <input type="hidden" name="username" value="<%= user.username %>">
-                <input type="hidden" name="gameName" value="<%= game.gameName %>">
+                <input type="hidden" name="game" value="<%= game._id %>">
                 <input type="submit" value="Download JSON">
             </form>
-            <form action="" method="POST" class="formcheckers-delete-check" data-name="<%= game.gameName %>">
+            <form action="" method="POST" class="formcheckers-delete-check" data-name="<%= game.name %>">
                 <input type="hidden" name="action" value="delete-game">
                 <input type="hidden" name="username" value="<%= user.username %>">
-                <input type="hidden" name="gameName" value="<%= game.gameName %>">
+                <input type="hidden" name="game" value="<%= game._id %>">
                 <input type="submit" value="Delete Game">
             </form>
         </td>

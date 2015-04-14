@@ -48,7 +48,7 @@ td {
     <ul>
         <li><a href="<%= httpPrefix %>/games/<%= me.username %>">My Games</a></li>
         <li><a href="<%= httpPrefix %>/account">My Account</a></li>
-        <% if (me.isAdmin || me.isOrganizationAdmin) { %><li><a href="<%= httpPrefix %>/account/admin">Admin</a></li><% } %>
+        <% if (me.isAnyAdmin) { %><li><a href="<%= httpPrefix %>/account/admin">Admin</a></li><% } %>
         <li><a href="<%= httpPrefix %>/logout">Log Out</a></li>
     </ul>
     <% } %>

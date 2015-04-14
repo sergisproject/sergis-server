@@ -27,31 +27,33 @@ var accounts = module.exports = {
      * Populate req.user if a user is logged in.
      *
      * Preconditions:
-     *     The username of a logged-in user is in req.session.username if a
-     *     user is logged in.
+     *     The user ID of a logged-in user is in req.session.user_id if a user
+     *     is logged in.
      *
      * Postconditions:
      *     req.user is set to the User if a user is logged in.
      */
     checkUser: function (req, res, next) {
-        if (req.session && req.session.username) {
-            db.users.get(req.session.username, function (err, user) {
-                if (err || !user) {
-                    // Bad username in session!
-                    // Destroy the session
-                    req.session.destroy(function (err) {
-                        if (err){
-                            console.error("ERROR DESTROYING SESSION: ", err.stack);
-                        }
-                        // Now, we can just continue, since the login page will show if needed
-                        return next();
-                    });
-                } else {
-                    // All good; store the user with the request.
-                    req.user = user;
-                    // And, continue on our merry way
+        if (req.session && req.session.user_id) {
+            db.models.User.findById(req.session.user_id)
+                          .populate("organization")
+                          .exec().then(function (user) {
+                if (!user) return Promise.reject("Invalid user ID in session.");
+                
+                // All good; store the user with the request.
+                req.user = user;
+                // And, continue on our merry way
+                return next();
+            }).then(null, function (err) {
+                // Bad username in session!
+                // Destroy the session
+                req.session.destroy(function (err) {
+                    if (err){
+                        console.error("ERROR DESTROYING SESSION: ", err.stack);
+                    }
+                    // Now, we can just continue, since the login page will show if needed
                     return next();
-                }
+                });
             });
         } else {
             // No user
@@ -78,8 +80,8 @@ var accounts = module.exports = {
                 username: "TempAdmin",
                 username_lowercase: "tempadmin",
                 encryptedPassword: "",
-                displayName: "WARNING: Set ASSUME_ADMIN to false in config.js",
-                isAdmin: true
+                name: "WARNING: Set ASSUME_ADMIN to false in config.js",
+                isFullAdmin: true
             };
         }
 
@@ -124,30 +126,28 @@ var accounts = module.exports = {
     requireOtherAccountAccess: function (req, res, next) {
         var otherUsername = req.params.username;
         // Let's get the data on the account that we're trying to open
-        db.users.get(otherUsername, function (err, otherUser) {
-            if (err) {
-                req.error = {number: 500};
+        db.models.User.findOne({username_lowercase: otherUsername.toLowerCase()})
+                      .populate("organization")
+                      .exec().then(function (otherUser) {
+            if (!otherUser) {
+                // The other user doesn't exist!
+                // Send a 404 if we're admin, 403 otherwise.
+                req.error = {number: user.isFullAdmin ? 404 : 403};
                 return next("route");
             }
             
-            // Now, are we sure that this other user exists?
-            if (!otherUser) {
-                // Nope! Send a 404 if we're admin, 403 otherwise.
-                req.error = {number: user.isAdmin ? 404 : 403};
-                return next("route");
-            }
-
             // Alrighty, now, do we have permission to access him?
-            if (req.user.username !== otherUser.username && !req.user.isAdmin &&
-                !(req.user.isOrganizationAdmin && req.user.organization === otherUser.organization)) {
-                // Not allowed! Send along a good ol' 403
+            if (!req.user.canModifyUser(otherUser)) {
+                // Not allowed Send along a good ol' 403
                 req.error = {number: 403};
                 return next("route");
             }
-
+            
             // Alrighty, finally, yes, we do have permission to access this guy, no matter who he is
             req.otherUser = otherUser;
             return next();
+        }).then(null, function (err) {
+            return next(err);
         });
     },
     
@@ -190,53 +190,73 @@ var accounts = module.exports = {
                 nostyle: nostyle
             });
         }
-
-        // Next, make sure the game name isn't taken
-        db.games.get(user.username, gameName, function (err, game) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
+        
+        // Now, check the JSON game data
+        if (!jsondata) {
+            var jsonerr;
+            try {
+                jsondata = JSON.parse(req.files.jsonfile.buffer.toString());
+            } catch (err) {
+                jsondata = null;
+                jsonerr = err;
             }
-
-            if (game) {
-                // Ahh! Game with this gameOwner/gameName combo already exists!
+            if (!jsondata) {
                 return res.render("error-back.ejs", {
                     title: "SerGIS Account - " + user.username,
                     subtitle: "Error Creating Game",
-                    details: "This account already has a game named \"" + gameName + "\". Game names must be unique.",
+                    details: "Invalid SerGIS JSON Game Data file.\n\n" + (jsonerr ? jsonerr.name + ": " + jsonerr.message : ""),
                     nostyle: nostyle
                 });
             }
+        }
 
-            // Now, check the JSON game data
-            if (!jsondata) {
-                var jsonerr;
-                try {
-                    jsondata = JSON.parse(req.files.jsonfile.buffer.toString());
-                } catch (err) {
-                    jsondata = null;
-                    jsonerr = err;
-                }
-                if (!jsondata) {
-                    return res.render("error-back.ejs", {
-                        title: "SerGIS Account - " + user.username,
-                        subtitle: "Error Creating Game",
-                        details: "Invalid SerGIS JSON Game Data file.\n\n" + (jsonerr ? jsonerr.name + ": " + jsonerr.message : ""),
-                        nostyle: nostyle
-                    });
-                }
+        // Next, try to make the game
+        var newGame = new db.models.Game({
+            name: gameName,
+            name_lowercase: gameName.toLowerCase(),
+            owner: user,
+            access: access,
+            jsondata: jsondata
+        });
+        newGame.save().then(function () {
+            // Hooray, all done!
+            req.statusMessages = [gameName + " created successfully!"];
+            return next();
+        }, function (err) {
+            // Check the error that we gotst
+            if (err && err.name == "ValidationError") {
+                // Ahh! ValidationError!
+                return res.render("error-back.ejs", {
+                    title: "SerGIS Account - " + user.username,
+                    subtitle: "Error Creating Game",
+                    details: "Error creating game \"" + gameName + "\". Game names must be unique.",
+                    nostyle: nostyle
+                });
+            } else {
+                // Some other error; bubble up
+                return next(err);
             }
-
-            // Okay, everything should be good now!
-            db.games.create(user.username, gameName, access, jsondata, function (err, game) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
-                req.statusMessages = [game ? (gameName + " created successfully!") : "Error creating game."];
-                return next();
-            });
+        });
+    },
+    
+    /**
+     * Delete a user and all their associated games.
+     *
+     * @param {User} user - The user to remove.
+     *
+     * @return {Promise}
+     */
+    deleteUser: function (user) {
+        // Make sure the user isn't a full admin
+        if (user.isFullAdmin) {
+            // AHH!
+            return Promise.reject("User is a Full Admin.");
+        }
+        
+        // First, delete any games owned by this user
+        return Promise.resolve(db.models.Game.remove({owner: user._id}).exec()).then(function () {
+            // Next, delete the user
+            return user.remove();
         });
     }
 };
@@ -247,7 +267,7 @@ var pageHandlers = {
      * Handle GET requests to the login page.
      */
     loginGet: function (req, res, next, loginErrorMsg) {
-        return res.render("account-login.ejs", {
+        res.render("account-login.ejs", {
             error: loginErrorMsg || false
         });
     },
@@ -262,46 +282,40 @@ var pageHandlers = {
         }
         
         // Kill any previous account that the user might have been logged in to
-        req.session.username = undefined;
+        req.session.user_id = undefined;
         req.user = undefined;
         // See if it's valid
-        db.users.check(req.body.username, req.body.password, function (err, user) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-
-            if (user) {
-                // Yay! All correct!
-                // Store the username in the session
-                req.session.username = user.username;
-
-                // Store the user with the request
-                req.user = user;
-                
-                // Check if it was a POST request before
-                var postData = req.session.preLoginPostData;
-                if (postData) {
-                    // Re-add any pre-login POST data
-                    for (var i = 0; i < postData.length; i++) {
-                        req.body[postData[i][0]] = postData[i][1];
-                    }
-                    req.session.preLoginPostData = undefined;
-                    
-                    // Continue on our merry way (no redirecting, since we need it to be POST anyway)
-                    return next();
-                }
-
-                // Redirect to wherever we were before login
-                res.redirect(req.baseUrl + req.path);
-            } else if (user === false) {
+        db.models.User.checkLoginInfo(req.body.username, req.body.password).then(function (user) {
+            if (!user) {
                 // Bad username/password
-                accounts.loginGet(req, res, next, "Username or password incorrect.");
-            } else {
-                // Error!
-                req.error = {number: 500};
-                return next("route");
+                pageHandlers.loginGet(req, res, next, "Username or password incorrect.");
+                return;
             }
+            
+            // Yay, all correct!
+            // Store the user ID in the session
+            req.session.user_id = user._id;
+            
+            // Store the user with the request
+            req.user = user;
+            
+            // Check if it was a POST request before
+            var postData = req.session.preLoginPostData;
+            if (postData) {
+                // Re-add any pre-login POST data
+                for (var i = 0; i < postData.length; i++) {
+                    req.body[postData[i][0]] = postData[i][1];
+                }
+                req.session.preLoginPostData = undefined;
+
+                // Continue on our merry way (no redirecting, since we need it to be POST anyway)
+                return next();
+            }
+
+            // Redirect to wherever we were before login
+            res.redirect(req.baseUrl + req.path);
+        }).then(null, function (err) {
+            next(err);
         });
     }
 };

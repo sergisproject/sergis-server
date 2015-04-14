@@ -10,19 +10,18 @@ SerGIS Server has a few node.js dependencies; to install these, run `npm install
 
 Also, SerGIS Server requires a running [MongoDB](https://www.mongodb.org/) server.
 
+Before running the server, check the config file (`config.js`), and change any relevant variables. Then, run `node server.js` to see what you can do!
+
 ## TODOs
 
 - Add ability to sort the tables of games, users, etc.
 - As Full Admin, on the Admin page, add ability to filter users by organization.
-- Add ability to change the name of existing games (if either we own the game, or we're an admin)
-- Add ability to edit existing games (if either we own the game, or if we're an admin)
 - For the "Publish" page (that's shown in the Author), give the user 2 radio button choices:
       [*]  Create new game: ____________
       [ ]  Overwrite existing game: [--dropdown-w/-existing-games--]
 - Add new access level: "Unlisted" (only shows up in game listings for game owner and admins, but anyone with the link can access)
-- Use Mongoose and Promises for db stuff
-    - Find out when node started supporting promises and require at least that version in package.json
 - Allow game owners and admins to change names of existing games (and store old names for purpose of redirection)
+- Add ability to edit existing games (if either we own the game, or if we're an admin)
 
 ## License
 

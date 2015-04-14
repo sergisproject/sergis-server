@@ -6,30 +6,32 @@
         <li><%= status %></li>
     <% }) %></ul><% } %>
     
-    <p class="titlelinks"><a href="<%= httpPrefix %>/games/<%= user.username %>"><% if (me.username == user.username) { %>My <% } %>Games<% if (me.username != user.username) { %> by <%= user.displayName %><% } %></a></p>
-    <h2><%= user.displayName %></h2>
+    <p class="titlelinks"><a href="<%= httpPrefix %>/games/<%= user.username %>"><% if (me.username == user.username) { %>My <% } %>Games<% if (me.username != user.username) { %> by <%= user.name %><% } %></a></p>
+    <h2><%= user.name %></h2>
     
     <form action="" method="POST">
         <input type="hidden" name="username" value="<%= user.username %>">
         <input type="hidden" name="action" value="update-user">
         <table><tbody>
-            <tr><td>Display Name: </td><td><input type="text" name="displayName" required value="<%= user.displayName %>"></td></tr>
+            <tr><td>Display Name: </td><td><input type="text" name="name" required value="<%= user.name %>"></td></tr>
             <tr><td>New Password: </td><td><input name="password1" type="password"><br><small>(Leave this blank to keep the existing password.)</small></td></tr>
             <tr><td>Confirm New Password: </td><td><input name="password2" type="password"></td></tr>
-            <% if (me.isAdmin && user.username != me.username) { %>
+            <% if (me.isFullAdmin) { %>
             <tr><td>Organization: </td><td><select name="organization">
+                <!-- <%= (user.organization && user.organization._id) %> -->
                 <option value=""<% if (!user.organization) { %> selected<% } %>>(none)</option>
                 <% organizations.forEach(function (org) { %>
-                <option value="<%= org %>"<% if (user.organization == org) { %> selected<% } %>><%= org %></option>
+                <option value="<%= org._id %>"<% if (user.organization && user.organization.equals(org)) { %> selected<% } %>><%= org.name %></option>
                 <% }) %>
             </select></td></tr>
+            <% if (!user.equals(me)) { %>
             <tr><td>Admin Status: </td><td><select name="admin">
-                <option value="nope"<% if (!user.isAdmin && !user.isOrganizationAdmin) { %> selected<% } %>>Not Admin</option>
-                <option value="kinda"<% if (!user.isAdmin && user.isOrganizationAdmin) { %> selected<% } %>>Organization Admin</option>
-                <option value="yup"<% if (user.isAdmin) { %> selected<% } %>>Full Admin</option>
+                <option value="nope"<% if (user.adminStatus == "nope") { %> selected<% } %>>Not Admin</option>
+                <option value="kinda"<% if (user.adminStatus == "kinda") { %> selected<% } %>>Organization Admin</option>
+                <option value="yup"<% if (user.adminStatus == "yup") { %> selected<% } %>>Full Admin</option>
             </select></td></tr>
-            <% } %>
-            <tr><td>&nbsp;</td><td><input type="submit" value="Update <% if (me.username != user.username) { %><%= user.displayName %><% } %>"></td></tr>
+            <% } } %>
+            <tr><td>&nbsp;</td><td><input type="submit" value="Update <% if (me.username != user.username) { %><%= user.name %><% } %>"></td></tr>
         </tbody></table>
     </form>
     <h3>Manually Add Game</h3>
@@ -47,14 +49,14 @@
                 <option value="organization">Organization</option>
                 <% } %>
                 <option value="private">Private</option>
-            </select><br><small>Public games are accessible by anyone.<br><% if (user.organization) { %>Organization games are accessible by anyone in <%= user.organization %>.<br><% } %>Private games are only accessible by <% if (me.username == user.username) { %>you<% } else { %><%= user.displayName %><% } %> and administrators.</small></td></tr>
+            </select><br><small>Public games are accessible by anyone.<br><% if (user.organization) { %>Organization games are accessible by anyone in <%= user.organization.name %>.<br><% } %>Private games are only accessible by <% if (me.username == user.username) { %>you<% } else { %><%= user.name %><% } %> and administrators.</small></td></tr>
             <tr><td>&nbsp;</td><td><input type="submit" value="Create Game"></td></tr>
         </tbody></table>
     </form>
     
     <h3>Delete Account</h3>
-    <% if (user.isAdmin) { %>
-    <p>Full Admin accounts cannot be deleted.<% if (me.isAdmin) { %> Please change the account's admin status from Full Admin first.<% } %></p>
+    <% if (user.isFullAdmin) { %>
+    <p>Full Admin accounts cannot be deleted.<% if (me.isFullAdmin) { %> Please change the account's admin status from Full Admin first.<% } %></p>
     <% } else { %>
     <p>To permanently remove this account and ALL games associated with it, click "Delete Account."</p>
     <form action="" method="POST" onsubmit="return confirm('Are you sure that you want to delete <% if (user.username == me.username) { %>your<% } else { %>this<% } %> account?')">

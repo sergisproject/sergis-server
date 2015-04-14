@@ -24,8 +24,8 @@ var path = require("path");
 var MongoClient = require("mongodb").MongoClient;
 
 // our modules
-var config = require("./config"),
-    db = require("./modules/db");
+var config = require("./config");
+// NOTE: ./modules/db is require'd below if needed
 
 
 /**
@@ -106,6 +106,7 @@ function initExitHandlers() {
 function runExitHandlers(reason) {
     console.log("");
     console.log("Running exit handlers" + (reason ? " (" + reason + ")" : "") + "...");
+    
     // Start from the end and run each exit handler
     while (exitHandlers.length) {
         try {
@@ -120,35 +121,22 @@ function runExitHandlers(reason) {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-var mdb;  // (Mongo Database)
+var db;
 // Make sure we're starting something and, if so, set up exit handling and init
 if (config.ENABLE_HTTP_SERVER || config.ENABLE_SOCKET_SERVER) {
-    // Connect to database
-    MongoClient.connect(config.MONGO_SERVER, function (err, _db) {
-        if (err) {
-            console.error("Error connecting to MongoDB server: ", err);
-        } else {
-            console.log("Connected to MongoDB server: " + config.MONGO_SERVER);
-            mdb = _db;
-            
-            // Set up exit handler system
-            initExitHandlers();
-            
-            // Set up exit handler for database
-            exitHandlers.push(function () {
-                // Close the database
-                if (mdb) {
-                    console.log("Closing MongoDB database");
-                    mdb.close();
-                }
-            });
-            
-            // Initialize the db module
-            db.init(mdb);
-            
-            // Initialize the rest of the server
-            init();
-        }
+    // Set up database
+    db = require("./modules/db");
+    db.addLoadHandler(function () {
+        // Database is loaded; set up exit handler system
+        initExitHandlers();
+        
+        // Set up exit handler for database
+        exitHandlers.push(function () {
+            return db.close();
+        });
+        
+        // Initialize the rest of the server
+        init();
     });
 } else {
     // Nope, nothing to do
@@ -169,136 +157,142 @@ if (config.ENABLE_HTTP_SERVER || config.ENABLE_SOCKET_SERVER) {
 }
 
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 var app, server, io;
-/** Set up the HTTP and/or socket server. */
 function init() {
     // Start HTTP server (if enabled)
-    if (config.ENABLE_HTTP_SERVER) {
-        console.log("Starting SerGIS HTTP server on port " + config.PORT + "...");
-
-        // Require more stuff
-        require("coffee-script/register");  // for indie-set
-        var express = require("express"),
-            session = require("express-session"),
-            MongoStore = require("connect-mongo")(session),
-            cookieParser = require("cookie-parser"),
-            indieSet = require("indie-set"),
-            ejs = require("ejs");
-        
-        // Create Express server instance
-        app = express();
-        server = require("http").Server(app);
-
-        // Listen with the HTTP server on our port
-        server.listen(config.PORT);
-
-        // Set up static directories
-        for (var pathDescrip in STATIC_DIRECTORIES) {
-            if (STATIC_DIRECTORIES.hasOwnProperty(pathDescrip)) {
-                app.use(config.HTTP_PREFIX + pathDescrip, express.static(STATIC_DIRECTORIES[pathDescrip]));
-            }
-        }
-        
-        // Set up cookie processing
-        app.use(cookieParser(config.COOKIE_SIGNING_KEY || undefined));
-        
-        // Set up sessions
-        app.use(session({
-            secret: config.SESSION_SECRET,
-            // whether to automatically save the session
-            resave: false,
-            // whether to save the session before anything has been written to it
-            saveUninitialized: false,
-            // use mongoDB to store the sessions
-            store: new MongoStore({
-                db: mdb
-            })
-        }));
-        
-        // Set up templating for HTML files
-        app.set("views", config.TEMPLATES_DIR);
-        app.engine("html", function (path, data, callback) {
-            if (!data) data = {};
-            if (!data.__set) data.__set = {};
-            data["style-simple.css"] = config.CLIENT_STATIC + "/style-simple.css";
-            data.__set.renderStatic = true;
-            return indieSet.__express(path, data, function (err, data) {
-                if (err) return callback(err);
-                // Make sure that there's a doctype
-                if (data && data.substring(0, data.indexOf("\n")).toLowerCase().indexOf("doctype") == -1) {
-                    data = "<!DOCTYPE html>\n" + data;
-                }
-                callback(err, data);
-            });
-        });
-        app.engine("ejs", function (path, data, callback) {
-            if (!data) data = {};
-            data["httpPrefix"] = config.HTTP_PREFIX;
-            data["CLIENT_STATIC"] = config.CLIENT_STATIC;
-            return ejs.renderFile(path, data, callback);
-        });
-
-        // Create handlers for our other page servers (see HTTP_SERVERS above)
-        for (var pathDescrip in HTTP_SERVERS) {
-            if (HTTP_SERVERS.hasOwnProperty(pathDescrip)) {
-                app.use(config.HTTP_PREFIX + pathDescrip, require("./modules/pageServers/" + HTTP_SERVERS[pathDescrip]));
-            }
-        }
-        
-        // Set up error handling
-        app.use(function (err, req, res, next) {
-            // NOTE: It probably wouldn't be beneficial to cause any errors here.
-            console.error("--------------------------------------------------------------------------------");
-            console.error("SerGIS Server ERROR at " + (new Date()) + ":\n" + err.stack + "\n\n");
-            res.status(500);
-            res.render("error.ejs", {
-                me: req.user,
-                number: 500,
-                title: "Internal Server Error",
-                details: "See error console on server, or contact the site administrator with the exact date and time that this error occurred."
-            });
-        });
-    }
-
-    // Start socket server (if enabled)
-    if (config.ENABLE_SOCKET_SERVER) {
-        // Decide on the socket.io path
-        var socketPath = undefined;
-        if (config.SOCKET_PREFIX) {
-            console.log("Setting socket path to " + config.SOCKET_PREFIX + "/socket.io");
-            socketPath = config.SOCKET_PREFIX + "/socket.io";
-        }
-        
-        // Check if we already have the Express HTTP server
-        if (app) {
-            console.log("Starting SerGIS socket server with HTTP server...");
-            // Use the same server instance for the socket.io server
-            io = require("socket.io")(server, {
-                path: socketPath
-            });
-        } else {
-            console.log("Starting SerGIS socket server on port " + config.PORT + "...");
-            // There's no HTTP server yet; make socket.io listen all by its lonesomes
-            io = require("socket.io").listen(config.PORT, {
-                path: socketPath
-            });
-        }
-        
-        if (config.SOCKET_ORIGIN) {
-            console.log("Setting socket to allow origin " + config.HTTP_ORIGIN);
-            io.origins(config.HTTP_ORIGIN);
-        }
-
-        // Create handlers for all our socket servers (see SOCKET_SERVERS above)
-        for (var pathDescrip in SOCKET_SERVERS) {
-            if (SOCKET_SERVERS.hasOwnProperty(pathDescrip)) {
-                io.of(pathDescrip).use(require("./modules/socketServers/" + SOCKET_SERVERS[pathDescrip]));
-            }
-        }
-    }
+    if (config.ENABLE_HTTP_SERVER) startHttpServer();
+    // Start the Socket server (if enabled)
+    if (config.ENABLE_SOCKET_SERVER) startSocketServer();
     
     // Always ready for more
     console.log("Ready\n");
+}
+
+
+/** Start HTTP server. */
+function startHttpServer() {
+    console.log("Starting SerGIS HTTP server on port " + config.PORT + "...");
+
+    // Require more stuff
+    require("coffee-script/register");  // for indie-set
+    var express = require("express"),
+        session = require("express-session"),
+        MongoStore = require("connect-mongo")(session),
+        cookieParser = require("cookie-parser"),
+        indieSet = require("indie-set"),
+        ejs = require("ejs");
+
+    // Create Express server instance
+    app = express();
+    server = require("http").Server(app);
+
+    // Listen with the HTTP server on our port
+    server.listen(config.PORT);
+
+    // Set up static directories
+    for (var pathDescrip in STATIC_DIRECTORIES) {
+        if (STATIC_DIRECTORIES.hasOwnProperty(pathDescrip)) {
+            app.use(config.HTTP_PREFIX + pathDescrip, express.static(STATIC_DIRECTORIES[pathDescrip]));
+        }
+    }
+
+    // Set up cookie processing
+    app.use(cookieParser(config.COOKIE_SIGNING_KEY || undefined));
+
+    // Set up sessions
+    app.use(session({
+        secret: config.SESSION_SECRET,
+        // whether to automatically save the session
+        resave: false,
+        // whether to save the session before anything has been written to it
+        saveUninitialized: false,
+        // use mongoDB to store the sessions
+        store: new MongoStore({
+            mongooseConnection: db.getMongooseConnection()
+        })
+    }));
+
+    // Set up templating for HTML files
+    app.set("views", config.TEMPLATES_DIR);
+    app.engine("html", function (path, data, callback) {
+        if (!data) data = {};
+        if (!data.__set) data.__set = {};
+        data["style-simple.css"] = config.CLIENT_STATIC + "/style-simple.css";
+        data.__set.renderStatic = true;
+        return indieSet.__express(path, data, function (err, data) {
+            if (err) return callback(err);
+            // Make sure that there's a doctype
+            if (data && data.substring(0, data.indexOf("\n")).toLowerCase().indexOf("doctype") == -1) {
+                data = "<!DOCTYPE html>\n" + data;
+            }
+            callback(err, data);
+        });
+    });
+    app.engine("ejs", function (path, data, callback) {
+        if (!data) data = {};
+        data["httpPrefix"] = config.HTTP_PREFIX;
+        data["CLIENT_STATIC"] = config.CLIENT_STATIC;
+        return ejs.renderFile(path, data, callback);
+    });
+
+    // Create handlers for our other page servers (see HTTP_SERVERS above)
+    for (var pathDescrip in HTTP_SERVERS) {
+        if (HTTP_SERVERS.hasOwnProperty(pathDescrip)) {
+            app.use(config.HTTP_PREFIX + pathDescrip, require("./modules/pageServers/" + HTTP_SERVERS[pathDescrip]));
+        }
+    }
+
+    // Set up error handling
+    app.use(function (err, req, res, next) {
+        // NOTE: It probably wouldn't be beneficial to cause any errors here.
+        console.error("--------------------------------------------------------------------------------");
+        console.error("SerGIS Server ERROR at " + (new Date()) + ":\n" + err.stack + "\n\n");
+        res.status(500);
+        res.render("error.ejs", {
+            me: req.user,
+            number: 500,
+            title: "Internal Server Error",
+            details: "See error console on server, or contact the site administrator with the exact date and time that this error occurred."
+        });
+    });
+}
+
+
+/** Start the socket server. */
+function startSocketServer() {
+    // Decide on the socket.io path
+    var socketPath = undefined;
+    if (config.SOCKET_PREFIX) {
+        console.log("Setting socket path to " + config.SOCKET_PREFIX + "/socket.io");
+        socketPath = config.SOCKET_PREFIX + "/socket.io";
+    }
+
+    // Check if we already have the Express HTTP server
+    if (app) {
+        console.log("Starting SerGIS socket server with HTTP server...");
+        // Use the same server instance for the socket.io server
+        io = require("socket.io")(server, {
+            path: socketPath
+        });
+    } else {
+        console.log("Starting SerGIS socket server on port " + config.PORT + "...");
+        // There's no HTTP server yet; make socket.io listen all by its lonesomes
+        io = require("socket.io").listen(config.PORT, {
+            path: socketPath
+        });
+    }
+
+    if (config.SOCKET_ORIGIN) {
+        console.log("Setting socket to allow origin " + config.HTTP_ORIGIN);
+        io.origins(config.HTTP_ORIGIN);
+    }
+
+    // Create handlers for all our socket servers (see SOCKET_SERVERS above)
+    for (var pathDescrip in SOCKET_SERVERS) {
+        if (SOCKET_SERVERS.hasOwnProperty(pathDescrip)) {
+            io.of(pathDescrip).use(require("./modules/socketServers/" + SOCKET_SERVERS[pathDescrip]));
+        }
+    }
 }

@@ -209,7 +209,7 @@ var config = module.exports = {
      * Regex for things that must be URL-safe (i.e. usernames and game names).
      * @type {RegExp}
      */
-    URL_SAFE_REGEX: /^[A-Za-z0-9~$"':;,.\-_]+$/,
+    URL_SAFE_REGEX: /^[A-Za-z0-9~$\*()"':;,\.\-_]+$/,
     
     /**
      * Human-readable character list for URL_SAFE_REGEX.

@@ -35,34 +35,34 @@ router.use(bodyParser.urlencoded({
 var pageHandlers = {
     checkGame: function (req, res, next) {
         var username = req.params.username, gameName = req.params.gameName;
-        db.users.get(username, function (err, owner) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
-            if (!owner) {
+        var user;
+        // Get the game owner
+        db.models.User.findOne({username_lowercase: username.toLowerCase()})
+                      .select("")
+                      .exec().then(function (_user) {
+            user = _user;
+            if (!user) {
                 // Owner doesn't exist
                 req.error = {number: 404};
                 return next("route");
             }
             
-            db.games.get(username, gameName, function (err, game) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
-                if (!game) {
-                    // Game doesn't exist!
-                    req.error = {number: 404};
-                    return next("route");
-                }
-                
-                req.owner = owner;
-                req.game = game;
-                return next();
-            });
+            // Get the game
+            return db.models.Game.findOne({owner: user._id, name_lowercase: gameName.toLowerCase()})
+                                 .select("")
+                                 .exec();
+        }).then(function (game) {
+            if (!game) {
+                // Game doesn't exist
+                req.error = {number: 404};
+                return next("route");
+            }
+            
+            // Got everything that we need!
+            req.game_id = game._id;
+            return next();
+        }).then(null, function (err) {
+            next(err);
         });
     },
     
@@ -70,12 +70,7 @@ var pageHandlers = {
         // List ALL the games that we have access to
         var gamesByAccess = [];
         // First, get all the public games
-        db.games.getAll(null, null, "public", function (err, publicGames) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
+        db.models.Game.getAll(null, null, "public").then(function (publicGames) {
             // Add the public games
             gamesByAccess.push({
                 name: "Public Games",
@@ -85,185 +80,193 @@ var pageHandlers = {
                 none: "No public games.",
                 games: publicGames
             });
-            // Now, if we're not logged in, we're done
-            if (!req.user) {
-                return res.render("games-all.ejs", {
-                    me: req.user,
-                    gamesByAccess: gamesByAccess
-                });
+        }).then(function () {
+            // If the user has no organization and they're not a full admin, just continue
+            if (!req.user || (!req.user.isFullAdmin && !req.user.organization)) {
+                return;
             }
             
-            // Nope, somebody's logged in, time to delve deeper
+            // Nope, they have an organization; find all the organization games
+            // (All if we're admin, or just the ones in our organization if we're not)
+            return db.models.Game.getAll(null, req.user.isFullAdmin ? null : req.user.organization, "organization");
+        }).then(function (organizationGames) {
+            // If we didn't get organization games, then just continue
+            if (!organizationGames) return;
+
+            // Add the organization games
+            gamesByAccess.push({
+                name: "Organization Games",
+                description: "Organization games are only accessible to other people in " + (req.user.isFullAdmin ? "the creator's organization and administrators" : req.user.organization) + ".",
+                access: "organization",
+                organizationColumn: !!req.user.isFullAdmin,
+                none: "No organization games.",
+                games: organizationGames
+            });
+        }).then(function () {
+            // If no user is logged in, just continue
+            if (!req.user) {
+                return;
+            }
+            
             // Get all the user's private games, or all the private games if we're admin,
             // or all the private games in our organization if we're an organization admin
-            db.games.getAll((req.user.isAdmin || (req.user.isOrganizationAdmin && req.user.organization)) ? null : req.user.username,
-                            req.user.isOrganizationAdmin ? req.user.organization : null, "private", function (err, privateGames) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
-                // Add the private games
-                gamesByAccess.push({
-                    name: "Private Games",
-                    description: "Private games are only accessible by their creator and administrators.",
-                    access: "private",
-                    organizationColumn: false,
-                    none: "No private games.",
-                    games: privateGames
-                });
-                // Now, if the user has no organization and they're not a full admin, we're done
-                if (!req.user.isAdmin && !req.user.organization) {
-                    return res.render("games-all.ejs", {
-                        me: req.user,
-                        gamesByAccess: gamesByAccess
-                    });
-                }
-                
-                // Nope, they have an organization; find all the organization games
-                // (All if we're admin, or just the ones in our organization if we're not)
-                db.games.getAll(null, req.user.isAdmin ? null : req.user.organization, "organization", function (err, organizationGames) {
-                    if (err) {
-                        req.error = {number: 500};
-                        return next("route");
-                    }
-
-                    // Insert it between the public and private games
-                    gamesByAccess.splice(1, 0, {
-                        name: "Organization Games",
-                        description: "Organization games are only accessible to other people in " + (req.user.isAdmin ? "the creator's organization and administrators" : req.user.organization) + ".",
-                        access: "organization",
-                        organizationColumn: !!req.user.isAdmin,
-                        none: "No organization games.",
-                        games: organizationGames
-                    });
-                    // And, we're finally completely done
-                    return res.render("games-all.ejs", {
-                        me: req.user,
-                        gamesByAccess: gamesByAccess
-                    });
-                });
+            return db.models.Game.getAll(req.user.isAnyAdmin ? null : req.user,
+                                         req.user.isOrganizationAdmin ? req.user.organization : null,
+                                         "private");
+        }).then(function (privateGames) {
+            // If we didn't get private games, then just continue
+            if (!privateGames) return;
+            
+            // Add the private games
+            gamesByAccess.push({
+                name: "Private Games",
+                description: "Private games are only accessible by their creator and administrators.",
+                access: "private",
+                organizationColumn: false,
+                none: "No private games.",
+                games: privateGames
             });
+        }).then(function () {
+            // Almost done...
+            // Make a list of organizations by ID (for quick lookups)
+            return db.models.Organization.find({}).select("name").exec();
+        }).then(function (orgs) {
+            var orgsByID = {};
+            orgs.forEach(function (org) {
+                orgsByID[org._id] = org.name;
+            });
+            // And, we're finally completely done.
+            res.render("games-all.ejs", {
+                me: req.user,
+                gamesByAccess: gamesByAccess,
+                orgsByID: orgsByID
+            });
+        }).then(null, function (err) {
+            next(err);
         });
     },
     
     listGames: function (req, res, next) {
-        // Make sure username exists
-        db.users.get(req.params.username, function (err, user) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
+        // Get the user
+        var user;
+        db.models.User.findOne({username_lowercase: req.params.username.toLowerCase()})
+                      .populate("organization")
+                      .exec().then(function (_user) {
+            user = _user;
             if (!user) {
                 // Lol, user doesn't exist
                 req.error = {status: 404};
                 return next("route");
             }
-
-            // Lists that we are waiting for
-            // true == waiting, false == ignoring
-            var gameListsByAccessLevel = {
-                public: true,
-                organization: (req.user && req.user.isAdmin) || (req.user && req.user.organization && user.organization == req.user.organization),
-                private: (req.user && req.user.isAdmin) || (req.user && req.user.username == user.username)
-            };
-            // Called after a list is loaded; renders the list after all are loaded.
-            var checkGameLists = function () {
-                var done = 0, total = 0;
-                for (var access in gameListsByAccessLevel) {
-                    if (gameListsByAccessLevel.hasOwnProperty(access) && gameListsByAccessLevel[access]) {
-                        total++;
-                        if (gameListsByAccessLevel[access] !== true) done++;
-                    }
-                }
-                if (done >= total) {
-                    var isMe = req.user && (req.user.username == user.username);
-                    var gamesByAccess = [];
-                    if (gameListsByAccessLevel.public) {
-                        gamesByAccess.push({
-                            name: "Public Games",
-                            description: "Public games are accessible by anyone.",
-                            access: "public",
-                            none: isMe ?
-                                "You have no public games." :
-                                user.username + " has no public games.",
-                            games: gameListsByAccessLevel.public
-                        });
-                    }
-                    if (gameListsByAccessLevel.organization) {
-                        gamesByAccess.push({
-                            name: "Organization Games",
-                            description: "Organization games are only accessible to other people in " + (user.organization || "your organization") + ".",
-                            access: "organization",
-                            none: isMe ?
-                                "You have no organization games." :
-                                user.username + " has no organization games.",
-                            games: gameListsByAccessLevel.organization
-                        });
-                    }
-                    if (gameListsByAccessLevel.private) {
-                        gamesByAccess.push({
-                            name: "Private Games",
-                            description: "Private games are only accessible by " + (isMe ? "you" : user.username) + " and administrators.",
-                            access: "private",
-                            none: isMe ?
-                                "You have no private games." :
-                                user.username + " has no private games.",
-                            games: gameListsByAccessLevel.private
-                        });
-                    }
-                    // Render!
-                    res.render("games.ejs", {
-                        me: req.user,
-                        user: user,
-                        canEditGames: req.user && (req.user.isAdmin ||
-                                                   (req.user.isOrganizationAdmin && req.user.organization === user.organization) ||
-                                                   req.user.username == user.username),
-                        gamesByAccess: gamesByAccess
-                    });
-                }
-            };
             
-            // Now, actually load the games
-            Object.keys(gameListsByAccessLevel).forEach(function (access) {
-                if (gameListsByAccessLevel[access]) {
-                    db.games.getAll(user.username, null, access, function (err, games) {
-                        // Fail silently on error
-                        gameListsByAccessLevel[access] = err ? false : games;
-                        checkGameLists();
-                    });
-                }
+            var promises = [];
+            
+            // Get the user's public games
+            promises.push(db.models.Game.getAll(user, null, "public"));
+            
+            // Get the user's organization games, if applicable
+            var myOrganization = req.user && req.user.organization;
+            var theirOrganization = user.organization;
+            if ((req.user && req.user.canModifyUser(user)) || (myOrganization && theirOrganization && myOrganization.equals(theirOrganization))) {
+                promises.push(db.models.Game.getAll(user, null, "organization").then(function (organizationGames) {
+                    // If the user isn't actually part of an organization, then don't return a list of games if there aren't any.
+                    // (This could occur if we're an admin looking at this user.)
+                    if (!theirOrganization && organizationGames.length == 0) {
+                        return false;
+                    } else {
+                        // Either we have games to show, or they're really part of an organization (so we want the "no organization games" message)
+                        return organizationGames;
+                    }
+                }));
+            } else {
+                promises.push(Promise.resolve(false));
+            }
+            
+            // Get the user's private games, if applicable
+            if (req.user && req.user.canModifyUser(user)) {
+                promises.push(db.models.Game.getAll(user, null, "private"));
+            } else {
+                promises.push(Promise.resolve(false));
+            }
+            
+            return Promise.all(promises);
+        }).then(function (allGames) {
+            if (!allGames) return;
+            
+            var publicGames = allGames[0],
+                organizationGames = allGames[1],
+                privateGames = allGames[2];
+            var isMe = req.user && req.user.equals(user);
+            var gamesByAccess = [];
+            
+            if (publicGames) {
+                gamesByAccess.push({
+                    name: "Public Games",
+                    description: "Public games are accessible by anyone.",
+                    access: "public",
+                    none: isMe ?
+                        "You have no public games." :
+                        user.username + " has no public games.",
+                    games: publicGames
+                });
+            }
+            if (organizationGames) {
+                gamesByAccess.push({
+                    name: "Organization Games",
+                    description: "Organization games are only accessible to other people in " + (
+                        (user.organization && user.organization.name) || (isMe ? "your organization" : "the creator's organization")
+                    ) + ".",
+                    access: "organization",
+                    none: isMe ?
+                        "You have no organization games." :
+                        user.username + " has no organization games.",
+                    games: organizationGames
+                });
+            }
+            if (privateGames) {
+                gamesByAccess.push({
+                    name: "Private Games",
+                    description: "Private games are only accessible by " + (isMe ? "you" : user.username) + " and administrators.",
+                    access: "private",
+                    none: isMe ?
+                        "You have no private games." :
+                        user.username + " has no private games.",
+                    games: privateGames
+                });
+            }
+            // Render!
+            res.render("games.ejs", {
+                me: req.user,
+                user: user,
+                canEditGames: req.user && req.user.canModifyUser(user),
+                gamesByAccess: gamesByAccess
             });
+        }).then(null, function (err) {
+            next(err);
         });
     },
     
     listGamesPost: function (req, res, next) {
         // We know that both req.user and req.otherUser are set,
         // and req.user has permission to modify req.otherUser's stuff
-        db.games.get(req.otherUser.username, req.body.gameName, function (err, game) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-
-            if (!game) {
-                // Invalid game
+        db.models.Game.findById(req.body.game)
+                      .populate("owner")
+                      .exec().then(function (game) {
+            if (!game || !game.owner.equals(req.otherUser)) {
+                // Invalid game, or game owner, passed in
+                console.log("GAME:" + game);
+                console.log("USER:" + req.otherUser);
                 return next();
             }
 
             switch (req.body.action) {
                 case "set-game-access":
                     if (["public", "organization", "private"].indexOf(req.body.access) != -1) {
-                        db.games.update(game.gameOwner, game.gameName, {
-                            access: req.body.access
-                        }, function (err) {
-                            if (err) {
-                                req.error = {number: 500};
-                                return next("route");
-                            }
-
+                        game.access = req.body.access;
+                        game.save().then(function () {
                             next();
+                        }, function (err) {
+                            next(err);
                         });
                         return;
                     }
@@ -271,17 +274,15 @@ var pageHandlers = {
                 case "download-game":
                     // Lolz, this one's funny (we don't call next())
                     res.set("Content-Type", "application/json");
-                    res.set("Content-Disposition", "attachment; filename=" + game.gameName + ".json");
+                    res.set("Content-Disposition", "attachment; filename=" + game.name + ".json");
                     res.send(game.jsondata);
                     return;
                 case "delete-game":
-                    db.games.delete(game.gameOwner, game.gameName, function (err) {
-                        if (err) {
-                            req.error = {number: 500};
-                            return next("route");
-                        }
-
+                    game.remove().then(function () {
+                        console.log("Removed game: " + game.name);
                         next();
+                    }, function (err) {
+                        next(err);
                     });
                     return;
             }
@@ -293,7 +294,7 @@ var pageHandlers = {
     
     serveGame: function (req, res, next) {
         // Render page
-        return res.render(path.join(config.SERGIS_CLIENT, "index.html"), {
+        res.render(path.join(config.SERGIS_CLIENT, "index.html"), {
             test: false,
             // lib files
             "style.css": config.CLIENT_STATIC + "/style.css",
@@ -304,8 +305,7 @@ var pageHandlers = {
             "socket-io-script-src": config.SOCKET_ORIGIN + config.SOCKET_PREFIX + "/socket.io/socket.io.js",
             "socket-io-origin": config.SOCKET_ORIGIN,
             "socket-io-prefix": config.SOCKET_PREFIX,
-            "gameOwner": req.game.gameOwner,
-            "gameName": req.game.gameName,
+            "game": req.game_id,
             "session": req.sessionID,
             "logoutUrl": config.HTTP_PREFIX + "/logout"
         });

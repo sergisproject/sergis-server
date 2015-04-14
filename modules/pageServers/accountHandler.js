@@ -60,14 +60,9 @@ var pageHandlers = {
         // accountActions["update-user"] will set otherUser right after updating
         // it, whether it originally came from req.user or req.otherUser.
         var user = req.otherUser || req.user;
-        // Get the organization list, in case we need it
-        db.organizations.getAll(function (err, organizations) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
-            return res.render("account.ejs", {
+        // Get the list of groups, in case we need it
+        db.models.Organization.find({}).exec().then(function (organizations) {
+            res.render("account.ejs", {
                 me: req.user,
                 user: user,
                 statusMessages: req.statusMessages || false,
@@ -75,6 +70,8 @@ var pageHandlers = {
                 gameNamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
                 gameNameCharacters: config.URL_SAFE_REGEX_CHARS
             });
+        }).then(null, function (err) {
+            next(err);
         });
     },
     
@@ -112,7 +109,7 @@ var pageHandlers = {
      */
     admin: function (req, res, next) {
         // First check: is the user an admin at all?
-        if (!req.user.isAdmin && !(req.user.isOrganizationAdmin && req.user.organization)) {
+        if (!req.user.isAnyAdmin) {
             // Nope! Silly user
             req.error = {number: 403};
             return next("route");
@@ -120,30 +117,26 @@ var pageHandlers = {
         
         // Yup, the user actually gotst some rights
         // Let's get them something to look at
-        db.users.getAll((req.user.isOrganizationAdmin && req.user.organization) ? req.user.organization : null, function (err, users) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
+        var users;
+        db.models.User.find(req.user.isOrganizationAdmin ? {organization: req.user.organization._id} : {})
+                      .populate("organization")
+                      .exec().then(function (_users) {
+            users = _users;
             // Get the organization list too
-            db.organizations.getAll(function (err, organizations) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
-                // Now, render all that shit
-                return res.render("admin.ejs", {
-                    me: req.user,
-                    users: users,
-                    statusMessages: req.statusMessages || false,
-                    organization: req.user.isOrganizationAdmin && req.user.organization,
-                    organizations: organizations,
-                    usernamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
-                    usernameCharacters: config.URL_SAFE_REGEX_CHARS
-                });
+            return db.models.Organization.find({}).exec();
+        }).then(function (organizations) {
+            // Now, render all that shit
+            res.render("admin.ejs", {
+                me: req.user,
+                users: users,
+                statusMessages: req.statusMessages || false,
+                organization: req.user.isOrganizationAdmin && req.user.organization && req.user.organization.name,
+                organizations: organizations,
+                usernamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
+                usernameCharacters: config.URL_SAFE_REGEX_CHARS
             });
+        }).then(null, function (err) {
+            next(err);
         });
     },
     
@@ -151,9 +144,8 @@ var pageHandlers = {
      * Handle POST requests the admin page, then serve admin page.
      */
     adminPost: function (req, res, next) {
-        req.user.isAdmin = 1;
         // First check: is the user an admin at all?
-        if (!req.user.isAdmin && !(req.user.isOrganizationAdmin && req.user.organization)) {
+        if (!req.user.isAnyAdmin) {
             // Nope! Silly user
             req.error = {number: 403};
             return next("route");
@@ -165,10 +157,10 @@ var pageHandlers = {
             switch (req.body.action) {
                 case "create-user":
                     adminActions["create-user"](req, res, next, req.body.username, req.body.password,
-                                                req.body.displayName, req.user.organization, "nope");
+                                                req.body.name, req.user.organization._id, "nope");
                     return;
                 case "delete-user":
-                    adminActions["delete-user"](req, res, next, req.body.username, req.user.organization);
+                    adminActions["delete-user"](req, res, next, req.body.username, req.user.organization._id);
                     return;
             }
         } else {
@@ -179,7 +171,7 @@ var pageHandlers = {
                     return;
                 case "create-user":
                     adminActions["create-user"](req, res, next, req.body.username, req.body.password,
-                                                req.body.displayName, req.body.organization, req.body.admin);
+                                                req.body.name, req.body.organization, req.body.admin);
                     return;
                 case "set-user-organization":
                     adminActions["set-user-organization"](req, res, next, req.body.username, req.body.organization);
@@ -206,13 +198,12 @@ var accountActions = {
      * Handle a request for the updating of a user.
      */
     "update-user": function (req, res, next, user) {
-        var update = {};
         var newPassword;
         req.statusMessages = [];
         
         // Check if the display name is changed
-        if (req.body.displayName && req.body.displayName != user.displayName) {
-            update.displayName = req.body.displayName;
+        if (req.body.name && req.body.name != user.name) {
+            user.name = req.body.name;
             req.statusMessages.push("The display name for " + user.username + " has been updated.");
         }
         
@@ -227,49 +218,32 @@ var accountActions = {
         }
         
         // Check if the organization is changed (admin only)
-        if (req.user.isAdmin && req.body.organization && req.body.organization != user.organization) {
-            update.organization = req.body.organization;
+        if (req.user.isFullAdmin && req.body.organization != "" + (user.organization && user.organization._id)) {
+            user.organization = req.body.organization || undefined;
             req.statusMessages.push("The organization for " + user.username + " has been updated.");
         }
         
         // Check if the admin status is changed (admin only)
-        var oldAdminStatus = user.isAdmin ? "yup" : user.isOrganizationAdmin ? "kinda" : "nope";
-        if (req.user.username != user.username && req.user.isAdmin && req.body.admin && req.body.admin != oldAdminStatus) {
-            update.isAdmin = req.body.admin == "yup";
-            update.isOrganizationAdmin = req.body.admin == "kinda";
+        var oldAdminStatus = user.isFullAdmin ? "yup" : user.isOrganizationAdmin ? "kinda" : "nope";
+        if (req.user.username != user.username && req.user.isFullAdmin && req.body.admin && req.body.admin != user.adminStatus) {
+            user.adminStatus = req.body.admin;
             req.statusMessages.push("The admin status for " + user.username + " has been updated.");
         }
         
         // Set the changes if there are any
-        if (JSON.stringify(update) != "{}" || newPassword) {
-            // Yay, there's changes to update!
-            db.users.update(user.username, update, newPassword, function (err) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
-                // Re-get the user we just updated (store it in req.otherUser)
-                db.users.get(user.username, function (err, user) {
-                    if (err) {
-                        req.error = {number: 500};
-                        return next("route");
-                    }
-
-                    if (!user) {
-                        // Ahh! He's gone!
-                        req.error = {status: 500};
-                        return next("route");
-                    }
-                    
-                    req.otherUser = user;
-                    return next();
-                });
-            });
-        } else {
-            // Nothing to change
-            return next();
-        }
+        user.save().then(function () {
+            // Update the password, if needed
+            if (newPassword) return user.setPassword(newPassword);
+        }).then(function () {
+            // Make sure organization is still populated
+            return user.populate("organization").execPopulate();
+        }).then(function () {
+            // All good!
+            req.otherUser = user;
+            next();
+        }).then(null, function (err) {
+            next(err);
+        });
     },
     
     /**
@@ -285,17 +259,12 @@ var accountActions = {
      */
     "delete-user": function (req, res, next, user) {
         // Full Admin accounts cannot be deleted.
-        if (user.isAdmin) {
+        if (user.isFullAdmin) {
             req.statusMessages = ["Full Admin accounts cannot be deleted."];
             return next();
         }
         
-        db.users.delete(user.username, function (err) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
+        user.remove().then(function () {
             if (req.user.username == user.username) {
                 // We deleted ourselves
                 req.session.destroy(function (err) {
@@ -303,12 +272,14 @@ var accountActions = {
                         console.error("ERROR DESTROYING SESSION: ", err.stack);
                     }
                     // Just redirect to the home page
-                    return res.redirect(config.HTTP_PREFIX + "/");
+                    res.redirect(config.HTTP_PREFIX + "/");
                 });
             } else {
                 // We deleted somebody else, so just redirect to admin page
-                return res.redirect(config.HTTP_PREFIX + "/account/admin");
+                res.redirect(config.HTTP_PREFIX + "/account/admin");
             }
+        }, function (err) {
+            next(err);
         });
     }
 };
@@ -320,13 +291,13 @@ var adminActions = {
     /**
      * Handle a request for the creation of a user.
      */
-    "create-user": function (req, res, next, username, password, displayName, organization, admin) {
+    "create-user": function (req, res, next, username, password, name, organizationID, admin) {
         var errorMsg;
         if (!username) {
             errorMsg = "No username provided.";
         } else if (!config.URL_SAFE_REGEX.test(username)) {
             errorMsg = "Invalid username.\nUsernames may consist of any letters, digits, and the following characters: " + config.URL_SAFE_REGEX_CHARS;
-        } else if (!displayName) {
+        } else if (!name) {
             errorMsg = "No display name provided.";
         }
 
@@ -339,66 +310,59 @@ var adminActions = {
         }
 
         // Finally... create the account
-        db.users.create(username, password, displayName, organization, admin, function (err, user) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
-            if (user === false) {
-                // Error...
+        db.models.User.createUser(username, name, password, organizationID, admin == "yup", admin == "kinda", req.user).then(function () {
+            // Everything successful; continue on our merry way!
+            req.statusMessages = ["User \"" + username + "\" has been created."];
+            next();
+        }, function (err) {
+            if (err && err.name == "ValidationError") {
                 return res.render("error-back.ejs", {
                     title: "SerGIS Server Admin",
                     subtitle: "Error Creating Account",
-                    details: "Username already exists."
+                    details: "User creation failed.\nPlease make sure that the username does not already exist."
                 });
+            } else {
+                next(err);
             }
-            
-            // Everything successful; continue on our merry way!
-            req.statusMessages = ["User \"" + username + "\" has been created."];
-            return next();
         });
     },
     
     /**
      * Handle a request for the deletion of a user.
      */
-    "delete-user": function (req, res, next, username, organization) {
-        db.users.get(username, function (err, user) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
+    "delete-user": function (req, res, next, username, organizationID) {
+        // Get the user, to check things if needed
+        db.models.User.findOne({username_lowercase: username.toLowerCase()}).exec().then(function (user) {
             if (!user) {
                 // Well, our job is practically done for us
-                return next();
+                next();
+                return;
             }
             
             // Make sure that we're not deleting ourselves, or an admin account
-            if (user.username == req.user.username || user.isAdmin) {
+            if (user.equals(req.user) || user.isFullAdmin) {
                 // Ahh!! Just pretend we didn't do anything
                 // (This technically isn't possible to do from the admin home page anyway,
                 // so this shouldn't ever be reached.)
-                return next();
+                next();
+                return;
             }
             
             // If we need to check the organization, do so
-            if (organization && user.organization !== organization) {
+            if (organizationID && !user.organization.equals(organizationID)) {
                 // Pretend we're not here
-                return next();
+                next();
+                return;
             }
             
-            // All good!
-            db.users.delete(username, function (err) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
+            // All good! Delete
+            return accounts.deleteUser(user).then(function () {
+                // All done!
                 req.statusMessages = ["User \"" + username + "\" has been deleted."];
-                return next();
+                next();
             });
+        }).then(null, function (err) {
+            next(err);
         });
     },
     
@@ -407,90 +371,48 @@ var adminActions = {
      */
     "create-organization": function (req, res, next, organizationName) {
         if (!organizationName) {
-            return res.render("error-back.ejs", {
+            res.render("error-back.ejs", {
                 title: "SerGIS Server Admin",
                 subtitle: "Error Creating Organization",
                 details: "No organization name provided."
             });
+            return;
         }
         
-        db.organizations.create(organizationName, function (err, organization) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
+        var org = new db.models.Organization({
+            name: organizationName,
+            name_lowercase: organizationName.toLowerCase()
+        });
+        org.save().then(function () {
             req.statusMessages = ["Oranization \"" + organizationName + "\" has been created."];
-            return next();
+            next();
+        }, function (err) {
+            next(err);
         });
     },
     
     /**
      * Set the organization of a user.
      */
-    "set-user-organization": function (req, res, next, username, organizationName) {
+    "set-user-organization": function (req, res, next, username, organizationID) {
         // Make sure username is A-Ok
-        db.users.get(username, function (err, user) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
+        db.models.User.findOne({username_lowercase: username.toLowerCase()}).exec().then(function (user) {
             if (!user) {
-                return res.render("error-back.ejs", {
+                res.render("error-back.ejs", {
                     title: "SerGIS Server Admin",
                     subtitle: "Error Updating User",
                     details: "Invalid username."
                 });
-            }
-            
-            // If we're setting the organization to nothing, then just do it now
-            if (!organizationName) {
-                // Okay, now update the user
-                db.users.update(username, {
-                    organization: null
-                }, null, function (err) {
-                    if (err) {
-                        req.error = {number: 500};
-                        return next("route");
-                    }
-
-                    // All good now!
-                    req.statusMessages = ["The organization has been set to none for user \"" + username + "\"."];
-                    return next();
-                });
                 return;
             }
             
-            // Since we need to, let's make sure organizationName is A-Ok
-            db.organizations.get(organizationName, function (err, organization) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
-                if (!organization) {
-                    return res.render("error-back.ejs", {
-                        title: "SerGIS Server Admin",
-                        subtitle: "Error Updating User",
-                        details: "Invalid organization."
-                    });
-                }
-                
-                // Okay, now update the user
-                db.users.update(username, {
-                    organization: organizationName
-                }, null, function (err) {
-                    if (err) {
-                        req.error = {number: 500};
-                        return next("route");
-                    }
-
-                    // All good now!
-                    req.statusMessages = ["The organization has been set to \"" + organizationName + "\" for user \"" + username + "\"."];
-                    return next();
-                });
+            user.organization = organizationID || undefined;
+            return user.save().then(function () {
+                req.statusMessages = ["The organization for user \"" + username + "\" has been updated."];
+                next();
             });
+        }).then(null, function (err) {
+            next(err);
         });
     },
     
@@ -499,40 +421,31 @@ var adminActions = {
      */
     "set-user-admin": function (req, res, next, username, admin) {
         // Make sure the username is A-Ok
-        db.users.get(username, function (err, user) {
-            if (err) {
-                req.error = {number: 500};
-                return next("route");
-            }
-            
+        db.models.User.findOne({username_lowercase: username.toLowerCase()}).exec().then(function (user) {
             if (!user) {
-                return res.render("error-back.ejs", {
+                res.render("error-back.ejs", {
                     title: "SerGIS Server Admin",
                     subtitle: "Error Updating User",
                     details: "Invalid username."
                 });
+                return;
             }
             
             // Make sure we're not changing ourselves
             if (user.username == req.user.username) {
                 // Pretend that nothing happened.
-                return next();
+                next();
+                return;
             }
             
-            // Okay, now update the user
-            db.users.update(username, {
-                isAdmin: admin == "yup",
-                isOrganizationAdmin: admin == "kinda",
-            }, null, function (err) {
-                if (err) {
-                    req.error = {number: 500};
-                    return next("route");
-                }
-
+            user.adminStatus = admin;
+            return user.save().then(function () {
                 // All good now!
                 req.statusMessages = ["User \"" + username + "\" is now " + (admin == "yup" ? " an Admin." : admin == "kinda" ? "an Organization Admin." : "not an admin.")];
-                return next();
+                next();
             });
+        }).then(null, function (err) {
+            next(err);
         });
     }
 };

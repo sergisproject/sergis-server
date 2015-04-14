@@ -106,11 +106,7 @@ var pageHandlers = {
                 res.set("Content-Type", "text/javascript");
                 res.send(contents.join("\n\n\n\n\n\n"));
             }).catch(function (err) {
-                console.error("ERROR CONCATENATING FILES: ", err.stack);
-                req.error = {
-                    number: 500
-                };
-                return next("route");
+                next(err);
             });
         }
     },

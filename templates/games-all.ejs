@@ -21,9 +21,9 @@
     <tbody>
     <% gameObj.games.forEach(function (game) { %>
     <tr>
-        <td><a href="<%= httpPrefix %>/games/<%= game.gameOwner %>/<%= game.gameName %>" title="Play <%= game.gameName %>"><b><%= game.gameName %></b></a></td>
-        <td><a href="<%= httpPrefix %>/games/<%= game.gameOwner %>" title="View all games by <%= game.gameOwner %>"><%= game.ownerDisplayName || game.gameOwner %></a></td>
-        <% if (gameObj.organizationColumn) { %><td><%= game.ownerOrganization %></td><% } %>
+        <td><a href="<%= httpPrefix %>/games/<%= game.owner.username %>/<%= game.name %>" title="Play <%= game.name %>"><b><%= game.name %></b></a></td>
+        <td><a href="<%= httpPrefix %>/games/<%= game.owner.username %>" title="View all games by <%= game.owner.name %>"><%= game.owner.name %></a></td>
+        <% if (gameObj.organizationColumn) { %><td><%= orgsByID[game.owner.organization] %></td><% } %>
     </tr>
     <% }) %>
     </tbody>

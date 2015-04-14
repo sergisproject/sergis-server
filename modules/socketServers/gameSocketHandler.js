@@ -19,6 +19,17 @@ var config = require("../../config"),
 
 
 /**
+ * Report an error.
+ */
+function reportError(err) {
+    if (err) {
+        console.error("--------------------------------------------------------------------------------");
+        console.error("SerGIS Server - Game Socket ERROR at " + (new Date()) + ":\n" + (err.stack || err) + "\n\n");
+    }
+}
+
+
+/**
  * Initialize the handler for connections to the "/game" socket.
  * This is called each time a new connection is made to the "/game" socket.
  *
@@ -28,93 +39,122 @@ var config = require("../../config"),
  */
 module.exports = function (socket, next) {
     // logIn handler
-    socket.on("logIn", function (gameOwner, gameName, username, password, callback) {
-        db.games.makeAuthenticatedGameToken(gameOwner, gameName, username, password, function (err, userObject, authToken) {
-            if (err) return callback();
-            callback(userObject, authToken);
+    socket.on("logIn", function (gameID, username, password, callback) {
+        if (!gameID) {
+            callback();
+            return;
+        }
+        
+        // Check the login info
+        db.models.User.checkLoginInfo(username, password).then(function (user) {
+            if (!user) {
+                callback(false);
+                return;
+            }
+            
+            // We have the user; get the game
+            return db.models.Game.findById(gameID).exec().then(function (game) {
+                if (!game) {
+                    callback();
+                    return;
+                }
+
+                // We have the game; make a game token
+                return db.models.GameToken.makeGameToken(game, user).then(function (gameToken) {
+                    if (!gameToken) return callback();
+                    
+                    // All good!
+                    callback(gameToken.clientUserObject, gameToken.token);
+                }, function (err) {
+                    // The user probably doesn't have access to this game
+                    callback(false, false);
+                });
+            });
+        }).then(null, function (err) {
+            reportError(err);
+            callback();
         });
     });
 
     // getUser handler
-    socket.on("getUser", function (gameOwner, gameName, sessionID, callback) {
-        if (!gameOwner || !gameName) {
-            return callback();
+    socket.on("getUser", function (gameID, sessionID, callback) {
+        if (!gameID) {
+            callback();
+            return;
         }
         
-        function last_resort() {
-            // Try logging in without authentication, if possible
-            db.games.makeAnonymousGameToken(gameOwner, gameName, function (err, userObject, authToken) {
-                if (err) return callback();
-                callback(userObject, authToken);
-            });
-        };
-        
-        if (!sessionID) {
-            return last_resort();
-        }
-        
-        // Since we have a session ID, try looking up username from that
-        db.getSessionByID(sessionID, function (err, session) {
-            if (err || !session || !session.username) {
+        var game;
+        Promise.resolve(db.models.Game.findById(gameID).exec()).then(function (_game) {
+            game = _game;
+            if (!game) return;
+            
+            // Get the session by its ID
+            return db.getSessionByID(sessionID);
+        }).then(function (session) {
+            if (!session || !session.user_id) {
                 // No session
-                return last_resort();
+                return;
             }
             
-            // We should be good!
-            db.games.makeGameToken(gameOwner, gameName, session.username, function (err, userObject, authToken) {
-                if (err) return callback();
-                callback(userObject, authToken);
-            });
+            // Get user from session username
+            return db.models.User.findById(session.user_id).exec();
+        }).then(function (user) {
+            if (!game) return;
+            
+            // Whether we have a user or not, try making a game token
+            return db.models.GameToken.makeGameToken(game, user);
+        }).then(function (gameToken) {
+            if (!gameToken) return callback();
+            callback(gameToken.clientUserObject, gameToken.token);
+        }).then(null, function (err) {
+            reportError(err);
+            callback();
         });
     });
 
     // game function handler
     socket.on("game", function (token, func, args, callback) {
         if (gameCommon.hasOwnProperty(func) && typeof gameCommon[func] == "function") {
-            db.games.getGameAndTokenData(token, function (err, game, tokenData) {
-                if (err) {
-                    return callback(false, "Server error");
+            var gameToken, data;
+            Promise.resolve(db.models.GameToken.findOne({token: token}).populate("game").exec()).then(function (_gameToken) {
+                gameToken = _gameToken;
+                if (!gameToken) {
+                    callback(false, "Invalid token");
+                    return Promise.reject();
                 }
                 
-                if (!game || !tokenData) {
-                    return callback(false, "Invalid token");
-                }
-                
+                var game = gameToken.game;
                 if (!game.jsondata || !game.jsondata.promptList || !game.jsondata.promptList.length) {
-                    return callback(false, "Invalid game data");
+                    callback(false, "Invalid game data");
+                    return Promise.reject();
                 }
 
-                var state = tokenData.state;
-                args = [game.jsondata, tokenData.state].concat(args);
-                gameCommon[func].apply(gameCommon, args).then(function (data) {
-                    // Promise resolved
-                    // If it was a "getGameOverContent", delete the token (we're done)
-                    if (func == "getGameOverContent") {
-                        db.games.deleteGameToken(tokenData.token, function (err, result) {
-                            if (err) {
-                                console.error("ERROR UPDATING TOKEN GAME STATE: ", err && err.stack);
-                                return callback(false, "Server Error");
-                            }
-
-                            // Yay, all good!
-                            callback(true, data);
-                        });
-                    } else {
-                        // Otherwise, make sure state is updated
-                        db.games.updateGameTokenData(tokenData.token, {state: tokenData.state}, function (err, success) {
-                            if (err) {
-                                console.error("ERROR UPDATING TOKEN GAME STATE: ", err && err.stack);
-                                return callback(false, "Server Error");
-                            }
-
-                            // Yay, all good!
-                            callback(true, data);
-                        });
-                    }
-                }, function (err) {
-                    // Promise rejected
+                // Run the function (in gameCommon)
+                args = [game.jsondata, gameToken.state].concat(args);
+                return gameCommon[func].apply(gameCommon, args).then(null, function (data) {
+                    // gameCommon...'s Promise rejected
                     callback(false, data);
                 });
+            }).then(function (_data) {
+                data = _data;
+                // gameCommon function's Promise resolved
+                // If it was a "getGameOverContent", delete the token (we're done)
+                if (func == "getGameOverContent") {
+                    return gameToken.remove();
+                } else {
+                    // Otherwise, make sure state is updated
+                    gameToken.markModified("state");
+                    return gameToken.save();
+                }
+            }).then(function () {
+                // Yay, all good!
+                callback(true, data);
+            }, function (err) {
+                if (err) {
+                    // Server DB error
+                    reportError(err);
+                    callback(false, "Server error");
+                }
             });
         } else {
             return callback(false, func + " does not exist.");
@@ -123,5 +163,5 @@ module.exports = function (socket, next) {
 
 
     // Everything's initialized for us; move on!
-    return next();
+    next();
 };

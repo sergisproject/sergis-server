@@ -15,6 +15,17 @@ var config = require("../../config"),
 
 
 /**
+ * Report an error.
+ */
+function reportError(err) {
+    if (err) {
+        console.error("--------------------------------------------------------------------------------");
+        console.error("SerGIS Server - Author Socket ERROR at " + (new Date()) + ":\n" + (err.stack || err) + "\n\n");
+    }
+}
+
+
+/**
  * Initialize the handler for connections to the "/author" socket.
  * This is called each time a new connection is made to the "/author" socket.
  *
@@ -26,24 +37,29 @@ module.exports = function (socket, next) {
     // init handler
     socket.on("init", function (sessionID, callback) {
         if (!sessionID) {
-            return callback(false);
+            callback(false);
+            return;
         }
         
         // Since we have a session ID, try looking up username from that
-        db.getSessionByID(sessionID, function (err, session) {
-            if (err || !session || !session.username) {
+        db.getSessionByID(sessionID).then(function (session) {
+            if (!session || !session.username) {
                 // Nothing useful in the session
-                return callback(false);
+                callback(false);
+                return;
             }
             
             // Initialize the rest of the handlers
             initHandlers(socket, session.username);
-            return callback(true);
+            callback(true);
+        }, function (err) {
+            reportError(err);
+            callback(false);
         });
     });
 
     // Everything's initialized for us; move on!
-    return next();
+    next();
 };
 
 
@@ -51,95 +67,141 @@ module.exports = function (socket, next) {
  * Initialize all of the game storage-related handlers for a socket instance.
  */
 function initHandlers(socket, username) {
-    // getGameList function; args: [] --> Object<string, Date>
-    socket.on("getGameList", function (args, callback) {
-        db.author.getAll(username, function (err, gameList) {
-            if (err) return callback(false);
-            return callback(true, gameList);
-        });
-    });
-
-    // loadGame function; args: [gameName] --> Object
-    socket.on("loadGame", function (args, callback) {
-        var gameName = args[0];
-        db.author.get(username, gameName, function (err, jsondata) {
-            if (err || !jsondata) return callback(false);
-            return callback(true, jsondata);
-        });
-    });
-
-    // saveGame function; args: [gameName, jsondata]
-    socket.on("saveGame", function (args, callback) {
-        var gameName = args[0], jsondata = args[1];
-        // First, try creating it
-        db.author.create(username, gameName, jsondata, function (err, didItAllGoWell) {
-            if (err) return callback(false);
-            if (didItAllGoWell) {
-                // Yay, all done!
-                return callback(true);
-            } else {
-                // It didn't go well, probably cause it already exists, so we need to update
-                db.author.update(username, gameName, jsondata, function (err) {
-                    if (err) return callback(false);
-                    // Yay, all done for realz!
-                    return callback(true);
+    db.models.User.findOne({username_lowercase: username.toLowerCase()}, function (err, user) {
+        if (!user) {
+            // =(
+            return;
+        }
+        
+        // getGameList function; args: [] --> Object<string, Date>
+        socket.on("getGameList", function (args, callback) {
+            db.models.AuthorGame.find({owner: user._id})
+                                .select("name lastModified")
+                                .exec().then(function (games) {
+                var gameList = {};
+                games.forEach(function (game) {
+                    gameList[game.name] = new Date(game.lastModified);
                 });
-            }
-        });
-    });
-
-    // renameGame function; args: [gameName, newGameName]
-    socket.on("renameGame", function (args, callback) {
-        var gameName = args[0], newGameName = args[1];
-        db.author.get(username, gameName, function (err, jsondata) {
-            if (err || !jsondata) return callback(false);
-            db.author.delete(username, gameName, function (err) {
-                if (err) return callback(false);
-                db.author.create(username, newGameName, jsondata, function (err) {
-                    if (err) return callback(false);
-                    return callback(true);
-                });
+                callback(true, gameList);
+            }, function (err) {
+                reportError(err);
+                callback(false);
             });
         });
-    });
 
-    // removeGame function; args: [gameName]
-    socket.on("removeGame", function (args, callback) {
-        var gameName = args[0];
-        db.author.delete(username, gameName, function (err) {
-            if (err) return callback(false);
-            callback(true);
-        });
-    });
-
-    // checkGameName function; args: [gameName] --> number
-    socket.on("checkGameName", function (args, callback) {
-        var gameName = args[0];
-        if (!gameName || !config.URL_SAFE_REGEX.test(gameName)) return callback(true, -1);
-        // It's valid, check to see if it's taken
-        db.author.get(username, gameName, function (err, jsondata) {
-            if (err) return callback(false);
-            return callback(true, jsondata ? 0 : 1);
-        });
-    });
-
-    // previewGame and publishGame functions; args: [gameName] --> Object
-    function pubviewGame(type, args, callback) {
-        var gameName = args[0];
-        // Make sure the game exists
-        db.author.get(username, gameName, function (err, jsondata) {
-            if (err || !jsondata) return callback(false);
-            // Okay, it's good
-            return callback(true, {
-                url: config.HTTP_PREFIX + "/author/" + type,
-                method: "POST",
-                data: {
-                    gameName: gameName
-                },
-                enctype: "application/x-www-form-urlencoded"
+        // loadGame function; args: [gameName] --> Object
+        socket.on("loadGame", function (args, callback) {
+            var gameName = args[0];
+            db.models.AuthorGame.findOne({owner: user._id, name_lowercase: gameName.toLowerCase()})
+                                .select("jsondata")
+                                .exec().then(function (game) {
+                callback(!!game.jsondata, game.jsondata || undefined);
+            }, function (err) {
+                reportError(err);
+                callback(false);
             });
         });
-    }
-    socket.on("previewGame", pubviewGame.bind(null, "preview"));
-    socket.on("publishGame", pubviewGame.bind(null, "publish"));
+
+        // saveGame function; args: [gameName, jsondata]
+        socket.on("saveGame", function (args, callback) {
+            var gameName = args[0], jsondata = args[1];
+            // Try looking it up
+            db.models.AuthorGame.findOne({owner: user._id, name_lowercase: gameName.toLowerCase()})
+                                .select("")
+                                .exec().then(function (game) {
+                if (game) {
+                    // Update the required fields
+                    game.jsondata = jsondata;
+                    game.lastModified = new Date();
+                } else {
+                    // No game matched; make a new game
+                    game = new db.models.AuthorGame({
+                        name: gameName,
+                        name_lowercase: gameName.toLowerCase(),
+                        owner: user._id,
+                        jsondata: jsondata,
+                        lastModified: new Date()
+                    });
+                }
+                return game.save();
+            }).then(function () {
+                callback(true);
+            }).then(null, function (err) {
+                reportError(err);
+                callback(false);
+            });
+        });
+
+        // renameGame function; args: [gameName, newGameName]
+        socket.on("renameGame", function (args, callback) {
+            var gameName = args[0], newGameName = args[1];
+            db.models.AuthorGame.findOne({owner: user._id, name_lowercase: gameName.toLowerCase()})
+                                .select("")
+                                .exec().then(function (game) {
+                game.name = newGameName;
+                game.name_lowercase = newGameName.toLowerCase();
+                return game.save();
+            }).then(function () {
+                callback(true);
+            }).then(null, function (err) {
+                if (err && err.name == "ValidationError") {
+                    callback(false, "Invalid game name.");
+                } else {
+                    reportError(err);
+                    callback(false);
+                }
+            });
+        });
+
+        // removeGame function; args: [gameName]
+        socket.on("removeGame", function (args, callback) {
+            var gameName = args[0];
+            db.models.AuthorGame.findOneAndRemove({owner: user._id, name_lowercase: gameName.toLowerCase()})
+                                .exec().then(function (game) {
+                callback(true);
+            }, function (err) {
+                reportError(err);
+                callback(false);
+            });
+        });
+
+        // checkGameName function; args: [gameName] --> number
+        socket.on("checkGameName", function (args, callback) {
+            var gameName = args[0];
+            if (!gameName || !config.URL_SAFE_REGEX.test(gameName)) return callback(true, -1);
+            // It's valid, check to see if it's taken
+            db.models.AuthorGame.count({owner: user._id, name_lowercase: gameName.toLowerCase()})
+                                .exec().then(function (count) {
+                callback(true, count ? 0 : 1);
+            }, function (err) {
+                reportError(err);
+                callback(false);
+            });
+        });
+
+        // previewGame and publishGame functions; args: [gameName] --> Object
+        function pubviewGame(type, args, callback) {
+            var gameName = args[0];
+            // Make sure the game exists
+            db.models.AuthorGame.findOne({owner: user._id, name_lowercase: gameName.toLowerCase()})
+                                .select("")
+                                .exec().then(function (game) {
+                if (!game) return callback(false);
+                // Okay, it's good
+                callback(true, {
+                    url: config.HTTP_PREFIX + "/author/" + type,
+                    method: "POST",
+                    data: {
+                        id: "" + game._id
+                    },
+                    enctype: "application/x-www-form-urlencoded"
+                });
+            }, function (err) {
+                reportError(err);
+                callback(false);
+            });
+        }
+        socket.on("previewGame", pubviewGame.bind(null, "preview"));
+        socket.on("publishGame", pubviewGame.bind(null, "publish"));
+    });
 }
