@@ -156,76 +156,7 @@ exports.migrateFromPlainMongo = function () {
     var userIdsByName = {};
     var gameIdsByName = {};
     
-    return new Promise(function (resolve, reject) {
-        //
-        // Migrate sergis-organizations
-        //
-        db.collection("sergis-organizations").find({}).toArray(function (err, organizations) {
-            if (err) return reject(err);
-            
-            var promises = [];
-            organizations.forEach(function (org) {
-                var newOrg = new models.Organization({
-                    name: org.name,
-                    name_lowercase: org.name.toLowerCase()
-                });
-                promises.push(newOrg.save().then(function () {
-                    organizationIdsByName[org.name] = newOrg._id;
-                }));
-            });
-            resolve(Promise.all(promises));
-        });
-    }).then(function () {
-        return new Promise(function (resolve, reject) {
-            //
-            // Migrate sergis-users
-            //
-            db.collection("sergis-users").find({}).toArray(function (err, items) {
-                if (err) return reject(err);
-                
-                var promises = [];
-                items.forEach(function (item) {
-                    var newItem = new models.User({
-                        username: item.username,
-                        username_lowercase: item.username.toLowerCase(),
-                        name: item.displayName,
-                        encryptedPassword: item.encryptedPassword,
-                        organization: item.organization ? organizationIdsByName[item.organization] : undefined,
-                        isFullAdmin: item.isAdmin,
-                        isOrganizationAdmin: item.isOrganizationAdmin
-                    });
-                    promises.push(newItem.save().then(function () {
-                        userIdsByName[item.username] = newItem._id;
-                    }));
-                });
-                resolve(Promise.all(promises));
-            });
-        });
-    }).then(function () {
-        return new Promise(function (resolve, reject) {
-            //
-            // Migrate sergis-games
-            //
-            db.collection("sergis-games").find({}).toArray(function (err, items) {
-                if (err) return reject(err);
-                
-                var promises = [];
-                items.forEach(function (item) {
-                    var newItem = new models.Game({
-                        name: item.gameName,
-                        name_lowercase: item.gameName.toLowerCase(),
-                        owner: userIdsByName[item.gameOwner],
-                        access: item.access,
-                        jsondata: item.jsondata
-                    });
-                    promises.push(newItem.save().then(function () {
-                        gameIdsByName[item.gameName] = newItem._id;
-                    }));
-                });
-                resolve(Promise.all(promises));
-            });
-        });
-    }).then(function () {
+    return Promise.resolve().then(function () {
         return new Promise(function (resolve, reject) {
             //
             // Migrate sergis-author-games
