@@ -14,7 +14,7 @@
                 <% } %>
                 <option value="private">Private</option>
             </select></td></tr>
-            <tr><td>&nbsp;</td><td><small>Public games are accessible by anyone.<br><% if (me.organization) { %>Organization games are accessible by anyone in <%= me.organization %>.<br><% } %>Private games are only accessible by you and administrators.</small></td></tr>
+            <tr><td>&nbsp;</td><td><small>Public games are accessible by anyone.<br><% if (me.organization) { %>Organization games are accessible by anyone in <%= me.organization.name %>.<br><% } %>Private games are only accessible by you and administrators.</small></td></tr>
             <tr><td>&nbsp;</td><td><input type="submit" value="Create Game"></td></tr>
         </tbody></table>
     </form>
