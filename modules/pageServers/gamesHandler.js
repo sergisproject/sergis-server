@@ -164,7 +164,7 @@ var pageHandlers = {
                 promises.push(db.models.Game.getAll(user, null, "organization").then(function (organizationGames) {
                     // If the user isn't actually part of an organization, then don't return a list of games if there aren't any.
                     // (This could occur if we're an admin looking at this user.)
-                    if (!theirOrganization && organizationGames.length == 0) {
+                    if (!theirOrganization && organizationGames.length === 0) {
                         return false;
                     } else {
                         // Either we have games to show, or they're really part of an organization (so we want the "no organization games" message)

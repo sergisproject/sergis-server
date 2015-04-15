@@ -9,12 +9,6 @@
 // This file handles everything having to do with login, account permissions,
 // and other shared functionality.
 
-// node modules
-var path = require("path");
-
-// required modules
-var express = require("express");
-
 // our modules
 var config = require("../config"),
     db = require("./db");

@@ -56,8 +56,9 @@ db.once("open", function () {
         if (err) return console.error(err, "reading files from models directory at " + modelsDir);
         
         // Load all the models
+        var i;
         try {
-            for (var i = 0; i < files.length; i++) {
+            for (i = 0; i < files.length; i++) {
                 if (files[i].substr(-3) == ".js") {
                     // "require" this file
                     models[files[i].substring(0, files[i].length - 3)] = require(path.join(modelsDir, files[i]))(mongoose);
@@ -77,7 +78,7 @@ db.once("open", function () {
         
         config.time("db.js", "Models loaded. Running load handlers...");
         // Run load handlers
-        for (var i = 0; i < loadHandlers.length; i++) {
+        for (i = 0; i < loadHandlers.length; i++) {
             loadHandlers[i]();
         }
         config.time("db.js", "Done running load handlers.");

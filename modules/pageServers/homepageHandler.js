@@ -13,7 +13,6 @@ var express = require("express");
 
 // our modules
 var config = require("../../config"),
-    db = require("../db"),
     accounts = require("../accounts");
 
 // The router for /
@@ -62,11 +61,10 @@ var pageHandlers = {
         }
         res.status(number);
         res.render("error.hbs", {
-            title: "SerGIS Error",
+            title: title,
             errorPage: true,
             me: req.user,
             number: number,
-            title: title,
             details: details
         });
     }

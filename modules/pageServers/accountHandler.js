@@ -9,9 +9,6 @@
 // This file handles everything having to do with serving account and
 // administrative pages for sergis-server.
 
-// node modules
-var path = require("path");
-
 // required modules
 var express = require("express"),
     bodyParser = require("body-parser"),
@@ -251,8 +248,7 @@ var accountActions = {
         }
         
         // Check if the admin status is changed (admin only)
-        var oldAdminStatus = user.isFullAdmin ? "yup" : user.isOrganizationAdmin ? "kinda" : "nope";
-        if (req.user.username != user.username && req.user.isFullAdmin && req.body.admin && req.body.admin != user.adminStatus) {
+        if (!req.user.equals(user) && req.user.isFullAdmin && req.body.admin && req.body.admin != user.adminStatus) {
             user.adminStatus = req.body.admin;
             req.statusMessages.push("The admin status for " + user.username + " has been updated.");
         }
@@ -459,7 +455,7 @@ var adminActions = {
             }
             
             // Make sure we're not changing ourselves
-            if (user.username == req.user.username) {
+            if (user.equals(req.user)) {
                 // Pretend that nothing happened.
                 next();
                 return;

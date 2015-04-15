@@ -262,11 +262,10 @@ function startHttpServer() {
         console.error("SerGIS Server ERROR at " + (new Date()) + ":\n" + err.stack + "\n\n");
         res.status(500);
         res.render("error.hbs", {
-            title: "SerGIS Error",
+            title: "Internal Server Error",
             errorPage: true,
             me: req.user,
             number: 500,
-            title: "Internal Server Error",
             details: "See error console on server, or contact the site administrator with the exact date and time that this error occurred."
         });
     });
@@ -276,7 +275,7 @@ function startHttpServer() {
 /** Start the socket server. */
 function startSocketServer() {
     // Decide on the socket.io path
-    var socketPath = undefined;
+    var socketPath;
     if (config.SOCKET_PREFIX) {
         console.log("Setting socket path to " + config.SOCKET_PREFIX + "/socket.io");
         socketPath = config.SOCKET_PREFIX + "/socket.io";
