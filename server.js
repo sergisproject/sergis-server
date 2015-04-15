@@ -44,10 +44,10 @@ var STATIC_DIRECTORIES = {
  * modules in `modules/pageServers/`.
  */
 var HTTP_SERVERS = {
-    "/static": "staticHandler",
-    "/games": "gamesHandler",
-    "/account": "accountHandler",
     "/author": "authorHandler",
+    "/account": "accountHandler",
+    "/games": "gamesHandler",
+    "/static": "staticHandler",
     // This one catches everything else
     "/": "homepageHandler"
 };
