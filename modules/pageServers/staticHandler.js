@@ -53,7 +53,7 @@ var pageHandlers = {
         if (config.MINIFY_JS) {
             // Serve a minified version
             if (!minifiedJS.hasOwnProperty(name)) {
-                console.log("Minifying JS: " + name);
+                config.time("staticHandler.js", "Minifying " + name + "...");
                 
                 // Save current working directory
                 var cwd = process.cwd();
@@ -83,6 +83,8 @@ var pageHandlers = {
                     code: result.code,
                     map: result.map
                 };
+                
+                config.time("staticHandler.js", "Minified " + name + ".");
             }
 
             // Send the end result file on out

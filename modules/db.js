@@ -28,12 +28,14 @@ var modelsDir = path.join(__dirname, "models");
 
 
 // Connect to the MongoDB server
+config.time("db.js", "Connecting to MongoDB server...");
 mongoose.connect(config.MONGO_SERVER, {
     server: {
         keepAlive: 1,
         auto_reconnect: true
     }
 });
+config.time("db.js", "Connected to MongoDB server.");
 
 var db = mongoose.connection;
 
