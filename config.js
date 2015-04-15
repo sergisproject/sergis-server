@@ -249,5 +249,5 @@ config.time = function (fileName, description) {
     timeFromPrev = ((timeFromPrev[0] + timeFromPrev[1] / 1e9) * 1000).toFixed(3);
     timeFromPrev = ("          " + timeFromPrev).substr(Math.min(-10, -timeFromPrev.length));
     
-    console.log("::: TIMING [" + timeFromStart + " sec] [" + timeFromPrev + " ms since]: " + fileName + ": " + description);
+    console.log("::: TIMING [" + timeFromStart + " sec] [" + timeFromPrev + " ms diff]: " + fileName + ": " + description);
 };
