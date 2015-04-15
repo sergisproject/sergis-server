@@ -10,13 +10,13 @@
 var fs = require("fs"),
     path = require("path");
 
+// our modules (require'd up here so we can use config.time for mongoose require)
+var config = require("../config");
+
 // required modules
 config.time("db.js", "Requiring mongoose...");
 var mongoose = require("mongoose");
 config.time("db.js", "Required mongoose.");
-
-// our modules
-var config = require("../config");
 
 
 /** Functions to call when the database is loaded */
