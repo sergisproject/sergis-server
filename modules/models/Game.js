@@ -123,7 +123,7 @@ module.exports = function (mongoose) {
             
             // Check each game owner's organization
             return games.filter(function (game) {
-                return game.owner.organization && game.owner.organization.equals(organization);
+                return game.owner.organization && game.owner.organization.equals(organization._id);
             });
         });
     };
