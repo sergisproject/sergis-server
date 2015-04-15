@@ -182,7 +182,7 @@ var config = module.exports = {
      * @type {Array.<string>}
      */
     AUTHOR_RESOURCES_JS: [
-        "es6-promise-2.0.0.min.js", "author-checkpromise.js", "localforage.nopromises.min.js",
+        "es6-promise-2.0.0.min.js", "author-checkpromise.js",
         "author-main.js", "author-ask.js",
         "author-json.js", "author-games.js", "author-table.js",
         "author-editor.js", "author-action-editor.js", "author-frontend-info-editor.js",
