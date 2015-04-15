@@ -1,11 +1,11 @@
-<% if (typeof nostyle == "undefined" || !nostyle) { %>
+{{#unless nostyle}}
 <footer>
     <p>Copyright &copy; 2015, SerGIS Project Contributors</p>
     <p><a href="http://sergisproject.github.io/" target="_blank">The SerGIS Project</a></p>
 </footer>
-<% } %>
+{{/unless}}
 
-<% if (typeof formCheckers != "undefined" && formCheckers) { %>
+{{#if formCheckers}}
 <script type="text/javascript">
 (function () {
     var elems = document.getElementsByTagName("select"), elem;
@@ -49,9 +49,9 @@
     }
 })();
 </script>
-<% } %>
+{{/if}}
 
-<% if (typeof passwordGenerator != "undefined" && passwordGenerator) { %>
+{{#if passwordGenerator}}
 <script type="text/javascript" src="https://cdn.rawgit.com/xiongchiamiov/pronounceable-password-generator/be6ab0cbf88aa0466308ab926d9a28f278c80237/gpw.js"></script>
 <script type="text/javascript">
 (function () {
@@ -72,6 +72,6 @@
     }
 })();
 </script>
-<% } %>
+{{/if}}
 </body>
 </html>

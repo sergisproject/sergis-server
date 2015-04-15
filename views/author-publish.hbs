@@ -1,0 +1,21 @@
+{{> HEADER}}
+
+<section>
+    <form action="" method="POST" enctype="application/x-www-form-urlencoded">
+        <input type="hidden" name="action" value="create-game">
+        <input type="hidden" name="authorGameID" value="{{authorGameID}}">
+        <table><tbody>
+            <tr><td>Game Name: </td><td><input type="text" name="gameName" value="{{authorGameName}}" required pattern="{{gameNamePattern}}"></td></tr>
+            <tr><td>&nbsp;</td><td><small>Must be unique, consisting only of letters, digits, and the following characters: <code>{{gameNameCharacters}}</code></small></td></tr>
+            <tr><td>Access Level: </td><td><select name="access">
+                <option value="public" selected>Public</option>
+                {{#if me.organization}}<option value="organization">Organization</option>{{/if}}
+                <option value="private">Private</option>
+            </select></td></tr>
+            <tr><td>&nbsp;</td><td><small>Public games are accessible by anyone.<br>{{#if me.organization}}Organization games are accessible by anyone in {{me.organization.name}}.<br>{{/if}}Private games are only accessible by you and administrators.</small></td></tr>
+            <tr><td>&nbsp;</td><td><input type="submit" value="Create Game"></td></tr>
+        </tbody></table>
+    </form>
+</section>
+
+{{> FOOTER}}

@@ -61,6 +61,18 @@ module.exports = function (mongoose) {
     });
     
     
+    // Game model virtuals
+    gameSchema.virtual("isPublicAccess").get(function () {
+        return this.access == "public";
+    });
+    gameSchema.virtual("isOrganizationAccess").get(function () {
+        return this.access == "organization";
+    });
+    gameSchema.virtual("isPrivateAccess").get(function () {
+        return this.access == "private";
+    });
+    
+    
     // Game model instance method
     /**
      * Determine whether the game is accessible by a certain user.
@@ -125,6 +137,14 @@ module.exports = function (mongoose) {
             return games.filter(function (game) {
                 return game.owner.organization && game.owner.organization.equals(organization._id);
             });
+        }).then(function (games) {
+            // Populate each owner's organization
+            return Promise.all(games.map(function (game) {
+                if (!game || !game.owner) return Promise.resolve(game);
+                return game.owner.populate("organization").execPopulate().then(function () {
+                    return game;
+                });
+            }));
         });
     };
     

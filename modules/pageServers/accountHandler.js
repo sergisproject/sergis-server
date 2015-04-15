@@ -62,11 +62,19 @@ var pageHandlers = {
         var user = req.otherUser || req.user;
         // Get the list of groups, in case we need it
         db.models.Organization.find({}).exec().then(function (organizations) {
-            res.render("account.ejs", {
+            res.render("account.hbs", {
+                title: "SerGIS Account - " + user.username,
                 me: req.user,
                 user: user,
-                statusMessages: req.statusMessages || false,
-                organizations: organizations,
+                isMe: req.user.equals(user),
+                statusMessages: req.statusMessages,
+                organizations: organizations.map(function (org) {
+                    return {
+                        _id: org._id,
+                        name: org.name,
+                        selected: user.organization && user.organization.equals(org)
+                    };
+                }),
                 gameNamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
                 gameNameCharacters: config.URL_SAFE_REGEX_CHARS
             });
@@ -126,14 +134,33 @@ var pageHandlers = {
             return db.models.Organization.find({}).exec();
         }).then(function (organizations) {
             // Now, render all that shit
-            res.render("admin.ejs", {
+            res.render("admin.hbs", {
+                title: "SerGIS Server Admin",
                 me: req.user,
-                users: users,
-                statusMessages: req.statusMessages || false,
+                users: users.map(function (user) {
+                    return {
+                        _id: user._id,
+                        username: user.username,
+                        name: user.name,
+                        isFullAdmin: user.isFullAdmin,
+                        isOrganizationAdmin: user.isOrganizationAdmin,
+                        isMe: user.equals(req.user),
+                        organizations: organizations.map(function (org) {
+                            return {
+                                _id: org._id,
+                                name: org.name,
+                                selected: user.organization && user.organization.equals(org)
+                            };
+                        })
+                    };
+                }),
+                statusMessages: req.statusMessages,
                 organization: req.user.isOrganizationAdmin && req.user.organization && req.user.organization.name,
                 organizations: organizations,
                 usernamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
-                usernameCharacters: config.URL_SAFE_REGEX_CHARS
+                usernameCharacters: config.URL_SAFE_REGEX_CHARS,
+                formCheckers: true,
+                passwordGenerator: true
             });
         }).then(null, function (err) {
             next(err);
@@ -302,7 +329,7 @@ var adminActions = {
         }
 
         if (errorMsg) {
-            return res.render("error-back.ejs", {
+            return res.render("error-back.hbs", {
                 title: "SerGIS Server Admin",
                 subtitle: "Error Creating Account",
                 details: errorMsg
@@ -316,7 +343,7 @@ var adminActions = {
             next();
         }, function (err) {
             if (err && err.name == "ValidationError") {
-                return res.render("error-back.ejs", {
+                return res.render("error-back.hbs", {
                     title: "SerGIS Server Admin",
                     subtitle: "Error Creating Account",
                     details: "User creation failed.\nPlease make sure that the username does not already exist."
@@ -371,7 +398,7 @@ var adminActions = {
      */
     "create-organization": function (req, res, next, organizationName) {
         if (!organizationName) {
-            res.render("error-back.ejs", {
+            res.render("error-back.hbs", {
                 title: "SerGIS Server Admin",
                 subtitle: "Error Creating Organization",
                 details: "No organization name provided."
@@ -398,7 +425,7 @@ var adminActions = {
         // Make sure username is A-Ok
         db.models.User.findOne({username_lowercase: username.toLowerCase()}).exec().then(function (user) {
             if (!user) {
-                res.render("error-back.ejs", {
+                res.render("error-back.hbs", {
                     title: "SerGIS Server Admin",
                     subtitle: "Error Updating User",
                     details: "Invalid username."
@@ -423,7 +450,7 @@ var adminActions = {
         // Make sure the username is A-Ok
         db.models.User.findOne({username_lowercase: username.toLowerCase()}).exec().then(function (user) {
             if (!user) {
-                res.render("error-back.ejs", {
+                res.render("error-back.hbs", {
                     title: "SerGIS Server Admin",
                     subtitle: "Error Updating User",
                     details: "Invalid username."

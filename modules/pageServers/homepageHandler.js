@@ -34,7 +34,8 @@ var ERROR_TITLES = {
 // The page handlers for /
 var pageHandlers = {
     homepageGet: function (req, res) {
-        res.render("homepage.ejs", {
+        res.render("homepage.hbs", {
+            title: "Welcome to SerGIS!",
             me: req.user,
         });
     },
@@ -60,7 +61,9 @@ var pageHandlers = {
             }
         }
         res.status(number);
-        res.render("error.ejs", {
+        res.render("error.hbs", {
+            title: "SerGIS Error",
+            errorPage: true,
             me: req.user,
             number: number,
             title: title,

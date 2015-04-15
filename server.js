@@ -18,15 +18,14 @@ var path = require("path");
 
 // required modules
 // NOTE: require'd below if needed:
-// express, express-sessions, connect-mongo, http, socket.io, cookie-parser,
-// coffee-script/register, indie-set, ejs
+// express, express-sessions, connect-mongo, http, socket.io, cookie-parser, hbs
 
 // our modules
 var config = require("./config");
 // NOTE: ./modules/db is require'd below if needed
 
 
-config.time("server.js", "Top");
+config.time("server.js", "top");
 
 
 /**
@@ -126,9 +125,8 @@ var db;
 // Make sure we're starting something and, if so, set up exit handling and init
 if (config.ENABLE_HTTP_SERVER || config.ENABLE_SOCKET_SERVER) {
     // Set up database
-    config.time("server.js", "Requiring db...");
     db = require("./modules/db");
-    config.time("server.js", "Required db");
+    config.time("server.js", "Required db.");
     db.addLoadHandler(function () {
         // Database is loaded; set up exit handler system
         initExitHandlers();
@@ -180,30 +178,26 @@ function startHttpServer() {
     console.log("Starting SerGIS HTTP server on port " + config.PORT + "...");
 
     // Require more stuff
-    config.time("server.js", "requiring coffee-script...");
-    require("coffee-script/register");  // for indie-set
-    config.time("server.js", "requiring other stuff...");
+    config.time("server.js", "Requiring more stuff...");
     var express = require("express");
-    config.time("server.js", "required express.");
+    config.time("server.js", "Required express.");
     var session = require("express-session");
-    config.time("server.js", "required express-session");
+    config.time("server.js", "Required express-session.");
     var MongoStore = require("connect-mongo")(session);
-    config.time("server.js", "required connect-mongo");
+    config.time("server.js", "Required connect-mongo.");
     var cookieParser = require("cookie-parser");
-    config.time("server.js", "required cookie-parser");
-    var indieSet = require("indie-set");
-    config.time("server.js", "required indie-set");
-    var ejs = require("ejs");
-    config.time("server.js", "required ejs");
+    config.time("server.js", "Required cookie-parser.");
+    var hbs = require("hbs");
+    config.time("server.js", "Required hbs.");
 
     // Create Express server instance
     app = express();
     server = require("http").Server(app);
 
     // Listen with the HTTP server on our port
-    config.time("server.js", "express started.");
     server.listen(config.PORT);
-    config.time("server.js", "listening on " + config.PORT);
+    
+    config.time("server.js", "Express listening on " + config.PORT);
 
     // Set up static directories
     for (var pathDescrip in STATIC_DIRECTORIES) {
@@ -228,33 +222,36 @@ function startHttpServer() {
         })
     }));
 
-    // Set up templating for HTML files
-    app.set("views", config.TEMPLATES_DIR);
+    // Set up templating
+    app.set("views", path.join(__dirname, "views"));
+    hbs.registerPartials(path.join(__dirname, "views", "partials"));
+    hbs.registerHelper("or", function (a, b, options) {
+        return (a || b) ? options.fn(this) : options.inverse(this);
+    });
+    
+    // Render HTML files (used for client/author's index.html)
     app.engine("html", function (path, data, callback) {
         if (!data) data = {};
-        if (!data.__set) data.__set = {};
-        data["style-simple.css"] = config.CLIENT_STATIC + "/style-simple.css";
-        data.__set.renderStatic = true;
-        return indieSet.__express(path, data, function (err, data) {
-            if (err) return callback(err);
-            // Make sure that there's a doctype
-            if (data && data.substring(0, data.indexOf("\n")).toLowerCase().indexOf("doctype") == -1) {
-                data = "<!DOCTYPE html>\n" + data;
-            }
-            callback(err, data);
-        });
+        data.startComment = "<!--";
+        data.endComment = "-->";
+        return hbs.__express(path, data, callback);
     });
-    app.engine("ejs", function (path, data, callback) {
+    
+    // Render HBS files (used for sergis-server views)
+    app.engine("hbs", function (path, data, callback) {
         if (!data) data = {};
-        data["httpPrefix"] = config.HTTP_PREFIX;
-        data["CLIENT_STATIC"] = config.CLIENT_STATIC;
-        return ejs.renderFile(path, data, callback);
+        data.HTTP_PREFIX = config.HTTP_PREFIX;
+        data.CLIENT_STATIC = config.CLIENT_STATIC;
+        return hbs.__express(path, data, callback);
     });
 
+    config.time("server.js", "Express set up.");
+    
     // Create handlers for our other page servers (see HTTP_SERVERS above)
     for (var pathDescrip in HTTP_SERVERS) {
         if (HTTP_SERVERS.hasOwnProperty(pathDescrip)) {
             app.use(config.HTTP_PREFIX + pathDescrip, require("./modules/pageServers/" + HTTP_SERVERS[pathDescrip]));
+            config.time("server.js", "Express page hander " + pathDescrip + " loaded.");
         }
     }
 
@@ -264,15 +261,15 @@ function startHttpServer() {
         console.error("--------------------------------------------------------------------------------");
         console.error("SerGIS Server ERROR at " + (new Date()) + ":\n" + err.stack + "\n\n");
         res.status(500);
-        res.render("error.ejs", {
+        res.render("error.hbs", {
+            title: "SerGIS Error",
+            errorPage: true,
             me: req.user,
             number: 500,
             title: "Internal Server Error",
             details: "See error console on server, or contact the site administrator with the exact date and time that this error occurred."
         });
     });
-    
-    config.time("server.js", "All Express is set up.");
 }
 
 
@@ -305,12 +302,13 @@ function startSocketServer() {
         io.origins(config.HTTP_ORIGIN);
     }
 
+    config.time("server.js", "Socket initialized.");
+    
     // Create handlers for all our socket servers (see SOCKET_SERVERS above)
     for (var pathDescrip in SOCKET_SERVERS) {
         if (SOCKET_SERVERS.hasOwnProperty(pathDescrip)) {
-            config.time("server.js", "Loading socket handler " + pathDescrip);
             io.of(pathDescrip).use(require("./modules/socketServers/" + SOCKET_SERVERS[pathDescrip]));
+            config.time("server.js", "Socket handler " + pathDescrip + " loaded.");
         }
     }
-    config.time("server.js", "Socket loaded.");
 }

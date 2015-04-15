@@ -159,7 +159,7 @@ var accounts = module.exports = {
     createGame: function (req, res, next, user, gameName, access, jsondata, nostyle) {
         // First, make sure everything's here and good
         if (!gameName) {
-            return res.render("error-back.ejs", {
+            return res.render("error-back.hbs", {
                 title: "SerGIS Account - " + user.username,
                 subtitle: "Error Creating Game",
                 details: "Game name is missing.",
@@ -167,7 +167,7 @@ var accounts = module.exports = {
             });
         }
         if (!config.URL_SAFE_REGEX.test(gameName)) {
-            return res.render("error-back.ejs", {
+            return res.render("error-back.hbs", {
                 title: "SerGIS Account - " + user.username,
                 subtitle: "Error Creating Game",
                 details: "Invalid game name. Game names may consist of any letters, digits, and the following characters: " + config.URL_SAFE_REGEX_CHARS,
@@ -175,7 +175,7 @@ var accounts = module.exports = {
             });
         }
         if (!access || ["public", "organization", "private"].indexOf(access) == -1) {
-            return res.render("error-back.ejs", {
+            return res.render("error-back.hbs", {
                 title: "SerGIS Account - " + user.username,
                 subtitle: "Error Creating Game",
                 details: "Invalid access level.",
@@ -183,7 +183,7 @@ var accounts = module.exports = {
             });
         }
         if (!jsondata && !req.files.jsonfile) {
-            return res.render("error-back.ejs", {
+            return res.render("error-back.hbs", {
                 title: "SerGIS Account - " + user.username,
                 subtitle: "Error Creating Game",
                 details: "No SerGIS JSON Game Data file has been provided.",
@@ -201,7 +201,7 @@ var accounts = module.exports = {
                 jsonerr = err;
             }
             if (!jsondata) {
-                return res.render("error-back.ejs", {
+                return res.render("error-back.hbs", {
                     title: "SerGIS Account - " + user.username,
                     subtitle: "Error Creating Game",
                     details: "Invalid SerGIS JSON Game Data file.\n\n" + (jsonerr ? jsonerr.name + ": " + jsonerr.message : ""),
@@ -226,7 +226,7 @@ var accounts = module.exports = {
             // Check the error that we gotst
             if (err && err.name == "ValidationError") {
                 // Ahh! ValidationError!
-                return res.render("error-back.ejs", {
+                return res.render("error-back.hbs", {
                     title: "SerGIS Account - " + user.username,
                     subtitle: "Error Creating Game",
                     details: "Error creating game \"" + gameName + "\". Game names must be unique.",
@@ -267,8 +267,10 @@ var pageHandlers = {
      * Handle GET requests to the login page.
      */
     loginGet: function (req, res, next, loginErrorMsg) {
-        res.render("account-login.ejs", {
-            error: loginErrorMsg || false
+        res.render("account-login.hbs", {
+            title: "SerGIS Login",
+            loginPage: true,
+            error: loginErrorMsg
         });
     },
     

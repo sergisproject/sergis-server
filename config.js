@@ -130,12 +130,6 @@ var config = module.exports = {
     // DATA DIRECTORIES
     
     /**
-     * Templates directory.
-     * @type {string}
-     */
-    TEMPLATES_DIR: path.join(__dirname, "templates"),
-    
-    /**
      * Alternate HTTP path for the SerGIS Client static files
      * (i.e. the sergis-client/lib).
      * If not provided (empty string), defaults to /client-lib/ (served through
@@ -156,7 +150,7 @@ var config = module.exports = {
      * if the sergis-server backend is used.
      * @type {Array.<string>}
      */
-    CLIENT_RESOURCES_JS: ["main.js", "frontends/arcgis.js",
+    CLIENT_RESOURCES_JS: ["es6-promise-2.0.0.min.js", "main.js", "frontends/arcgis.js",
                           "backends/sergis-server.js"],
     
     /**
@@ -164,7 +158,7 @@ var config = module.exports = {
      * if the local backend is used.
      * @type {Array.<string>}
      */
-    CLIENT_RESOURCES_JS_LOCAL: ["main.js", "frontends/arcgis.js",
+    CLIENT_RESOURCES_JS_LOCAL: ["es6-promise-2.0.0.min.js", "main.js", "frontends/arcgis.js",
                                 "backends/game-common.js", "backends/local.js"],
     
     /**
@@ -188,6 +182,7 @@ var config = module.exports = {
      * @type {Array.<string>}
      */
     AUTHOR_RESOURCES_JS: [
+        "es6-promise-2.0.0.min.js", "author-checkpromise.js", "localforage.nopromises.min.js",
         "author-main.js", "author-ask.js",
         "author-json.js", "author-games.js", "author-table.js",
         "author-editor.js", "author-action-editor.js", "author-frontend-info-editor.js",

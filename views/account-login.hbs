@@ -1,13 +1,13 @@
-<%- include("HEADER", {title: "SerGIS Login", page: "login"}) %>
+{{> HEADER}}
 
 <section>
     <form action="" method="POST">
         <input type="hidden" name="login" value="account-login">
         <h2>Login</h2>
 
-        <% if (error) { %>
-        <p><i><%= error %></i></p>
-        <% } %>
+{{#if error}}
+        <p><i>{{error}}</i></p>
+{{/if}}
         
         <table><tbody>
             <tr><td>Username: </td><td><input type="text" name="username"></td></tr>
@@ -17,4 +17,4 @@
     </form>
 </section>
 
-<%- include("FOOTER") %>
+{{> FOOTER}}

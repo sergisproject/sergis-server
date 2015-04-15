@@ -1,0 +1,35 @@
+{{> HEADER}}
+
+<section>
+    <h2>SerGIS Games</h2>
+
+{{#each gamesByAccess}}
+    <h3 class="has-description">{{this.name}}</h3>
+    <p class="description">{{this.description}}</p>
+{{#unless this.games}}
+    <p>{{this.none}}</p>
+{{else}}
+    <table>
+    <thead>
+    <tr>
+        <th>Game Name</th>
+        <th>Game Owner</th>
+        {{#if this.organizationColumn}}<th>Organization</th>{{/if}}
+    </tr>
+    </thead>
+
+    <tbody>
+{{#each this.games}}
+    <tr>
+        <td><a href="{{../../HTTP_PREFIX}}/games/{{this.owner.username}}/{{this.name}}" title="Play {{this.name}}"><b>{{this.name}}</b></a></td>
+        <td><a href="{{../../HTTP_PREFIX}}/games/{{this.owner.username}}" title="View all games by {{this.owner.name}}">{{this.owner.name}}</a></td>
+        {{#if ../organizationColumn}}<td>{{this.owner.organization.name}}</td>{{/if}}
+    </tr>
+{{/each}}
+    </tbody>
+    </table>
+{{/unless}}
+{{/each}}
+</section>
+
+{{> FOOTER}}

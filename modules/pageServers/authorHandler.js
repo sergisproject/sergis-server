@@ -38,17 +38,12 @@ var pageHandlers = {
     authorGet: function (req, res, next) {
         // Render page
         res.render(path.join(config.SERGIS_AUTHOR, "index.html"), {
-            // lib files
-            "stylesheet.css": config.AUTHOR_STATIC + "/stylesheets/stylesheet.css",
-            "es6-promise-2.0.0.min.js": config.AUTHOR_STATIC + "/javascripts/es6-promise-2.0.0.min.js",
-            "localforage.nopromises.min.js": config.AUTHOR_STATIC + "/javascripts/localforage.nopromises.min.js",
-            "author-js-src": config.HTTP_PREFIX + "/static/author.js",
-
-            "no-minified": false,
-            "socket-io-script-src": config.SOCKET_ORIGIN + config.SOCKET_PREFIX + "/socket.io/socket.io.js",
-            "socket-io-origin": config.SOCKET_ORIGIN,
-            "socket-io-prefix": config.SOCKET_PREFIX,
-            "session": req.sessionID
+            stylesheetPath: config.AUTHOR_STATIC + "/stylesheets/stylesheet.css",
+            author_js_src: config.HTTP_PREFIX + "/static/author.js",
+            socket_io_script_src: config.SOCKET_ORIGIN + config.SOCKET_PREFIX + "/socket.io/socket.io.js",
+            socket_io_origin: config.SOCKET_ORIGIN,
+            socket_io_prefix: config.SOCKET_PREFIX,
+            session: req.sessionID
         });
     },
     
@@ -92,14 +87,11 @@ var pageHandlers = {
             
             // Render page
             res.render(path.join(config.SERGIS_CLIENT, "index.html"), {
+                stylesheetPath: config.CLIENT_STATIC + "/style.css",
+                client_js_src: config.HTTP_PREFIX + "/static/client.local.js",
+                
                 // NOTE: `test` is written to a JS block!
-                test: 'var SERGIS_JSON_DATA = ' + JSON.stringify(game.jsondata).replace(/<\/script>/g, '</scr" + "ipt>') + ';',
-
-                // lib files
-                "style.css": config.CLIENT_STATIC + "/style.css",
-                "es6-promise-2.0.0.min.js": config.CLIENT_STATIC + "/es6-promise-2.0.0.min.js",
-                "client-js-src": config.HTTP_PREFIX + "/static/client.local.js",
-                "no-minified": false
+                test: 'var SERGIS_JSON_DATA = ' + JSON.stringify(game.jsondata).replace(/<\/script>/g, '</scr" + "ipt>') + ';'
             });
         }, function (err) {
             next(err);
@@ -172,7 +164,9 @@ var pageHandlers = {
                 }
 
                 // Render the publish page
-                res.render("author-publish.ejs", {
+                res.render("author-publish.hbs", {
+                    title: "SerGIS Account - " + req.user.username,
+                    nostyle: true,
                     me: req.user,
                     authorGameID: game._id,
                     authorGameName: game.name,
@@ -190,7 +184,9 @@ var pageHandlers = {
      */
     publishDone: function (req, res, next) {
         // Render a Congrats page
-        res.render("author-publish-done.ejs", {
+        res.render("author-publish-done.hbs", {
+            title: "SerGIS Account - " + req.user.username,
+            nostyle: true,
             me: req.user,
             gameName: req.body.gameName
         });

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{{title}}</title>
+{{#unless nostyle}}
+<link rel="stylesheet" type="text/css" href="{{CLIENT_STATIC}}/style-simple.css">
+{{else}}
+<style type="text/css">
+/* Simple style */
+body {
+    background: transparent;
+    font-size: 1.2em;
+    font-family: sans-serif;
+}
+
+input, select {
+    font-size: 1em;
+}
+
+td {
+    padding: 5px;
+}
+</style>
+{{/unless}}
+</head>
+
+<body>
+
+{{#unless nostyle}}
+<header>
+    <h1>{{title}}</h1>
+    {{#if me}}
+    <ul>
+        <li>Logged in as {{me.username}}</li>
+    </ul>
+    {{/if}}
+    <ul>
+        <li><a href="{{HTTP_PREFIX}}/">Home</a></li>
+        <li><a href="{{HTTP_PREFIX}}/games">Games</a></li>
+        {{#if me}}
+        <li><a href="{{HTTP_PREFIX}}/author">Game Author</a></li>
+        {{else}}{{#unless loginPage}}
+        <li><a href="{{HTTP_PREFIX}}/account">Log In</a></li>
+        {{/unless}}{{/if}}
+    </ul>
+    {{#if me}}
+    <ul>
+        <li><a href="{{HTTP_PREFIX}}/games/{{me.username}}">My Games</a></li>
+        <li><a href="{{HTTP_PREFIX}}/account">My Account</a></li>
+        {{#if me.isAnyAdmin}}<li><a href="{{HTTP_PREFIX}}/account/admin">Admin</a></li>{{/if}}
+        <li><a href="{{HTTP_PREFIX}}/logout">Log Out</a></li>
+    </ul>
+    {{/if}}
+</header>
+{{/unless}}

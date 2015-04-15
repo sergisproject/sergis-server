@@ -1,0 +1,110 @@
+{{> HEADER}}
+
+<section>
+{{#if statusMessages}}
+    <ul class="status">
+        {{#each statusMessages}}<li>{{this}}</li>{{/each}}
+    </ul>
+{{/if}}
+
+{{#if me.isFullAdmin}}
+    <form action="" method="POST">
+        <input type="hidden" name="action" value="create-organization">
+        <h2>Create Organization</h2>
+        <table><tbody>
+            <tr><td>Organization Name: </td><td><input name="organization" type="text" required></td></tr>
+            <tr><td>&nbsp;</td><td><input type="submit" value="Create Organization"></td></tr>
+        </tbody></table>
+    </form>
+{{/if}}
+
+    <form action="" method="POST">
+        <input type="hidden" name="action" value="create-user">
+        <h2>Create User{{#if organization}} in {{organization}}{{/if}}</h2>
+        <table><tbody>
+            <tr><td>Username: </td><td><input type="text" name="username" required pattern="{{usernamePattern}}"><br><small>Must be unique, consisting only of letters, digits, and the following characters: <code>{{usernameCharacters}}</code></small></td></tr>
+            <tr><td>Display Name: </td><td><input type="text" name="name" required></td></tr>
+            <tr><td>Password: </td><td><input type="text" id="new-user-password" name="password" autocomplete="off" required> <button class="password-generator" data-input-elem="new-user-password" data-message-elem="new-user-password-message" style="display: none;">Generate Password</button><br><small id="new-user-password-message"></small></td></tr>
+{{#if me.isFullAdmin}}
+            <tr><td>Organization: </td><td><select name="organization">
+                <option value="" selected>(none)</option>
+                {{#each organizations}}<option value="{{this._id}}">{{this.name}}</option>{{/each}}
+            </select> <small>(optional)</small></td></tr>
+            <tr><td>Admin Status: </td><td><select name="admin">
+                <option value="nope" selected>Not Admin</option>
+                <option value="kinda">Organization Admin</option>
+                <option value="yup">Full Admin</option>
+            </select></td></tr>
+{{/if}}
+            <tr><td>&nbsp;</td><td><input type="submit" value="Create User"></td></tr>
+        </tbody></table>
+    </form>
+
+    <h2>Existing Users{{#if organization}} in {{organization}}{{/if}}</h2>
+{{#unless users}}
+    <p>No users! Create one above.</p>
+{{else}}
+    <table>
+    <thead>
+    <tr>
+        <th>Username</th>
+        <th>Display Name</th>
+{{#if me.isFullAdmin}}
+        <th>Organization</th>
+        <th>Admin Status</th>
+{{/if}}
+        <th>&nbsp;</th>
+        <th>&nbsp;</th>
+    </tr>
+    </thead>
+
+    <tbody>
+{{#each users}}
+    <tr>
+        <td><i>{{this.username}}</i></td>
+        <td>{{this.name}}</td>
+{{#if ../me.isFullAdmin}}
+        <td>
+            <form action="" method="POST">
+                <input type="hidden" name="action" value="set-user-organization">
+                <input type="hidden" name="username" value="{{this.username}}">
+                <select name="organization" class="formcheckers-select-auto-submit">
+                    <option value="">(none)</option>
+                    {{#each organizations}}<option value="{{this._id}}"{{#if this.selected}} selected{{/if}}>{{this.name}}</option>{{/each}}
+                </select>
+                <input type="submit" value="Update">
+            </form>
+        </td>
+        <td>
+{{#if this.isMe}}Full Admin{{else}}
+            <form action="" method="POST">
+                <input type="hidden" name="action" value="set-user-admin">
+                <input type="hidden" name="username" value="{{../user.username}}">
+                <select name="admin" class="formcheckers-select-auto-submit">
+                    <option value="nope">Not Admin</option>
+                    <option value="kinda"{{#if this.isOrganizationAdmin}} selected{{/if}}>Organization Admin</option>
+                    <option value="yup"{{#if this.isFullAdmin}} selected{{/if}}>Full Admin</option>
+                </select>
+                <input type="submit" value="Update">
+            </form>
+{{/if}}
+        </td>
+{{/if}}
+        <td><a href="{{../HTTP_PREFIX}}/account/admin/{{this.username}}">View Details</a><br><a href="{{../HTTP_PREFIX}}/games/{{this.username}}">View Games</a></td>
+{{#unless this.isMe}}{{#unless this.isFullAdmin}}
+        <td>
+            <form action="" method="POST" class="formcheckers-delete-check" data-name="{{this.name}}">
+                <input type="hidden" name="action" value="delete-user">
+                <input type="hidden" name="username" value="{{this.username}}">
+                <input type="submit" value="Delete">
+            </form>
+        </td>
+{{/unless}}{{/unless}}
+    </tr>
+{{/each}}
+    </tbody>
+    </table>
+{{/unless}}
+</section>
+
+{{> FOOTER}}

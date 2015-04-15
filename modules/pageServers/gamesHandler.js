@@ -127,19 +127,12 @@ var pageHandlers = {
                 games: privateGames
             });
         }).then(function () {
-            // Almost done...
-            // Make a list of organizations by ID (for quick lookups)
-            return db.models.Organization.find({}).select("name").exec();
-        }).then(function (orgs) {
-            var orgsByID = {};
-            orgs.forEach(function (org) {
-                orgsByID[org._id] = org.name;
-            });
             // And, we're finally completely done.
-            res.render("games-all.ejs", {
+            res.render("games-all.hbs", {
+                title: "SerGIS Games",
                 me: req.user,
                 gamesByAccess: gamesByAccess,
-                orgsByID: orgsByID
+                formCheckers: true
             });
         }).then(null, function (err) {
             next(err);
@@ -235,11 +228,14 @@ var pageHandlers = {
                 });
             }
             // Render!
-            res.render("games.ejs", {
+            res.render("games.hbs", {
+                title: "SerGIS Games",
                 me: req.user,
                 user: user,
+                isMe: req.user && req.user.equals(user),
                 canEditGames: req.user && req.user.canModifyUser(user),
-                gamesByAccess: gamesByAccess
+                gamesByAccess: gamesByAccess,
+                formCheckers: true
             });
         }).then(null, function (err) {
             next(err);
@@ -302,19 +298,15 @@ var pageHandlers = {
     serveGame: function (req, res, next) {
         // Render page
         res.render(path.join(config.SERGIS_CLIENT, "index.html"), {
-            test: false,
-            // lib files
-            "style.css": config.CLIENT_STATIC + "/style.css",
-            "es6-promise-2.0.0.min.js": config.CLIENT_STATIC + "/es6-promise-2.0.0.min.js",
-            "client-js-src": config.HTTP_PREFIX + "/static/client.js",
+            stylesheetPath: config.CLIENT_STATIC + "/style.css",
+            client_js_src: config.HTTP_PREFIX + "/static/client.js",
+            socket_io_script_src: config.SOCKET_ORIGIN + config.SOCKET_PREFIX + "/socket.io/socket.io.js",
+            socket_io_origin: config.SOCKET_ORIGIN,
+            socket_io_prefix: config.SOCKET_PREFIX,
+            game: req.game_id,
+            session: req.sessionID,
 
-            "no-minified": false,
-            "socket-io-script-src": config.SOCKET_ORIGIN + config.SOCKET_PREFIX + "/socket.io/socket.io.js",
-            "socket-io-origin": config.SOCKET_ORIGIN,
-            "socket-io-prefix": config.SOCKET_PREFIX,
-            "game": req.game_id,
-            "session": req.sessionID,
-            "logoutUrl": config.HTTP_PREFIX + "/logout"
+            test: false
         });
     }
 };
