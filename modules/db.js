@@ -11,7 +11,9 @@ var fs = require("fs"),
     path = require("path");
 
 // required modules
+config.time("db.js", "Requiring mongoose...");
 var mongoose = require("mongoose");
+config.time("db.js", "Required mongoose.");
 
 // our modules
 var config = require("../config");
