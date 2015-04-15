@@ -13,7 +13,6 @@
 /*****************************************************************************/
 
 
-
 // node modules
 var path = require("path");
 
@@ -25,6 +24,9 @@ var path = require("path");
 // our modules
 var config = require("./config");
 // NOTE: ./modules/db is require'd below if needed
+
+
+config.time("server.js", "Top");
 
 
 /**
@@ -124,7 +126,9 @@ var db;
 // Make sure we're starting something and, if so, set up exit handling and init
 if (config.ENABLE_HTTP_SERVER || config.ENABLE_SOCKET_SERVER) {
     // Set up database
+    config.time("server.js", "Requiring db...");
     db = require("./modules/db");
+    config.time("server.js", "Required db");
     db.addLoadHandler(function () {
         // Database is loaded; set up exit handler system
         initExitHandlers();
@@ -160,6 +164,7 @@ if (config.ENABLE_HTTP_SERVER || config.ENABLE_SOCKET_SERVER) {
 
 var app, server, io;
 function init() {
+    config.time("server.js", "Init'ing the rest of the server...");
     // Start HTTP server (if enabled)
     if (config.ENABLE_HTTP_SERVER) startHttpServer();
     // Start the Socket server (if enabled)
@@ -175,20 +180,30 @@ function startHttpServer() {
     console.log("Starting SerGIS HTTP server on port " + config.PORT + "...");
 
     // Require more stuff
+    config.time("server.js", "requiring coffee-script...");
     require("coffee-script/register");  // for indie-set
-    var express = require("express"),
-        session = require("express-session"),
-        MongoStore = require("connect-mongo")(session),
-        cookieParser = require("cookie-parser"),
-        indieSet = require("indie-set"),
-        ejs = require("ejs");
+    config.time("server.js", "requiring other stuff...");
+    var express = require("express");
+    config.time("server.js", "required express.");
+    var session = require("express-session");
+    config.time("server.js", "required express-session");
+    var MongoStore = require("connect-mongo")(session);
+    config.time("server.js", "required connect-mongo");
+    var cookieParser = require("cookie-parser");
+    config.time("server.js", "required cookie-parser");
+    var indieSet = require("indie-set");
+    config.time("server.js", "required indie-set");
+    var ejs = require("ejs");
+    config.time("server.js", "required ejs");
 
     // Create Express server instance
     app = express();
     server = require("http").Server(app);
 
     // Listen with the HTTP server on our port
+    config.time("server.js", "express started.");
     server.listen(config.PORT);
+    config.time("server.js", "listening on " + config.PORT);
 
     // Set up static directories
     for (var pathDescrip in STATIC_DIRECTORIES) {
@@ -256,6 +271,8 @@ function startHttpServer() {
             details: "See error console on server, or contact the site administrator with the exact date and time that this error occurred."
         });
     });
+    
+    config.time("server.js", "All Express is set up.");
 }
 
 
@@ -291,7 +308,9 @@ function startSocketServer() {
     // Create handlers for all our socket servers (see SOCKET_SERVERS above)
     for (var pathDescrip in SOCKET_SERVERS) {
         if (SOCKET_SERVERS.hasOwnProperty(pathDescrip)) {
+            config.time("server.js", "Loading socket handler " + pathDescrip);
             io.of(pathDescrip).use(require("./modules/socketServers/" + SOCKET_SERVERS[pathDescrip]));
         }
     }
+    config.time("server.js", "Socket loaded.");
 }

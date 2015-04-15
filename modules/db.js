@@ -47,6 +47,7 @@ db.once("open", function () {
     console.log("Opened MongoDB connection.");
     
     // Load models from `models` directory
+    config.time("db.js", "Loading models...");
     fs.readdir(modelsDir, function (err, files) {
         if (err) return console.error(err, "reading files from models directory at " + modelsDir);
         
@@ -62,10 +63,7 @@ db.once("open", function () {
             console.error("Error loading model: ", err.stack);
             
             // Make sure the MongoDB connection is closed
-            exports.close().then(function () {
-                process.exit();
-            }, function (err) {
-                console.error("Error closing database: ", err.stack);
+            exports.close(function () {
                 process.exit();
             });
             
@@ -73,10 +71,12 @@ db.once("open", function () {
             return;
         }
         
+        config.time("db.js", "Models loaded. Running load handlers...");
         // Run load handlers
         for (var i = 0; i < loadHandlers.length; i++) {
             loadHandlers[i]();
         }
+        config.time("db.js", "Done running load handlers.");
         // No more load handlers allowed
         loadHandlers = null;
     });
@@ -110,15 +110,20 @@ exports.addLoadHandler = function (callback) {
 
 /**
  * Close the MongoDB database connection if opened.
+ *
+ * @param {Function} [callback] - An optional callback for after it's closed.
  */
-exports.close = function () {
+exports.close = function (callback) {
     if (mongoose.connection) {
         console.log("Closing MongoDB connection...");
         mongoose.connection.close(function () {
             // There's a strong chance we'll never get here, because the server
             // will end before it's fully closed.
             console.log("Closed MongoDB connection.");
+            if (typeof callback == "function") callback();
         });
+    } else {
+        callback();
     }
 };
 

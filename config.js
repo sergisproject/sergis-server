@@ -54,6 +54,12 @@ var argdata = [
  */
 var config = module.exports = {
     /**
+     * Whether development mode is on. If true, then timing messages are shown.
+     * @type {boolean}
+     */
+    DEVELOPMENT: process.env && process.env.NODE_ENV == "development",
+    
+    /**
      * Default server port.
      * @type {number|string}
      */
@@ -231,3 +237,22 @@ if (config.CLIENT_STATIC.substr(-1) == "/") config.CLIENT_STATIC = config.CLIENT
 // Check AUTHOR_STATIC
 if (!config.AUTHOR_STATIC) config.AUTHOR_STATIC = config.HTTP_PREFIX + "/author-lib/";
 if (config.AUTHOR_STATIC.substr(-1) == "/") config.AUTHOR_STATIC = config.AUTHOR_STATIC.slice(0, -1);
+
+
+// TIMING STUFF (to test performance)
+var startTime, prevTime;
+config.time = function (fileName, description) {
+    if (!config.DEVELOPMENT) return;
+    if (!startTime) startTime = prevTime = process.hrtime();
+    var timeFromStart = process.hrtime(startTime);
+    var timeFromPrev = process.hrtime(prevTime);
+    prevTime = process.hrtime();
+    
+    timeFromStart = (timeFromStart[0] + timeFromStart[1] / 1e9).toFixed(5);
+    timeFromStart = ("          " + timeFromStart).substr(Math.min(-10, -timeFromStart.length));
+    
+    timeFromPrev = ((timeFromPrev[0] + timeFromPrev[1] / 1e9) * 1000).toFixed(3);
+    timeFromPrev = ("          " + timeFromPrev).substr(Math.min(-10, -timeFromPrev.length));
+    
+    console.log("::: TIMING [" + timeFromStart + " sec] [" + timeFromPrev + " ms since]: " + fileName + ": " + description);
+};
