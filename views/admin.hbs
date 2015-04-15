@@ -79,7 +79,7 @@
 {{#if this.isMe}}Full Admin{{else}}
             <form action="" method="POST">
                 <input type="hidden" name="action" value="set-user-admin">
-                <input type="hidden" name="username" value="{{../user.username}}">
+                <input type="hidden" name="username" value="{{../../user.username}}">
                 <select name="admin" class="formcheckers-select-auto-submit">
                     <option value="nope">Not Admin</option>
                     <option value="kinda"{{#if this.isOrganizationAdmin}} selected{{/if}}>Organization Admin</option>

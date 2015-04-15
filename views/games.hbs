@@ -17,7 +17,7 @@
     <thead>
     <tr>
         <th>Game Name</th>
-{{#if ../canEditGames}}
+{{#if ../../canEditGames}}
         <th>Access Level</th>
         <th>&nbsp;</th>
 {{/if}}
@@ -27,16 +27,16 @@
     <tbody>
 {{#each this.games}}
     <tr>
-        <td><a href="{{../../HTTP_PREFIX}}/games/{{../../user.username}}/{{this.name}}" title="Play {{this.name}}"><b>{{this.name}}</b></a></td>
+        <td><a href="{{../../../HTTP_PREFIX}}/games/{{../../../user.username}}/{{this.name}}" title="Play {{this.name}}"><b>{{this.name}}</b></a></td>
 {{#if canEditGames}}
         <td>
             <form action="" method="POST">
                 <input type="hidden" name="action" value="set-game-access">
-                <input type="hidden" name="username" value="{{../../user.username}}">
+                <input type="hidden" name="username" value="{{../../../user.username}}">
                 <input type="hidden" name="game" value="{{this._id}}">
                 <select name="access" class="formcheckers-select-auto-submit">
                     <option value="public"{{#if this.isPublicAccess}} selected{{/if}}>Public</option>
-                    {{#or ../../user.organization this.isOrganizationAccess}}<option value="organization"{{#if this.isOrganizationAccess}} selected{{/if}}>Organization</option>{{/or}}
+                    {{#or ../../../user.organization this.isOrganizationAccess}}<option value="organization"{{#if this.isOrganizationAccess}} selected{{/if}}>Organization</option>{{/or}}
                     <option value="private"{{#if this.isPrivateAccess}} selected{{/if}}>Private</option>
                 </select>
                 <input type="submit" value="Update">
@@ -45,7 +45,7 @@
         <td>
             <form action="" method="POST" target="_blank">
                 <input type="hidden" name="action" value="download-game">
-                <input type="hidden" name="username" value="{{../../user.username}}">
+                <input type="hidden" name="username" value="{{../../../user.username}}">
                 <input type="hidden" name="game" value="{{this._id}}">
                 <input type="submit" value="Download JSON">
             </form>

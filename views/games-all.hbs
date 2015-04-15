@@ -21,8 +21,8 @@
     <tbody>
 {{#each this.games}}
     <tr>
-        <td><a href="{{../../HTTP_PREFIX}}/games/{{this.owner.username}}/{{this.name}}" title="Play {{this.name}}"><b>{{this.name}}</b></a></td>
-        <td><a href="{{../../HTTP_PREFIX}}/games/{{this.owner.username}}" title="View all games by {{this.owner.name}}">{{this.owner.name}}</a></td>
+        <td><a href="{{../../../HTTP_PREFIX}}/games/{{this.owner.username}}/{{this.name}}" title="Play {{this.name}}"><b>{{this.name}}</b></a></td>
+        <td><a href="{{../../../HTTP_PREFIX}}/games/{{this.owner.username}}" title="View all games by {{this.owner.name}}">{{this.owner.name}}</a></td>
         {{#if ../organizationColumn}}<td>{{this.owner.organization.name}}</td>{{/if}}
     </tr>
 {{/each}}
