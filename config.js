@@ -199,7 +199,7 @@ config.SERGIS_CLIENT = path.join(__dirname, "sergis-client");
  *
  * @type {Array.<string>}
  */
-config.CLIENT_RESOURCES_JS = ["es6-promise-2.0.0.min.js", "main.js", "frontends/arcgis.js",
+config.CLIENT_RESOURCES_JS = ["es6-promise.js", "main.js", "frontends/arcgis.js",
                               "backends/sergis-server.js"];
 
 
@@ -212,7 +212,7 @@ config.CLIENT_RESOURCES_JS = ["es6-promise-2.0.0.min.js", "main.js", "frontends/
  *
  * @type {Array.<string>}
  */
-config.CLIENT_RESOURCES_JS_LOCAL = ["es6-promise-2.0.0.min.js", "main.js", "frontends/arcgis.js",
+config.CLIENT_RESOURCES_JS_LOCAL = ["es6-promise.js", "main.js", "frontends/arcgis.js",
                                     "backends/game-common.js", "backends/local.js"];
 
 
@@ -248,7 +248,7 @@ config.SERGIS_AUTHOR = path.join(__dirname, "sergis-author");
  * @type {Array.<string>}
  */
 config.AUTHOR_RESOURCES_JS = [
-    "es6-promise-2.0.0.min.js", "author-checkpromise.js",
+    "es6-promise.js", "author-checkpromise.js",
     "author-main.js", "author-ask.js",
     "author-json.js", "author-games.js", "author-table.js",
     "author-editor.js", "author-action-editor.js", "author-frontend-info-editor.js",
