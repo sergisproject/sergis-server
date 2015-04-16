@@ -281,7 +281,8 @@ function startHttpServer() {
     
     // Set up SERVER_LOG_DIR (if applicable)
     if (config.SERVER_LOG_DIR) {
-        app.use(config.HTTP_PREFIX + "/server-logs",
+        var logRouter = express.Router();
+        logRouter.use("",
             accounts.checkUser,
             accounts.requireLogin,
             function (req, res, next) {
@@ -293,6 +294,7 @@ function startHttpServer() {
             },
             express.static(config.SERVER_LOG_DIR)
         );
+        app.use(config.HTTP_PREFIX + "/server-logs", logRouter);
     }
 
     config.time("server.js", "Express set up.");
