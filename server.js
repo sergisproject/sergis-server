@@ -284,9 +284,8 @@ function startHttpServer() {
         var logRouter = express.Router();
         logRouter.get("",
             accounts.checkUser,
-            accounts.requireLogin,
             function (req, res, next) {
-                if (!req.user.isFullAdmin) {
+                if (!req.user || !req.user.isFullAdmin) {
                     req.error = {number: 403};
                     return next("route");
                 }
