@@ -82,7 +82,7 @@ module.exports = function (mongoose) {
             var gameToken = new GameToken({
                 token: token,
                 game: game._id,
-                user: user._id,
+                user: user ? user._id : undefined,
                 state: {
                     gameName: game.name,
                     // Default state
