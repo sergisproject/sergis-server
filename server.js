@@ -281,11 +281,11 @@ function startHttpServer() {
     
     // Set up SERVER_LOG_DIR (if applicable)
     if (config.SERVER_LOG_DIR) {
-        var logRouter = express.Router();
-        logRouter.get("",
+        app.all(config.HTTP_PREFIX + "/server-logs/*",
             accounts.checkUser,
+            accounts.requireLogin,
             function (req, res, next) {
-                if (!req.user || !req.user.isFullAdmin) {
+                if (!req.user.isFullAdmin) {
                     req.error = {number: 403};
                     return next("route");
                 }
@@ -293,7 +293,6 @@ function startHttpServer() {
             },
             express.static(config.SERVER_LOG_DIR)
         );
-        app.use(config.HTTP_PREFIX + "/server-logs", logRouter);
     }
 
     config.time("server.js", "Express set up.");
