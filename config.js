@@ -267,6 +267,16 @@ config.AUTHOR_RESOURCES_JS = [
 config.STATIC_DIR = path.join(__dirname, "dist");
 
 
+/**
+ * Directory of server logs, to be easily accessible by a Full Admin.
+ * If not available, use empty string ("").
+ * This directory should contain an index.html file.
+ *
+ * @type {string}
+ */
+config.SERVER_LOG_DIR = "";
+
+
 ///////////////////////////////////////////////////////////////////////////
 // Misc.
 

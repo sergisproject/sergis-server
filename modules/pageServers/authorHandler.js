@@ -12,8 +12,7 @@
 var path = require("path");
 
 // required modules
-var express = require("express"),
-    bodyParser = require("body-parser");
+var express = require("express");
 
 // our modules
 var config = require("../../config"),
@@ -22,11 +21,6 @@ var config = require("../../config"),
 
 // The router for /author/
 var router = module.exports = express.Router();
-
-// Set up body parser for POST data
-router.use(bodyParser.urlencoded({
-    extended: true
-}));
 
 
 ////////////////////////////////////////////////////////////////////////////////

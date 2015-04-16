@@ -11,7 +11,6 @@
 
 // required modules
 var express = require("express"),
-    bodyParser = require("body-parser"),
     multer = require("multer");
 
 // our modules
@@ -21,11 +20,6 @@ var config = require("../../config"),
 
 // The router for /account/
 var router = module.exports = express.Router();
-
-// Set up body parser for POST data
-router.use(bodyParser.urlencoded({
-    extended: true
-}));
 
 // Set up multer for POST data (multipart/form-data, used for file uploads or big things)
 router.use(multer({
@@ -152,6 +146,7 @@ var pageHandlers = {
                     };
                 }),
                 statusMessages: req.statusMessages,
+                serverLogs: !!config.SERVER_LOG_DIR,
                 organization: req.user.isOrganizationAdmin && req.user.organization && req.user.organization.name,
                 organizations: organizations,
                 usernamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),

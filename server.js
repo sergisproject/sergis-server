@@ -19,11 +19,12 @@ var path = require("path"),
 
 // required modules
 // NOTE: require'd below if needed:
-// express, express-sessions, connect-mongo, http, socket.io, cookie-parser, hbs
+// express, express-sessions, connect-mongo, http, socket.io, cookie-parser,
+// body-parser, hbs
 
 // our modules
 var config = require("./config");
-// NOTE: ./modules/db is require'd below if needed
+// NOTE: ./modules/db and ./modules/accounts are require'd below if needed
 
 
 config.time("server.js", "top");
@@ -199,8 +200,11 @@ function startHttpServer() {
     config.time("server.js", "Required connect-mongo.");
     var cookieParser = require("cookie-parser");
     config.time("server.js", "Required cookie-parser.");
+    var bodyParser = require("body-parser");
+    config.time("server.js", "Required body-parser");
     var hbs = require("hbs");
     config.time("server.js", "Required hbs.");
+    var accounts = require("./modules/accounts");
 
     // Create Express server instance
     app = express();
@@ -211,7 +215,7 @@ function startHttpServer() {
     
     config.time("server.js", "Express listening on " + config.PORT);
 
-    // Set up static directories
+    // Set up plain static directories
     var staticDescrip, staticInfo;
     for (staticDescrip in STATIC_DIRECTORIES) {
         if (STATIC_DIRECTORIES.hasOwnProperty(staticDescrip)) {
@@ -233,6 +237,11 @@ function startHttpServer() {
 
     // Set up cookie processing
     app.use(cookieParser(config.COOKIE_SIGNING_KEY || undefined));
+
+    // Set up body parser for POST data
+    app.use(bodyParser.urlencoded({
+        extended: true
+    }));
 
     // Set up sessions
     app.use(session({
@@ -269,6 +278,22 @@ function startHttpServer() {
         data.CLIENT_STATIC = config.CLIENT_STATIC;
         return hbs.__express(path, data, callback);
     });
+    
+    // Set up SERVER_LOG_DIR (if applicable)
+    if (config.SERVER_LOG_DIR) {
+        app.use(config.HTTP_PREFIX + "/server-logs",
+            accounts.checkUser,
+            accounts.requireLogin,
+            function (req, res, next) {
+                if (!req.user.isFullAdmin) {
+                    req.error = {number: 403};
+                    next("route");
+                }
+                next();
+            },
+            express.static(config.SERVER_LOG_DIR)
+        );
+    }
 
     config.time("server.js", "Express set up.");
     
