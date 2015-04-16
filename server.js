@@ -14,7 +14,8 @@
 
 
 // node modules
-var path = require("path");
+var path = require("path"),
+    fs = require("fs");
 
 // required modules
 // NOTE: require'd below if needed:
@@ -30,11 +31,23 @@ config.time("server.js", "top");
 
 /**
  * The different plain static file directories.
- * The keys are the Express paths, and the values are directories.
+ * The keys are the Express paths, and the values are objects with these
+ * properties:
+ *   `path`: The local path to the directory to serve.
+ *   `requiredFiles`: Files that we should check are in the directory (optional)
+ *                    NOTE: This is not able to check for files in subdirs!
  */
 var STATIC_DIRECTORIES = {
-    "/client-lib": path.join(config.SERGIS_CLIENT, "lib"),
-    "/author-lib": config.SERGIS_AUTHOR
+    "/static": {
+        path: config.STATIC_DIR,
+        requiredFiles: ["author.min.js", "client.min.js", "client.local.min.js"]
+    },
+    "/client-lib": {
+        path: path.join(config.SERGIS_CLIENT, "lib")
+    },
+    "/author-lib": {
+        path: config.SERGIS_AUTHOR
+    }
 };
 
 
@@ -47,7 +60,6 @@ var HTTP_SERVERS = {
     "/author": "authorHandler",
     "/account": "accountHandler",
     "/games": "gamesHandler",
-    "/static": "staticHandler",
     // This one catches everything else
     "/": "homepageHandler"
 };
@@ -200,9 +212,22 @@ function startHttpServer() {
     config.time("server.js", "Express listening on " + config.PORT);
 
     // Set up static directories
-    for (var pathDescrip in STATIC_DIRECTORIES) {
-        if (STATIC_DIRECTORIES.hasOwnProperty(pathDescrip)) {
-            app.use(config.HTTP_PREFIX + pathDescrip, express.static(STATIC_DIRECTORIES[pathDescrip]));
+    var staticDescrip, staticInfo;
+    for (staticDescrip in STATIC_DIRECTORIES) {
+        if (STATIC_DIRECTORIES.hasOwnProperty(staticDescrip)) {
+            staticInfo = STATIC_DIRECTORIES[staticDescrip];
+            if (!staticInfo.path || !fs.statSync(staticInfo.path).isDirectory()) {
+                throw new Error("Invalid `path` in STATIC_DIRECTORIES[" + JSON.stringify(staticDescrip) + "]");
+            }
+            if (staticInfo.requiredFiles) {
+                var files = fs.readdirSync(staticInfo.path);
+                staticInfo.requiredFiles.forEach(function (filename) {
+                    if (files.indexOf(filename) == -1) {
+                        throw new Error("Missing file " + filename + " in STATIC_DIRECTORIES[" + JSON.stringify(staticDescrip) + "]");
+                    }
+                });
+            }
+            app.use(config.HTTP_PREFIX + staticDescrip, express.static(staticInfo.path));
         }
     }
 

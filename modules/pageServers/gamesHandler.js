@@ -299,7 +299,7 @@ var pageHandlers = {
         // Render page
         res.render(path.join(config.SERGIS_CLIENT, "index.html"), {
             stylesheetPath: config.CLIENT_STATIC + "/style.css",
-            client_js_src: config.HTTP_PREFIX + "/static/client.js",
+            client_js_src: config.HTTP_PREFIX + "/static/client.min.js",
             socket_io_script_src: config.SOCKET_ORIGIN + config.SOCKET_PREFIX + "/socket.io/socket.io.js",
             socket_io_origin: config.SOCKET_ORIGIN,
             socket_io_prefix: config.SOCKET_PREFIX,

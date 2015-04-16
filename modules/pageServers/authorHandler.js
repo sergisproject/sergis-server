@@ -39,7 +39,7 @@ var pageHandlers = {
         // Render page
         res.render(path.join(config.SERGIS_AUTHOR, "index.html"), {
             stylesheetPath: config.AUTHOR_STATIC + "/stylesheets/stylesheet.css",
-            author_js_src: config.HTTP_PREFIX + "/static/author.js",
+            author_js_src: config.HTTP_PREFIX + "/static/author.min.js",
             socket_io_script_src: config.SOCKET_ORIGIN + config.SOCKET_PREFIX + "/socket.io/socket.io.js",
             socket_io_origin: config.SOCKET_ORIGIN,
             socket_io_prefix: config.SOCKET_PREFIX,
@@ -88,7 +88,7 @@ var pageHandlers = {
             // Render page
             res.render(path.join(config.SERGIS_CLIENT, "index.html"), {
                 stylesheetPath: config.CLIENT_STATIC + "/style.css",
-                client_js_src: config.HTTP_PREFIX + "/static/client.local.js",
+                client_js_src: config.HTTP_PREFIX + "/static/client.local.min.js",
                 
                 // NOTE: `test` is written to a JS block!
                 test: 'var SERGIS_JSON_DATA = ' + JSON.stringify(game.jsondata).replace(/<\/script>/g, '</scr" + "ipt>') + ';'

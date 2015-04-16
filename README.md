@@ -8,7 +8,11 @@ The server must have a recent version of [node.js](http://www.nodejs.org/) and [
 
 SerGIS Server has a few node.js dependencies; to install these, run `npm install` in a terminal in the root directory of the codebase. Also, make sure the submodules in `sergis-author` and `sergis-client` are there (if you cloned the git repo, run `git submodule init` and/or `git submodule update`).
 
-Also, SerGIS Server requires a running [MongoDB](https://www.mongodb.org/) server.
+To run the required [grunt](http://www.gruntjs.com/) tasks, `grunt-cli` must be installed. To do this, run: `npm install -g grunt-cli`
+
+Once grunt is installed, run `grunt` to run jshint and uglifyjs, or `grunt dist` to run just uglifyjs. (Running grunt is not required, but it is highly recommended for optimal server performance.)
+
+SerGIS Server requires a running [MongoDB](https://www.mongodb.org/) server. The path to the MongoDB server can be set in `config.js`.
 
 Before running the server, check the config file (`config.js`), and change any relevant variables. Then, run `node server.js` to see what you can do!
 
