@@ -288,7 +288,7 @@ function startHttpServer() {
             function (req, res, next) {
                 if (!req.user.isFullAdmin) {
                     req.error = {number: 403};
-                    next("route");
+                    return next("route");
                 }
                 next();
             },
