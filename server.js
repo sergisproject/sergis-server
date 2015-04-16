@@ -282,7 +282,7 @@ function startHttpServer() {
     // Set up SERVER_LOG_DIR (if applicable)
     if (config.SERVER_LOG_DIR) {
         var logRouter = express.Router();
-        logRouter.use("",
+        logRouter.get("",
             accounts.checkUser,
             accounts.requireLogin,
             function (req, res, next) {
