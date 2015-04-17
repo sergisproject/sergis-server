@@ -268,6 +268,8 @@ function startHttpServer() {
         if (!data) data = {};
         data.startComment = "<!--";
         data.endComment = "-->";
+        data.startJSComment = "/*";
+        data.endJSComment = "*/";
         return hbs.__express(path, data, callback);
     });
     

@@ -37,7 +37,27 @@ var pageHandlers = {
             socket_io_script_src: config.SOCKET_ORIGIN + config.SOCKET_PREFIX + "/socket.io/socket.io.js",
             socket_io_origin: config.SOCKET_ORIGIN,
             socket_io_prefix: config.SOCKET_PREFIX,
-            session: req.sessionID
+            session: req.sessionID,
+            
+            // NOTE: author_links is written to a JS var!
+            author_links: JSON.stringify([
+                {
+                    name: "Home",
+                    href: config.HTTP_PREFIX + "/"
+                },
+                {
+                    name: "Games",
+                    href: config.HTTP_PREFIX + "/games"
+                },
+                {
+                    name: "My Account",
+                    href: config.HTTP_PREFIX + "/account"
+                },
+                {
+                    name: "Log Out",
+                    href: config.HTTP_PREFIX + "/logout"
+                }
+            ]),
         });
     },
     
