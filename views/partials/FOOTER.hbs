@@ -1,8 +1,14 @@
 {{#unless nostyle}}
-<footer>
-    <p>Copyright &copy; 2015, SerGIS Project Contributors</p>
-    <p><a href="http://sergisproject.github.io/" target="_blank">The SerGIS Project</a></p>
-</footer>
+    </section>
+</div>
+</div>
+
+<div id="footer_wrap" class="outer">
+    <footer class="inner">
+        <p>Copyright &copy; 2015, SerGIS Project Contributors</p>
+        <p><a href="http://sergisproject.github.io/" target="_blank">The SerGIS Project</a></p>
+    </footer>
+</div>
 {{/unless}}
 
 {{#if formCheckers}}
@@ -64,7 +70,7 @@
                 if (elem) {
                     elem.value = GPW.pronounceable(Math.floor(Math.random() * 5) + 8);
                     elem = document.getElementById(this.getAttribute("data-message-elem"));
-                    elem.innerHTML = "Make sure to copy or write this password down. Once you create the user, there is no way to retrieve this password!";
+                    elem.innerHTML = "Make sure to copy or write this password down.<br>Once you create the user, there is no way to retrieve this password!";
                 }
             }, false);
             elems[i].style.display = "inline";

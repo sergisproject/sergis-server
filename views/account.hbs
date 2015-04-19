@@ -7,13 +7,15 @@
     </ul>
 {{/if}}
     
-    <p class="titlelinks"><a href="{{HTTP_PREFIX}}/games/{{user.username}}">{{#if isMe}}My Games{{else}}Games by {{user.name}}{{/if}}</a></p>
     <h2>{{user.name}}</h2>
+{{#unless isMe}}
+    <p><a href="{{../HTTP_PREFIX}}/games/{{../user.username}}">Games by {{user.name}}</a></p>
+{{/unless}}
     
     <form action="" method="POST">
         <input type="hidden" name="username" value="{{user.username}}">
         <input type="hidden" name="action" value="update-user">
-        <table><tbody>
+        <table class="noborder"><tbody>
             <tr><td>Display Name: </td><td><input type="text" name="name" required value="{{user.name}}"></td></tr>
             <tr><td>New Password: </td><td><input name="password1" type="password"><br><small>(Leave this blank to keep the existing password.)</small></td></tr>
             <tr><td>Confirm New Password: </td><td><input name="password2" type="password"></td></tr>
@@ -41,9 +43,9 @@
     <form action="" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="username" value="{{user.username}}">
         <input type="hidden" name="action" value="create-game">
-        <table><tbody>
-            <tr><td>Game Name: </td><td><input type="text" name="gameName" required pattern="{{gameNamePattern}}"><br><small>Must be unique, consisting only of letters, digits, and the following characters: <code>{{gameNameCharacters}}</code></small></td></tr>
-            <tr><td>SerGIS JSON Game Data file: </td><td><input type="file" name="jsonfile" required></td></tr>
+        <table class="noborder"><tbody>
+            <tr><td>Game Name: </td><td><input type="text" name="gameName" required pattern="{{gameNamePattern}}"><br><small>Must be unique, consisting only of letters, digits, and the characters: <code>{{gameNameCharacters}}</code></small></td></tr>
+            <tr><td>JSON Game Data file: </td><td><input type="file" name="jsonfile" required></td></tr>
             <tr><td>Access Level: </td><td><select name="access">
                 <option value="public" selected>Public</option>
                 {{#if user.organization}}<option value="organization">Organization</option>{{/if}}

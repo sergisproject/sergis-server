@@ -2,9 +2,10 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
 <title>{{title}}</title>
 {{#unless nostyle}}
-<link rel="stylesheet" type="text/css" href="{{CLIENT_STATIC}}/style-simple.css">
+<link rel="stylesheet" type="text/css" href="{{HTTP_PREFIX}}/static/stylesheet.min.css">
 {{else}}
 <style type="text/css">
 /* Simple style */
@@ -28,29 +29,32 @@ td {
 <body>
 
 {{#unless nostyle}}
-<header>
-    <h1>{{title}}</h1>
-    {{#if me}}
-    <ul>
-        <li>Logged in as {{me.username}}</li>
-    </ul>
-    {{/if}}
-    <ul>
-        <li><a href="{{HTTP_PREFIX}}/">Home</a></li>
-        <li><a href="{{HTTP_PREFIX}}/games">Games</a></li>
-        {{#if me}}
-        <li><a href="{{HTTP_PREFIX}}/author">Game Author</a></li>
-        {{else}}{{#unless loginPage}}
-        <li><a href="{{HTTP_PREFIX}}/account">Log In</a></li>
-        {{/unless}}{{/if}}
-    </ul>
-    {{#if me}}
-    <ul>
-        <li><a href="{{HTTP_PREFIX}}/games/{{me.username}}">My Games</a></li>
-        <li><a href="{{HTTP_PREFIX}}/account">My Account</a></li>
-        {{#if me.isAnyAdmin}}<li><a href="{{HTTP_PREFIX}}/account/admin">Admin</a></li>{{/if}}
-        <li><a href="{{HTTP_PREFIX}}/logout">Log Out</a></li>
-    </ul>
-    {{/if}}
-</header>
+<div id="top_wrap">
+<div id="header_wrap" class="outer">
+    <header class="inner">
+        <h1>{{title}}</h1>
+{{#if me}}
+        <h2 class="tagline"><i>Logged in as {{me.name}}</i><br><a href="{{HTTP_PREFIX}}/logout">Log Out</a></h2>
+{{/if}}
+        <ul>
+            <li><a href="{{HTTP_PREFIX}}/">Home</a></li>
+            <li><a href="{{HTTP_PREFIX}}/games">Games</a></li>
+{{#if me}}
+            <li><a href="{{HTTP_PREFIX}}/author">Game Author</a></li>
+{{else}}{{#unless loginPage}}
+            <li><a href="{{HTTP_PREFIX}}/account">Log In</a></li>
+{{/unless}}{{/if}}
+        </ul>
+{{#if me}}
+        <ul>
+            <li><a href="{{HTTP_PREFIX}}/games/{{me.username}}">My Games</a></li>
+            <li><a href="{{HTTP_PREFIX}}/account">My Account</a></li>
+            {{#if me.isAnyAdmin}}<li><a href="{{HTTP_PREFIX}}/account/admin">Admin</a></li>{{/if}}
+        </ul>
+{{/if}}
+    </header>
+</div>
+
+<div id="main_content_wrap" class="outer">
+    <section id="main_content" class="inner">
 {{/unless}}

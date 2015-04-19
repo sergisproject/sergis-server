@@ -19,7 +19,6 @@
         <th>Game Name</th>
 {{#if ../../canEditGames}}
         <th>Access Level</th>
-        <th>&nbsp;</th>
 {{/if}}
     </tr>
     </thead>
@@ -28,7 +27,7 @@
 {{#each this.games}}
     <tr>
         <td><a href="{{../../../HTTP_PREFIX}}/games/{{../../../user.username}}/{{this.name}}" title="Play {{this.name}}"><b>{{this.name}}</b></a></td>
-{{#if canEditGames}}
+{{#if ../../../canEditGames}}
         <td>
             <form action="" method="POST">
                 <input type="hidden" name="action" value="set-game-access">

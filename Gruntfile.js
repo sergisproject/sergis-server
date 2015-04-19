@@ -104,6 +104,17 @@ module.exports = function (grunt) {
         },
 
 
+        // cssmin
+        cssmin: {
+            dist: {
+                files: [{
+                    src: "static/*",
+                    dest: config.STATIC_DIR + "/stylesheet.min.css"
+                }]
+            }
+        },
+
+
         // copy
         copy: {
             dist: {
@@ -139,17 +150,24 @@ module.exports = function (grunt) {
 
         // watch
         watch: {
-            files: ["<%= jshint.server.src %>", "<%= jshint.client.src %>", "<%= jshint.author.src %>"],
-            tasks: ["jshint", "uglify", "copy", "clean"]
+            js: {
+                files: ["<%= jshint.server.src %>", "<%= jshint.client.src %>", "<%= jshint.author.src %>"],
+                tasks: ["jshint", "uglify", "copy", "clean"]
+            },
+            css: {
+                files: ["static/*"],
+                tasks: ["cssmin"]
+            }
         }
     });
 
     grunt.loadNpmTasks("grunt-contrib-jshint");
     grunt.loadNpmTasks("grunt-contrib-uglify");
+    grunt.loadNpmTasks("grunt-contrib-cssmin");
     grunt.loadNpmTasks("grunt-contrib-copy");
     grunt.loadNpmTasks("grunt-contrib-clean");
     grunt.loadNpmTasks("grunt-contrib-watch");
 
-    grunt.registerTask("default", ["jshint", "uglify", "copy", "clean"]);
-    grunt.registerTask("dist", ["uglify", "copy", "clean"]);
+    grunt.registerTask("default", ["jshint", "uglify", "cssmin", "copy", "clean"]);
+    grunt.registerTask("dist", ["uglify", "cssmin", "copy", "clean"]);
 };

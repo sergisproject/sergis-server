@@ -15,7 +15,7 @@
     <form action="" method="POST">
         <input type="hidden" name="action" value="create-organization">
         <h2>Create Organization</h2>
-        <table><tbody>
+        <table class="noborder"><tbody>
             <tr><td>Organization Name: </td><td><input name="organization" type="text" required></td></tr>
             <tr><td>&nbsp;</td><td><input type="submit" value="Create Organization"></td></tr>
         </tbody></table>
@@ -25,8 +25,8 @@
     <form action="" method="POST">
         <input type="hidden" name="action" value="create-user">
         <h2>Create User{{#if organization}} in {{organization}}{{/if}}</h2>
-        <table><tbody>
-            <tr><td>Username: </td><td><input type="text" name="username" required pattern="{{usernamePattern}}"><br><small>Must be unique, consisting only of letters, digits, and the following characters: <code>{{usernameCharacters}}</code></small></td></tr>
+        <table class="noborder"><tbody>
+            <tr><td>Username: </td><td><input type="text" name="username" required pattern="{{usernamePattern}}"><br><small>Must be unique, consisting only of letters, digits, and the characters: <code>{{usernameCharacters}}</code></small></td></tr>
             <tr><td>Display Name: </td><td><input type="text" name="name" required></td></tr>
             <tr><td>Password: </td><td><input type="text" id="new-user-password" name="password" autocomplete="off" required> <button class="password-generator" data-input-elem="new-user-password" data-message-elem="new-user-password-message" style="display: none;">Generate Password</button><br><small id="new-user-password-message"></small></td></tr>
 {{#if me.isFullAdmin}}
@@ -57,8 +57,6 @@
         <th>Organization</th>
         <th>Admin Status</th>
 {{/if}}
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
     </tr>
     </thead>
 
