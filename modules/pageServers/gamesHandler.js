@@ -90,7 +90,7 @@ var pageHandlers = {
             // Add the organization games
             gamesByAccess.push({
                 name: "Organization Games",
-                description: "Organization games are only accessible to other people in " + (req.user.isFullAdmin ? "the creator's organization and administrators" : req.user.organization) + ".",
+                description: "Organization games are only accessible to other people in " + (req.user.isFullAdmin ? "the creator's organization and administrators" : req.user.organization.name) + ".",
                 access: "organization",
                 organizationColumn: !!req.user.isFullAdmin,
                 none: "No organization games.",
