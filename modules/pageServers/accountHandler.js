@@ -116,14 +116,38 @@ var pageHandlers = {
         
         // Yup, the user actually gotst some rights
         // Let's get them something to look at
-        var users;
-        db.models.User.find(req.user.isOrganizationAdmin ? {organization: req.user.organization._id} : {})
-                      .populate("organization")
-                      .exec().then(function (_users) {
-            users = _users;
-            // Get the organization list too
-            return db.models.Organization.find({}).exec();
-        }).then(function (organizations) {
+        var sortParam = "" + req.query.sort;
+        if (["username", "name", "organization", "admin"].indexOf(sortParam) == -1) {
+            sortParam = "";
+        }
+        if (sortParam == "admin") sortParam = "-isFullAdmin -isOrganizationAdmin";
+        
+        var sort = sortParam;
+        if (sort.indexOf("organization") == -1) sort += " organization";
+        if (sort.indexOf("isFullAdmin") == -1) sort += " -isFullAdmin";
+        if (sort.indexOf("isOrganizationAdmin") == -1) sort += " -isOrganizationAdmin";
+        if (sort.indexOf("username") == -1) sort += " username";
+        sort = sort.trim();
+        
+        var organizations, filterParam;
+        // Get the organizations list
+        db.models.Organization.find({}).exec().then(function (_orgs) {
+            organizations = _orgs;
+            filterParam = "" + req.query.filter;
+            var orgIDs = organizations.map(function (org) { return "" + org._id; });
+            if (orgIDs.indexOf(filterParam) == -1) filterParam = "";
+            
+            var criteria = {};
+            if (req.user.isOrganizationAdmin) {
+                criteria.organization = req.user.organization._id;
+            } else if (filterParam) {
+                criteria.organization = filterParam;
+            }
+            return db.models.User.find(criteria)
+                          .sort(sort)
+                          .populate("organization")
+                          .exec();
+        }).then(function (users) {
             // Now, render all that shit
             res.render("admin.hbs", {
                 title: "SerGIS Server Admin",
@@ -149,6 +173,8 @@ var pageHandlers = {
                 serverLogs: !!config.SERVER_LOG_DIR,
                 organization: req.user.isOrganizationAdmin && req.user.organization && req.user.organization.name,
                 organizations: organizations,
+                filter: filterParam,
+                sort: sortParam,
                 usernamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
                 usernameCharacters: config.URL_SAFE_REGEX_CHARS,
                 formCheckers: true,

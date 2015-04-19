@@ -262,6 +262,12 @@ function startHttpServer() {
     hbs.registerHelper("or", function (a, b, options) {
         return (a || b) ? options.fn(this) : options.inverse(this);
     });
+    hbs.registerHelper("or3way", function (a, b, c, options) {
+        return (a || b || c) ? options.fn(this) : options.inverse(this);
+    });
+    hbs.registerHelper("eq", function (a, b, options) {
+        return (a == b) ? options.fn(this) : options.inverse(this);
+    });
     
     // Render HTML files (used for client/author's index.html)
     app.engine("html", function (path, data, callback) {

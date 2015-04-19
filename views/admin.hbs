@@ -48,15 +48,24 @@
 {{#unless users}}
     <p>No users! Create one above.</p>
 {{else}}
+{{#if me.isFullAdmin}}
+    <form action="">
+        <input type="hidden" name="sort" value="{{sort}}">
+        <p>Filter by Organization: <select name="filter" class="formcheckers-select-auto-submit">
+            <option value="">(none)</option>
+            {{#each organizations}}<option value="{{this._id}}"{{#eq ../filter this._id}} selected{{/eq}}>{{this.name}}</option>{{/each}}
+        </select> <input type="submit" value="Go"></p>
+    </form>
+{{/if}}
     <table>
     <thead>
     <tr>
-        <th>Username</th>
-        <th>Display Name</th>
+        <th><a href="?sort=username{{#if filter}}&amp;filter={{filter}}{{/if}}">Username</a></th>
+        <th><a href="?sort=name{{#if filter}}&amp;filter={{filter}}{{/if}}">Display Name</a></th>
 {{#if me.isFullAdmin}}
-        <th>Organization</th>
-        <th>Admin Status</th>
+        <th><a href="?sort=organization{{#if filter}}&amp;filter={{filter}}{{/if}}">Organization</a></th>
 {{/if}}
+        <th><a href="?sort=admin{{#if filter}}&amp;filter={{filter}}{{/if}}">Admin Status</a></th>
     </tr>
     </thead>
 
@@ -77,8 +86,11 @@
                 <input type="submit" value="Update">
             </form>
         </td>
+{{/if}}
+{{#or3way this.isMe this.isFullAdmin ../me.isOrganizationAdmin}}
+        <td>{{#if ../this.isFullAdmin}}Full Admin{{else}}{{#if ../this.isOrganizationAdmin}}Organization Admin{{else}}Not Admin{{/if}}{{/if}}</td>
+{{else}}
         <td>
-{{#if this.isMe}}Full Admin{{else}}
             <form action="" method="POST">
                 <input type="hidden" name="action" value="set-user-admin">
                 <input type="hidden" name="user" value="{{this._id}}">
@@ -89,9 +101,8 @@
                 </select>
                 <input type="submit" value="Update">
             </form>
-{{/if}}
+{{/or3way}}
         </td>
-{{/if}}
 {{#unless this.isMe}}{{#unless this.isFullAdmin}}
         <td>
             <form action="" method="POST" class="formcheckers-delete-check" data-name="{{this.name}}">

@@ -181,6 +181,10 @@ th {
   color: #fff;
 }
 
+th a {
+  color: #fff;
+}
+
 table:not(.noborder) td {
   padding: 5px;
   border: 1px solid #373737;

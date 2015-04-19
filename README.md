@@ -18,8 +18,6 @@ Before running the server, check the config file (`config.js`), and change any r
 
 ## TODOs
 
-- Add ability to sort the tables of games, users, etc.
-- As Full Admin, on the Admin page, add ability to filter users by organization.
 - For the "Publish" page (that's shown in the Author), give the user 2 radio button choices:
       [*]  Create new game: ____________
       [ ]  Overwrite existing game: [--dropdown-w/-existing-games--]
