@@ -61,6 +61,7 @@ module.exports = function (socket, next) {
 
                 // We have the game; make a game token
                 return db.models.GameToken.makeGameToken(game, user).then(function (gameToken) {
+                    console.log("FROM GAME TOKEN RESULT: " + JSON.stringify(gameToken));
                     if (!gameToken) return callback();
                     
                     // All good!
