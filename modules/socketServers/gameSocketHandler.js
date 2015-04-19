@@ -53,7 +53,7 @@ module.exports = function (socket, next) {
             }
             
             // We have the user; get the game
-            return db.models.Game.findById(gameID).populate("owner")exec().then(function (game) {
+            return db.models.Game.findById(gameID).populate("owner").exec().then(function (game) {
                 if (!game) {
                     callback();
                     return;
