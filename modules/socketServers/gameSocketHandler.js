@@ -61,15 +61,18 @@ module.exports = function (socket, next) {
 
                 // We have the game; make a game token
                 return db.models.GameToken.makeGameToken(game, user).then(function (gameToken) {
-                    console.log("FROM GAME TOKEN RESULT: " + JSON.stringify(gameToken));
                     if (!gameToken) return callback();
                     
                     // All good!
                     callback(gameToken.clientUserObject, gameToken.token);
                 }, function (err) {
-                    reportError(err);
-                    // The user probably doesn't have access to this game
-                    callback(false, false);
+                    if (err instanceof Error) {
+                        reportError(err);
+                        callback();
+                    } else {
+                        // The user probably doesn't have access to this game
+                        callback(false, false);
+                    }
                 });
             });
         }).then(null, function (err) {

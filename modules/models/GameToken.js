@@ -67,7 +67,6 @@ module.exports = function (mongoose) {
     gameTokenSchema.statics.makeGameToken = function (game, user) {
         return new Promise(function (resolve, reject) {
             if (!game.isAccessibleByUser(user)) {
-                console.log("NO ACCESS FO U");
                 // Ahh! The user doesn't have access to this game!
                 return reject();
             }
