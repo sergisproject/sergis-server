@@ -204,26 +204,38 @@ var accounts = module.exports = {
             }
         }
 
-        // Next, try to make the game
-        var newGame = new db.models.Game({
-            name: gameName,
-            name_lowercase: gameName.toLowerCase(),
-            owner: user,
-            access: access,
-            jsondata: jsondata
-        });
-        newGame.save().then(function () {
-            // Hooray, all done!
-            req.statusMessages = [gameName + " created successfully!"];
-            return next();
-        }, function (err) {
+        // Make sure that the user doesn't already have a game with this name
+        db.models.Game.findOne({owner: user, name_lowercase: gameName.toLowerCase()}).select("_id").exec().then(function (game) {
+            if (game) {
+                return res.render("error-back.hbs", {
+                    title: "SerGIS Account - " + user.username,
+                    subtitle: "Error Creating Game",
+                    details: "Error creating game \"" + gameName + "\". Game names must be unique.",
+                    nostyle: nostyle
+                });
+            }
+            
+            // Next, try to make the game
+            var newGame = new db.models.Game({
+                name: gameName,
+                name_lowercase: gameName.toLowerCase(),
+                owner: user,
+                access: access,
+                jsondata: jsondata
+            });
+            return newGame.save().then(function () {
+                // Hooray, all done!
+                req.statusMessages = [gameName + " created successfully!"];
+                return next();
+            });
+        }).then(null, function (err) {
             // Check the error that we gotst
             if (err && err.name == "ValidationError") {
                 // Ahh! ValidationError!
                 return res.render("error-back.hbs", {
                     title: "SerGIS Account - " + user.username,
                     subtitle: "Error Creating Game",
-                    details: "Error creating game \"" + gameName + "\". Game names must be unique.",
+                    details: "Error creating game \"" + gameName + "\": Validation Error.",
                     nostyle: nostyle
                 });
             } else {
