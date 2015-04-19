@@ -53,7 +53,7 @@ module.exports = function (socket, next) {
             }
             
             // We have the user; get the game
-            return db.models.Game.findById(gameID).exec().then(function (game) {
+            return db.models.Game.findById(gameID).populate("owner")exec().then(function (game) {
                 if (!game) {
                     callback();
                     return;
@@ -84,7 +84,7 @@ module.exports = function (socket, next) {
         }
         
         var game;
-        Promise.resolve(db.models.Game.findById(gameID).exec()).then(function (_game) {
+        Promise.resolve(db.models.Game.findById(gameID).populate("owner").exec()).then(function (_game) {
             game = _game;
             if (!game) return;
             
