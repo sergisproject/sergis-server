@@ -22,7 +22,6 @@ Before running the server, check the config file (`config.js`), and change any r
       [*]  Create new game: ____________
       [ ]  Overwrite existing game: [--dropdown-w/-existing-games--]
 - Add new access level: "Unlisted" (only shows up in game listings for game owner and admins, but anyone with the link can access)
-- Allow game owners and admins to change names of existing games (and store old names for purpose of redirection)
 - Add ability to edit existing games (if either we own the game, or if we're an admin)
 
 ## License

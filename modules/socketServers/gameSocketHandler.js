@@ -143,6 +143,7 @@ module.exports = function (socket, next) {
                 return gameCommon[func].apply(gameCommon, args).then(null, function (data) {
                     // gameCommon...'s Promise rejected
                     callback(false, data);
+                    return Promise.reject();
                 });
             }).then(function (_data) {
                 data = _data;

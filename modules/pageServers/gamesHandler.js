@@ -42,9 +42,7 @@ var pageHandlers = {
             }
             
             // Get the game
-            return db.models.Game.findOne({owner: user._id, name_lowercase: gameName.toLowerCase()})
-                                 .select("_id")
-                                 .exec();
+            return db.models.Game.getGame(user, gameName, true);
         }).then(function (game) {
             if (!game) {
                 // Game doesn't exist
@@ -244,12 +242,57 @@ var pageHandlers = {
                       .exec().then(function (game) {
             if (!game || !game.owner.equals(req.otherUser)) {
                 // Invalid game, or game owner, passed in
-                console.log("GAME:" + game);
-                console.log("USER:" + req.otherUser);
                 return next();
             }
 
             switch (req.body.action) {
+                case "rename-game":
+                    // Make sure the user doesn't have any existing games with this name
+                    db.models.Game.findOne({
+                        owner: game.owner._id,
+                        name_lowercase: req.body.gameName.toLowerCase()
+                    }).select("_id").exec().then(function (otherGame) {
+                        if (otherGame) {
+                            // Ahh! Game name already exists!
+                            return res.render("error-back.hbs", {
+                                title: "SerGIS Account - " + req.otherUser.username,
+                                subtitle: "Error Renaming Game",
+                                details: "Error renaming game: Game name already exists."
+                            });
+                        }
+                        
+                        // Okay, we're good; but test the name for validity
+                        if (!config.URL_SAFE_REGEX.test(req.body.gameName)) {
+                            return res.render("error-back.hbs", {
+                                title: "SerGIS Account - " + req.otherUser.username,
+                                subtitle: "Error Renaming Game",
+                                details: "Invalid game name. Game names may consist of any letters, digits, and the following characters: " + config.URL_SAFE_REGEX_CHARS
+                            });
+                        }
+                        
+                        // All good, for realz
+                        game.oldNames.push({
+                            name: game.name,
+                            name_lowercase: game.name_lowercase
+                        });
+                        game.name = req.body.gameName;
+                        game.name_lowercase = req.body.gameName.toLowerCase();
+                        return game.save().then(function () {
+                            next();
+                        });
+                    }).then(null, function (err) {
+                        if (err && err.name == "ValidationError") {
+                            return res.render("error-back.hbs", {
+                                title: "SerGIS Account - " + req.otherUser.username,
+                                subtitle: "Error Renaming Game",
+                                details: "Error renaming game: Validation Error.\nMake sure that the new name is valid."
+                            });
+                        } else {
+                            // Some other error; bubble up
+                            next(err);
+                        }
+                    });
+                    return;
                 case "set-game-access":
                     if (["public", "organization", "private"].indexOf(req.body.access) != -1) {
                         game.access = req.body.access;
@@ -275,8 +318,9 @@ var pageHandlers = {
                     });
                     return;
                 case "delete-game":
+                    var gameName = game.name, gameOwner = game.owner.username;
                     game.remove().then(function () {
-                        console.log("Removed game: " + game.name);
+                        console.log("Removed game: " + gameName + "\n          By: " + gameOwner);
                         next();
                     }, function (err) {
                         next(err);

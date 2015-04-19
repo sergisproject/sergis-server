@@ -20,7 +20,7 @@
             elems[i].disabled = false;
             elems[i].addEventListener("change", function (event) {
                 var elem = this;
-                while ((elem.tagName || elem.nodeName).toLowerCase() != "form") {
+                while (elem && (elem.tagName || elem.nodeName).toLowerCase() != "form") {
                     elem = elem.parentNode;
                 }
                 elem.submit();
@@ -50,6 +50,31 @@
             } else {
                 event.preventDefault();
                 return false;
+            }
+        }, false);
+    }
+})();
+
+(function () {
+    var elems = document.getElementsByClassName("formcheckers-prompt-auto-submit");
+    for (var i = 0; i < elems.length; i++) {
+        elems[i].style.display = "inline";
+        elems[i].addEventListener("click", function (event) {
+            event.preventDefault();
+            var newValue = prompt(this.getAttribute("data-promptText"), this.getAttribute("data-promptDefault"));
+            if (newValue) {
+                var form = this;
+                while (form && (form.tagName || form.nodeName).toLowerCase() != "form") {
+                    form = form.parentNode;
+                }
+                if (form) {
+                    var input = document.createElement("input");
+                    input.setAttribute("type", "hidden");
+                    input.setAttribute("name", this.getAttribute("data-valueName"));
+                    input.setAttribute("value", newValue);
+                    form.appendChild(input);
+                    form.submit();
+                }
             }
         }, false);
     }

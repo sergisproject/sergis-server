@@ -26,7 +26,16 @@
     <tbody>
 {{#each this.games}}
     <tr>
-        <td><a href="{{../../../HTTP_PREFIX}}/games/{{../../../user.username}}/{{this.name}}" title="Play {{this.name}}"><b>{{this.name}}</b></a></td>
+        <td><p><a href="{{../../../HTTP_PREFIX}}/games/{{../../../user.username}}/{{this.name}}" title="Play {{this.name}}"><b>{{this.name}}</b></a></p>
+{{#if ../../../canEditGames}}
+            <form action="" method="POST">
+                <input type="hidden" name="action" value="rename-game">
+                <input type="hidden" name="username" value="{{../../../user.username}}">
+                <input type="hidden" name="game" value="{{this._id}}">
+                <p><a href="#" title="Rename {{this.name}}" class="formcheckers-prompt-auto-submit" data-promptText="New name for {{this.name}}: " data-promptDefault="{{this.name}}" data-valueName="gameName" style="display: none;">Rename</a></p>
+            </form>
+{{/if}}
+        </td>
 {{#if ../../../canEditGames}}
         <td>
             <form action="" method="POST">

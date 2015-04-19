@@ -34,11 +34,22 @@ module.exports = function (mongoose) {
         name_lowercase: {
             type: String,
             required: true,
-            unique: true,
             validator: function (value) {
                 return config.URL_SAFE_REGEX.test(value);
             }
         },
+        
+        // Old game names
+        oldNames: [{
+            name: {
+                type: String,
+                required: true
+            },
+            name_lowercase: {
+                type: String,
+                required: true
+            }
+        }],
         
         // The access level
         access: {
@@ -147,6 +158,36 @@ module.exports = function (mongoose) {
                     return game;
                 });
             }));
+        });
+    };
+    
+    /**
+     * Get a game for a specific user and game name.
+     *
+     * @param {User} owner - The game owner.
+     * @param {string} gameName - The name of the game.
+     * @param {boolean} [selectOnlyID] - Whether we only need "_id".
+     *
+     * @return {Promise.<?Game>} The game matched by this owner/name.
+     */
+    gameSchema.statics.getGame = function (owner, gameName, selectOnlyID) {
+        return Promise.resolve().then(function () {
+            // Try to get the game
+            var query = Game.findOne({owner: owner._id, name_lowercase: gameName.toLowerCase()});
+            if (selectOnlyID) query = query.select("_id");
+            return query.exec();
+        }).then(function (game) {
+            if (game) return game;
+            
+            // Try to find a game that used to be named this
+            return Game.findOne({
+                owner: owner._id,
+                oldNames: {
+                    $elemMatch: {
+                        name_lowercase: gameName.toLowerCase()
+                    }
+                }
+            }).select("_id").exec();
         });
     };
     
