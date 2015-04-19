@@ -67,6 +67,7 @@ module.exports = function (socket, next) {
                     // All good!
                     callback(gameToken.clientUserObject, gameToken.token);
                 }, function (err) {
+                    reportError(err);
                     // The user probably doesn't have access to this game
                     callback(false, false);
                 });
