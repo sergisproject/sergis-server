@@ -58,7 +58,7 @@ h6 {
 
 p {
   font-size: 18px;
-  margin: 10px 0 15px 0;
+  margin: 8px 0;
 }
 
 footer p {
@@ -71,7 +71,9 @@ a {
   text-shadow: none;
 }
 
-a:hover, a:focus {text-decoration: underline;}
+a:hover, a:focus {
+  text-decoration: underline;
+}
 
 footer a {
   color: #F2F2F2;
@@ -95,10 +97,6 @@ img {
   border: 1px solid #ebebeb;
 
   box-shadow: 0 0 5px #ebebeb;
-  -webkit-box-shadow: 0 0 5px #ebebeb;
-  -moz-box-shadow: 0 0 5px #ebebeb;
-  -o-box-shadow: 0 0 5px #ebebeb;
-  -ms-box-shadow: 0 0 5px #ebebeb;
 }
 
 p img {
@@ -119,9 +117,6 @@ pre, code {
   font-size: 14px;
 
   border-radius: 2px;
-  -moz-border-radius: 2px;
-  -webkit-border-radius: 2px;
-
   box-shadow: 0 0 10px rgba(0,0,0,.1);
 }
 
