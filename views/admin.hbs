@@ -69,7 +69,7 @@
         <td>
             <form action="" method="POST">
                 <input type="hidden" name="action" value="set-user-organization">
-                <input type="hidden" name="username" value="{{this.username}}">
+                <input type="hidden" name="user" value="{{this._id}}">
                 <select name="organization" class="formcheckers-select-auto-submit">
                     <option value="">(none)</option>
                     {{#each organizations}}<option value="{{this._id}}"{{#if this.selected}} selected{{/if}}>{{this.name}}</option>{{/each}}
@@ -81,7 +81,7 @@
 {{#if this.isMe}}Full Admin{{else}}
             <form action="" method="POST">
                 <input type="hidden" name="action" value="set-user-admin">
-                <input type="hidden" name="username" value="{{../../user.username}}">
+                <input type="hidden" name="user" value="{{this._id}}">
                 <select name="admin" class="formcheckers-select-auto-submit">
                     <option value="nope">Not Admin</option>
                     <option value="kinda"{{#if this.isOrganizationAdmin}} selected{{/if}}>Organization Admin</option>
@@ -96,7 +96,7 @@
         <td>
             <form action="" method="POST" class="formcheckers-delete-check" data-name="{{this.name}}">
                 <input type="hidden" name="action" value="delete-user">
-                <input type="hidden" name="username" value="{{this.username}}">
+                <input type="hidden" name="user" value="{{this._id}}">
                 <input type="submit" value="Delete">
             </form>
         </td>

@@ -179,7 +179,7 @@ var pageHandlers = {
                                                 req.body.name, req.user.organization._id, "nope");
                     return;
                 case "delete-user":
-                    adminActions["delete-user"](req, res, next, req.body.username, req.user.organization._id);
+                    adminActions["delete-user"](req, res, next, req.body.user, req.user.organization._id);
                     return;
             }
         } else {
@@ -193,13 +193,13 @@ var pageHandlers = {
                                                 req.body.name, req.body.organization, req.body.admin);
                     return;
                 case "set-user-organization":
-                    adminActions["set-user-organization"](req, res, next, req.body.username, req.body.organization);
+                    adminActions["set-user-organization"](req, res, next, req.body.user, req.body.organization);
                     return;
                 case "set-user-admin":
-                    adminActions["set-user-admin"](req, res, next, req.body.username, req.body.admin);
+                    adminActions["set-user-admin"](req, res, next, req.body.user, req.body.admin);
                     return;
                 case "delete-user":
-                    adminActions["delete-user"](req, res, next, req.body.username);
+                    adminActions["delete-user"](req, res, next, req.body.user);
                     return;
             }
         }
@@ -348,9 +348,9 @@ var adminActions = {
     /**
      * Handle a request for the deletion of a user.
      */
-    "delete-user": function (req, res, next, username, organizationID) {
+    "delete-user": function (req, res, next, userID, organizationID) {
         // Get the user, to check things if needed
-        db.models.User.findOne({username_lowercase: username.toLowerCase()}).exec().then(function (user) {
+        db.models.User.findById(userID).exec().then(function (user) {
             if (!user) {
                 // Well, our job is practically done for us
                 next();
@@ -376,7 +376,7 @@ var adminActions = {
             // All good! Delete
             return accounts.deleteUser(user).then(function () {
                 // All done!
-                req.statusMessages = ["User \"" + username + "\" has been deleted."];
+                req.statusMessages = ["\"" + user.name + "\" has been deleted."];
                 next();
             });
         }).then(null, function (err) {
@@ -412,9 +412,9 @@ var adminActions = {
     /**
      * Set the organization of a user.
      */
-    "set-user-organization": function (req, res, next, username, organizationID) {
-        // Make sure username is A-Ok
-        db.models.User.findOne({username_lowercase: username.toLowerCase()}).exec().then(function (user) {
+    "set-user-organization": function (req, res, next, userID, organizationID) {
+        // Make sure user is A-Ok
+        db.models.User.findById(userID).exec().then(function (user) {
             if (!user) {
                 res.render("error-back.hbs", {
                     title: "SerGIS Server Admin",
@@ -426,7 +426,7 @@ var adminActions = {
             
             user.organization = organizationID || undefined;
             return user.save().then(function () {
-                req.statusMessages = ["The organization for user \"" + username + "\" has been updated."];
+                req.statusMessages = ["The organization for \"" + user.name + "\" has been updated."];
                 next();
             });
         }).then(null, function (err) {
@@ -437,9 +437,9 @@ var adminActions = {
     /**
      * Set the admin status of a user.
      */
-    "set-user-admin": function (req, res, next, username, admin) {
+    "set-user-admin": function (req, res, next, userID, admin) {
         // Make sure the username is A-Ok
-        db.models.User.findOne({username_lowercase: username.toLowerCase()}).exec().then(function (user) {
+        db.models.User.findById(userID).exec().then(function (user) {
             if (!user) {
                 res.render("error-back.hbs", {
                     title: "SerGIS Server Admin",
@@ -459,7 +459,7 @@ var adminActions = {
             user.adminStatus = admin;
             return user.save().then(function () {
                 // All good now!
-                req.statusMessages = ["User \"" + username + "\" is now " + (admin == "yup" ? " an Admin." : admin == "kinda" ? "an Organization Admin." : "not an admin.")];
+                req.statusMessages = ["\"" + user.name + "\" is now " + (admin == "yup" ? " an Admin." : admin == "kinda" ? "an Organization Admin." : "not an admin.")];
                 next();
             });
         }).then(null, function (err) {
