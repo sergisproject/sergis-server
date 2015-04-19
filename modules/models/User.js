@@ -310,7 +310,7 @@ function checkPassword(password, encryptedPassword) {
 function checkLoginInfo(username, password) {
     var user;
     // Find the username
-    return User.findOne({username: username}).then(function (_user) {
+    return User.findOne({username_lowercase: username.toLowerCase()}).then(function (_user) {
         user = _user;
         // Make sure the username was good
         if (!user) {
