@@ -63,7 +63,7 @@
     <tbody>
 {{#each users}}
     <tr>
-        <td><i>{{this.username}}</i></td>
+        <td><a href="{{../HTTP_PREFIX}}/account/admin/{{this.username}}"><i>{{this.username}}</i></a><br><a href="{{../HTTP_PREFIX}}/games/{{this.username}}">View Games</a></td>
         <td>{{this.name}}</td>
 {{#if ../me.isFullAdmin}}
         <td>
@@ -92,7 +92,6 @@
 {{/if}}
         </td>
 {{/if}}
-        <td><a href="{{../HTTP_PREFIX}}/account/admin/{{this.username}}">View Details</a><br><a href="{{../HTTP_PREFIX}}/games/{{this.username}}">View Games</a></td>
 {{#unless this.isMe}}{{#unless this.isFullAdmin}}
         <td>
             <form action="" method="POST" class="formcheckers-delete-check" data-name="{{this.name}}">
