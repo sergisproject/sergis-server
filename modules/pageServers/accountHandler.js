@@ -120,9 +120,9 @@ var pageHandlers = {
         if (["username", "name", "organization", "admin"].indexOf(sortParam) == -1) {
             sortParam = "";
         }
-        if (sortParam == "admin") sortParam = "-isFullAdmin -isOrganizationAdmin";
         
         var sort = sortParam;
+        if (sort == "admin") sort = "-isFullAdmin -isOrganizationAdmin";
         if (sort.indexOf("organization") == -1) sort += " organization";
         if (sort.indexOf("isFullAdmin") == -1) sort += " -isFullAdmin";
         if (sort.indexOf("isOrganizationAdmin") == -1) sort += " -isOrganizationAdmin";
