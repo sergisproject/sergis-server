@@ -86,6 +86,7 @@ module.exports = function (mongoose) {
         
         // If there's no user, then the game must be public for the person to be able to access
         if (!user) {
+            console.log("1");
             return game.access == "public";
         }
 
@@ -94,12 +95,16 @@ module.exports = function (mongoose) {
             // Game is public; anyone can access
             return true;
         }
+        
         var isInOrganization = user.organization && game.owner.organization &&
             game.owner.organization.equals(user.organization);
         if (game.access == "organization" && (user.isFullAdmin || isInOrganization)) {
             // Game is organization access; the user is in the owner's organization or the user is a full admin
             return true;
+        } else {
+            console.log("2: " + game.access + ", " + (user.isFullAdmin) + ", " + isInOrganization);
         }
+        
         // (we don't know if game.owner is populated or now)
         if ((game.owner._id || game.owner).equals(user._id) || user.isFullAdmin || (user.isOrganizationAdmin && isInOrganization)) {
             // Game is private; the user is the owner or an admin
