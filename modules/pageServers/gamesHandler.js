@@ -320,7 +320,7 @@ var pageHandlers = {
                 case "delete-game":
                     var gameName = game.name, gameOwner = game.owner.username;
                     game.remove().then(function () {
-                        console.log("Removed game: " + gameName + "\n          By: " + gameOwner);
+                        console.log("The game " + JSON.stringify(gameName) + ", owned by " + JSON.stringify(gameOwner) + ", was removed by " + JSON.stringify(req.user.username));
                         next();
                     }, function (err) {
                         next(err);

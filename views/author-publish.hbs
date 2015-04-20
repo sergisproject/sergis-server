@@ -5,8 +5,23 @@
         <input type="hidden" name="action" value="create-game">
         <input type="hidden" name="authorGameID" value="{{authorGameID}}">
         <table><tbody>
-            <tr><td>Game Name: </td><td><input type="text" name="gameName" value="{{authorGameName}}" required pattern="{{gameNamePattern}}"></td></tr>
-            <tr><td>&nbsp;</td><td><small>Must be unique, consisting only of letters, digits, and the following characters: <code>{{gameNameCharacters}}</code></small></td></tr>
+            <tr><td><input type="radio" id="overwrite_nope" name="overwrite" value="nope"{{#if newGameName}} checked{{/if}}></td><td colspan="2"><label for="overwrite_nope"> Create New Game</label></td></tr>
+            <tr><td>&nbsp;</td><td><label for="newGame">Name: </label></td><td style="width: 100%;"><input type="text" id="newGame" name="newGame" value="{{authorGameName}}" required pattern="{{gameNamePattern}}"></td></tr>
+            <tr><td>&nbsp;</td><td colspan="2"><small>Must be unique, consisting only of letters, digits, and the following characters: <code>{{gameNameCharacters}}</code></small></td></tr>
+
+{{#if gamesToOverwrite}}
+            <tr><td><input type="radio" id="overwrite_yessir" name="overwrite" value="yessir"{{#if oldGameName}} checked{{/if}}></td><td colspan="2"><label for="overwrite_yessir"> Overwrite Existing Game</label></td></tr>
+            <tr><td>&nbsp;</td><td><label for="oldGame">Game: </label></td><td>
+                <select id="oldGame" name="oldGame">{{#each gamesToOverwrite}}
+                    <option value="{{this._id}}"{{#if this.selected}} selected{{/if}}>{{this.name}} ({{this.access}})</option>{{/each}}
+                </select>
+            </td></tr>
+{{/if}}
+        </tbody></table>
+
+        <hr>
+
+        <table><tbody>
             <tr><td>Access Level: </td><td><select name="access">
                 <option value="public" selected>Public</option>
                 {{#if me.organization}}<option value="organization">Organization</option>{{/if}}
@@ -19,3 +34,28 @@
 </section>
 
 {{> FOOTER}}
+
+<script type="text/javascript">
+(function () {
+    var newGameOption = document.getElementById("overwrite_nope"),
+        newGame = document.getElementById("newGame"),
+        oldGameOption = document.getElementById("overwrite_yessir"),
+        oldGame = document.getElementById("oldGame");
+    
+    if (newGameOption && newGame && oldGameOption && oldGame) {
+        function checkOptions() {
+            if (oldGameOption.checked) {
+                newGame.disabled = true;
+                oldGame.disabled = false;
+            } else {
+                newGame.disabled = false;
+                oldGame.disabled = true;
+            }
+        }
+
+        newGameOption.addEventListener("click", checkOptions, false);
+        oldGameOption.addEventListener("click", checkOptions, false);
+        checkOptions();
+    }
+})();
+</script>

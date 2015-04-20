@@ -134,13 +134,14 @@ module.exports = function (mongoose) {
      * @param {string} [access] - The access level to filter with (will only
      *        include games with this exact access level).
      *
-     * @return {Promise.<Array.<Game>>} The games that match this criteria.
+     * @return {Promise.<Array.<Game>>} The games that match this criteria,
+     *         sorted by access, then organization, then owner.
      */
     gameSchema.statics.getAll = function (owner, organization, access) {
         var criteria = {};
-        if (owner) criteria.owner = owner;
+        if (owner) criteria.owner = owner._id || owner;
         if (access) criteria.access = access;
-        return Promise.resolve(Game.find(criteria).populate("owner").exec()).then(function (games) {
+        return Promise.resolve(Game.find(criteria).sort("owner").populate("owner").exec()).then(function (games) {
             if (!organization) {
                 // We don't have to check organization; we're done
                 return games;
@@ -158,6 +159,26 @@ module.exports = function (mongoose) {
                     return game;
                 });
             }));
+        }).then(function (games) {
+            // Sort by access
+            var order = ["public", "organization", "private"];
+            return games.sort(function (a, b) {
+                // Try to sort by access
+                var sortByAccess = order.indexOf(a.access) - order.indexOf(b.access);
+                if (sortByAccess !== 0) return sortByAccess;
+                // Try to sort by owner organization
+                var aOrg = a.owner &&
+                           a.owner.organization &&
+                           a.owner.organization._id &&
+                           a.owner.organization._id.getTimestamp();
+                aOrg = aOrg ? aOrg.getTime() : 0;
+                var bOrg = b.owner &&
+                           b.owner.organization &&
+                           b.owner.organization._id &&
+                           b.owner.organization._id.getTimestamp();
+                bOrg = bOrg ? bOrg.getTime() : 0;
+                return aOrg - bOrg;
+            });
         });
     };
     

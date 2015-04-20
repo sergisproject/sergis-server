@@ -127,33 +127,64 @@ var pageHandlers = {
     publishPost: function (req, res, next) {
         // If we're coming from the publish page
         if (req.body.action == "create-game") {
-            // Make sure that we have a valid game ID
-            if (!req.body.authorGameID) {
-                req.error = {
-                    number: 400,
-                    details: "Invalid authorGameID."
-                };
+            // Make sure that we have all the required params
+            if (!req.body.authorGameID || !req.body.overwrite) {
+                req.error = {number: 400};
                 return next("route");
             }
             
-            // Get the JSON data for the game
-            db.models.AuthorGame.findById(req.body.authorGameID)
-                                .select("jsondata")
-                                .lean(true)
-                                .exec().then(function (game) {
+            // Figure out the new game name
+            var overwrite = req.body.overwrite == "yessir";
+            var gameName = req.body.newGame; // replaced by oldGame later if needed
+            
+            return Promise.resolve().then(function () {
+                // Get the old game, if needed
+                if (!overwrite) return;
+                return db.models.Game.findById(req.body.oldGame).exec();
+            }).then(function (oldGame) {
+                if (overwrite) {
+                    // If we're overwriting, then oldGame MUST exists
+                    if (!oldGame) {
+                        // BAD!
+                        req.error = {
+                            number: 400,
+                            details: "Invalid old game ID."
+                        };
+                        next("route");
+                        return Promise.reject();
+                    }
+                    
+                    // Store the old game's game
+                    gameName = oldGame.name;
+                    
+                    // Delete the old game
+                    return oldGame.remove();
+                }
+            }).then(function () {
+                // Get the JSON data for the game
+                return db.models.AuthorGame.findById(req.body.authorGameID)
+                                           .select("jsondata")
+                                           .lean(true)
+                                           .exec();
+            }).then(function (game) {
                 if (!game) {
                     // AHH! We don't exist!
                     req.error = {
                         number: 400,
-                        details: "Invalid gameAuthorID."
+                        details: "Invalid author game ID."
                     };
-                    return next("route");
+                    next("route");
+                    return Promise.reject();
                 }
                 
                 // Move control to accounts.createGame to check the data and create the game
-                accounts.createGame(req, res, next, req.user, req.body.gameName, req.body.access, game.jsondata, true);
+                req.gameName = gameName;
+                accounts.createGame(req, res, next, req.user, gameName, req.body.access, game.jsondata, true);
             }, function (err) {
-                next(err);
+                // If there's no error, then we already returned/reported it
+                if (err) {
+                    next(err);
+                }
             });
         } else {
             // We must be coming right from the author (not the publish page)
@@ -166,8 +197,10 @@ var pageHandlers = {
                 return next("route");
             }
             
+            var game;
             db.models.AuthorGame.findById(req.body.id)
-                                .exec().then(function (game) {
+                                .exec().then(function (_game) {
+                game = _game;
                 if (!game) {
                     // AHH! We don't exist!
                     req.error = {
@@ -177,6 +210,23 @@ var pageHandlers = {
                     return next("route");
                 }
 
+                // Get a list of all the existing published games
+                return db.models.Game.getAll(req.user);
+            }).then(function (oldGames) {
+                if (!oldGames) return;
+                
+                var foundOldGameName = false;
+                var gamesToOverwrite = oldGames.map(function (oldGame) {
+                    if (game.name_lowercase == oldGame.name_lowercase) {
+                        foundOldGameName = true;
+                    }
+                    return {
+                        _id: oldGame._id,
+                        name: oldGame.name,
+                        access: oldGame.access,
+                        selected: game.name_lowercase == oldGame.name_lowercase
+                    };
+                });
                 // Render the publish page
                 res.render("author-publish.hbs", {
                     title: "SerGIS Account - " + req.user.username,
@@ -185,7 +235,10 @@ var pageHandlers = {
                     authorGameID: game._id,
                     authorGameName: game.name,
                     gameNamePattern: config.URL_SAFE_REGEX.toString().slice(1, -1),
-                    gameNameCharacters: config.URL_SAFE_REGEX_CHARS
+                    gameNameCharacters: config.URL_SAFE_REGEX_CHARS,
+                    gamesToOverwrite: gamesToOverwrite,
+                    newGameName: !foundOldGameName,
+                    oldGameName: foundOldGameName
                 });
             }, function (err) {
                 next(err);
@@ -202,7 +255,7 @@ var pageHandlers = {
             title: "SerGIS Account - " + req.user.username,
             nostyle: true,
             me: req.user,
-            gameName: req.body.gameName
+            gameName: req.gameName
         });
     }
 };
