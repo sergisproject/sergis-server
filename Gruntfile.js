@@ -168,6 +168,7 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks("grunt-contrib-clean");
     grunt.loadNpmTasks("grunt-contrib-watch");
 
+    grunt.registerTask("test", ["jshint"]);
     grunt.registerTask("default", ["jshint", "uglify", "cssmin", "copy", "clean"]);
     grunt.registerTask("dist", ["uglify", "cssmin", "copy", "clean"]);
 };
