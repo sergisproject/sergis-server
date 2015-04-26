@@ -19,6 +19,7 @@
         <th>Game Name</th>
 {{#if ../../canEditGames}}
         <th>Access Level</th>
+        <th>Date Published</th>
 {{/if}}
     </tr>
     </thead>
@@ -50,16 +51,15 @@
                 <input type="submit" value="Update">
             </form>
         </td>
+        <td>{{formatDate this.created}}</td>
         <td>
             <form action="" method="POST" target="_blank">
                 <input type="hidden" name="action" value="download-game">
-                <input type="hidden" name="username" value="{{../../../user.username}}">
                 <input type="hidden" name="game" value="{{this._id}}">
                 <input type="submit" value="Download JSON">
             </form>
             <form action="" method="POST" class="formcheckers-delete-check" data-name="{{this.name}}">
                 <input type="hidden" name="action" value="delete-game">
-                <input type="hidden" name="username" value="{{../username}}">
                 <input type="hidden" name="game" value="{{this._id}}">
                 <input type="submit" value="Delete Game">
             </form>

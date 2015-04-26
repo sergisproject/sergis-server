@@ -268,6 +268,15 @@ function startHttpServer() {
     hbs.registerHelper("eq", function (a, b, options) {
         return (a == b) ? options.fn(this) : options.inverse(this);
     });
+    hbs.registerHelper("formatDate", function (date) {
+        date = new Date(date);
+        var now = new Date();
+        return date.toLocaleDateString("en-US", {
+            year: (date.getFullYear() == now.getFullYear()) ? undefined : "numeric",
+            month: "long",
+            day: "numeric"
+        });
+    });
     
     // Render HTML files (used for client/author's index.html)
     app.engine("html", function (path, data, callback) {
