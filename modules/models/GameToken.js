@@ -94,6 +94,7 @@ module.exports = function (mongoose) {
                 clientUserObject: {
                     jumpingBackAllowed: !!game.jsondata.jumpingBackAllowed,
                     jumpingForwardAllowed: !!game.jsondata.jumpingForwardAllowed,
+                    alwaysReinitializeMap: !!game.jsondata.alwaysReinitializeMap,
                     layout: game.jsondata.layout,
                     homeURL: config.HTTP_PREFIX + "/games",
                     displayName: user ? user.name : undefined
