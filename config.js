@@ -251,7 +251,7 @@ config.AUTHOR_RESOURCES_JS = [
     "es6-promise.js", "author-checkpromise.js",
     "author-main.js", "author-ask.js",
     "author-json.js", "author-games.js", "author-table.js",
-    "author-editor.js", "author-action-editor.js", "author-frontend-info-editor.js",
+    "author-editor.js", "author-action-editor.js", "author-map-properties-editor.js",
     "author-backend_sergis-server.js"
 ];
 
