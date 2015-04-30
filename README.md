@@ -23,6 +23,9 @@ Before running the server, check the config file (`config.js`), and change any r
 
 - Add new access level: "Unlisted" (only shows up in game listings for game owner and admins, but anyone with the link can access)
 - Add ability to edit existing games (if either we own the game, or if we're an admin)
+- Add ability for admins to "impersonate" another user in the Author and see their unfinished (author) games
+- Add ability to "Remember Me" at login
+- Make server cope better with MongoDB crashing
 
 ## License
 
