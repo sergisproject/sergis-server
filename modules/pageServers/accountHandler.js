@@ -129,7 +129,7 @@ var pageHandlers = {
         if (sort.indexOf("username") == -1) sort += " username";
         sort = sort.trim();
         
-        var organizations, filterParam;
+        var authorgames, organizations, filterParam;
         // Get the organizations list
         db.models.Organization.find({}).exec().then(function (_orgs) {
             organizations = _orgs;
@@ -137,6 +137,17 @@ var pageHandlers = {
             var orgIDs = organizations.map(function (org) { return "" + org._id; });
             if (orgIDs.indexOf(filterParam) == -1) filterParam = "";
             
+            // Get the author games list, if applicable
+            if (req.user.isFullAdmin) {
+                return db.models.AuthorGame.find({})
+                                           .sort("owner")
+                                           .populate("owner")
+                                           .exec();
+            }
+        }).then(function (_authorgames) {
+            authorgames = _authorgames || [];
+            
+            // Get the user list
             var criteria = {};
             if (req.user.isOrganizationAdmin) {
                 criteria.organization = req.user.organization._id;
@@ -144,9 +155,9 @@ var pageHandlers = {
                 criteria.organization = filterParam;
             }
             return db.models.User.find(criteria)
-                          .sort(sort)
-                          .populate("organization")
-                          .exec();
+                                 .sort(sort)
+                                 .populate("organization")
+                                 .exec();
         }).then(function (users) {
             // Now, render all that shit
             res.render("admin.hbs", {
@@ -169,6 +180,7 @@ var pageHandlers = {
                         })
                     };
                 }),
+                authorgames: authorgames,
                 statusMessages: req.statusMessages,
                 serverLogs: !!config.SERVER_LOG_DIR,
                 organization: req.user.isOrganizationAdmin && req.user.organization && req.user.organization.name,
@@ -226,6 +238,9 @@ var pageHandlers = {
                     return;
                 case "delete-user":
                     adminActions["delete-user"](req, res, next, req.body.user);
+                    return;
+                case "download-author-game":
+                    adminActions["download-author-game"](req, res, next, req.body.authorgame);
                     return;
             }
         }
@@ -489,6 +504,23 @@ var adminActions = {
                 next();
             });
         }).then(null, function (err) {
+            next(err);
+        });
+    },
+    
+    /**
+     * Handle downloading the JSON for a user's author game.
+     */
+    "download-author-game": function (req, res, next, authorgameID) {
+        db.models.AuthorGame.findById(authorgameID)
+                            .select("name jsondata")
+                            .lean(true)
+                            .exec().then(function (authorgame) {
+            // Lolz, this one's funny (we don't call next())
+            res.set("Content-Type", "application/json");
+            res.set("Content-Disposition", "attachment; filename=AUTHOR_" + authorgame.name + ".json");
+            res.send(authorgame.jsondata);
+        }, function (err) {
             next(err);
         });
     }

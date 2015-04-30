@@ -117,6 +117,33 @@
     </tbody>
     </table>
 {{/unless}}
+
+{{#if me.isFullAdmin}}
+    <h2>Existing Author Games</h2>
+    <table>
+    <thead>
+    <tr>
+        <th>Game Name</th>
+        <th>Game Owner</th>
+    </tr>
+    </thead>
+    <tbody>
+{{#each authorgames}}
+    <tr>
+        <td>{{this.name}}</td>
+        <td>{{this.owner.username}}</td>
+        <td>
+            <form action="" method="POST">
+                <input type="hidden" name="action" value="download-author-game">
+                <input type="hidden" name="authorgame" value="{{this._id}}">
+                <input type="submit" value="Download JSON">
+            </form>
+        </td>
+    </tr>
+{{/each}}
+    </tbody>
+    </table>
+{{/if}}
 </section>
 
 {{> FOOTER}}
