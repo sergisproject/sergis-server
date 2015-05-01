@@ -87,11 +87,11 @@ var pageHandlers = {
         }
 
         db.models.AuthorGame.findById(req.body.id)
-                            .select("jsondata")
+                            .select("owner jsondata")
                             .lean(true)
                             .exec().then(function (game) {
-            if (!game) {
-                // AHH! We don't exist!
+            if (!game || !(req.user._id.equals(game.owner) || req.user.isFullAdmin)) {
+                // AHH! We don't exist, or we don't have access!
                 req.error = {
                     number: 400,
                     details: "Invalid game ID."

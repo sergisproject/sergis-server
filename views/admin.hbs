@@ -133,6 +133,12 @@
         <td>{{this.name}}</td>
         <td>{{this.owner.username}}</td>
         <td>
+            <form action="{{../HTTP_PREFIX}}/author/preview" method="POST" target="_blank">
+                <input type="hidden" name="id" value="{{this._id}}">
+                <input type="submit" value="Preview">
+            </form>
+        </td>
+        <td>
             <form action="" method="POST">
                 <input type="hidden" name="action" value="download-author-game">
                 <input type="hidden" name="authorgame" value="{{this._id}}">
