@@ -127,7 +127,7 @@ module.exports = function (socket, next) {
                 options: {lean: true}
             }).exec()).then(function (_gameToken) {
                 gameToken = _gameToken;
-                if (!gameToken) {
+                if (!gameToken || !gameToken.game) {
                     callback(false, "Invalid token");
                     return Promise.reject();
                 }

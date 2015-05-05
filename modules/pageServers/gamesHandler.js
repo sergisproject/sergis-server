@@ -306,14 +306,16 @@ var pageHandlers = {
                     break;
                 case "download-game":
                     // Lolz, this one's funny (we don't call next())
-                    res.set("Content-Type", "application/json");
-                    res.set("Content-Disposition", "attachment; filename=" + game.name + ".json");
                     db.models.Game.findById(game._id)
-                                  .select("jsondata")
+                                  .select("name jsondata")
                                   .lean(true)
                                   .exec().then(function (game) {
+                        res.set("Content-Type", "application/json");
+                        res.set("Content-Disposition", "attachment; filename=" + game.name + ".json");
+                        console.log("Downloading game: " + game.name);
                         res.send(game.jsondata);
-                    }, function (err) {
+                        console.log(game.name + " sent.");
+                    }).then(null, function (err) {
                         next(err);
                     });
                     return;
