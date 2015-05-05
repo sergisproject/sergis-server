@@ -518,7 +518,7 @@ var adminActions = {
                             .exec().then(function (authorgame) {
             // Lolz, this one's funny (we don't call next())
             res.set("Content-Type", "application/json");
-            res.set("Content-Disposition", "attachment; filename=AUTHOR_" + authorgame.name + ".json");
+            res.set("Content-Disposition", "attachment; filename=\"AUTHOR_" + authorgame.name.replace(/"/g, "\\\"") + ".json\"");
             console.log("Downloading author game: " + authorgame.name);
             res.send(authorgame.jsondata);
             console.log(authorgame.name + " sent.");

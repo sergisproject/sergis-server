@@ -311,7 +311,7 @@ var pageHandlers = {
                                   .lean(true)
                                   .exec().then(function (game) {
                         res.set("Content-Type", "application/json");
-                        res.set("Content-Disposition", "attachment; filename=" + game.name + ".json");
+                        res.set("Content-Disposition", "attachment; filename=\"" + game.name.replace(/"/g, "\\\"") + ".json\"");
                         console.log("Downloading game: " + game.name);
                         res.send(game.jsondata);
                         console.log(game.name + " sent.");
