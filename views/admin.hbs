@@ -125,6 +125,7 @@
     <tr>
         <th>Game Name</th>
         <th>Game Owner</th>
+        <th>Last Modified</th>
     </tr>
     </thead>
     <tbody>
@@ -132,6 +133,7 @@
     <tr>
         <td>{{this.name}}</td>
         <td>{{this.owner.username}}</td>
+        <td>{{formatDate this.lastModified}}</td>
         <td>
             <form action="{{../HTTP_PREFIX}}/author/preview" method="POST" target="_blank">
                 <input type="hidden" name="id" value="{{this._id}}">
