@@ -9,9 +9,28 @@
     
     <h2>{{user.name}}</h2>
 {{#unless isMe}}
-    <p><a href="{{../HTTP_PREFIX}}/games/{{../user.username}}">Games by {{user.name}}</a></p>
+    <p><strong><a href="{{../HTTP_PREFIX}}/games/{{../user.username}}">Games by {{user.name}}</a></strong></p>
 {{/unless}}
-    
+
+{{#if me.isFullAdmin}}
+    <table>
+        <tbody>
+            <tr>
+                <th>Date Created:</th>
+                <td>{{formatDate user.created}}</td>
+            </tr>
+            <tr>
+                <th>Creator:</th>
+                <td><a href="{{HTTP_PREFIX}}/account/admin/{{user.creator.username}}" title="{{user.creator.username}}">{{user.creator.name}}</a></td>
+            </tr>
+            <tr>
+                <th>Password Updated:</th>
+                <td>{{formatDate user.passwordCreated}}</td>
+            </tr>
+        </tbody>
+    </table>
+{{/if}}
+
     <form action="" method="POST">
         <input type="hidden" name="username" value="{{user.username}}">
         <input type="hidden" name="action" value="update-user">

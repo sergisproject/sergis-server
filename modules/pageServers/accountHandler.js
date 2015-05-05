@@ -51,8 +51,15 @@ var pageHandlers = {
         // accountActions["update-user"] will set otherUser right after updating
         // it, whether it originally came from req.user or req.otherUser.
         var user = req.otherUser || req.user;
+        
         // Get the list of groups, in case we need it
-        db.models.Organization.find({}).exec().then(function (organizations) {
+        var organizations;
+        db.models.Organization.find({}).exec().then(function (_organizations) {
+            organizations = _organizations;
+            
+            // Populate the user's creator
+            return user.populate("creator").execPopulate();
+        }).then(function () {
             res.render("account.hbs", {
                 title: "SerGIS Account - " + user.username,
                 me: req.user,
