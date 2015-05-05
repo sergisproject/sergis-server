@@ -117,7 +117,7 @@ var pageHandlers = {
         // Yup, the user actually gotst some rights
         // Let's get them something to look at
         var sortParam = "" + req.query.sort;
-        if (["username", "name", "organization", "admin"].indexOf(sortParam) == -1) {
+        if (["username_lowercase", "name", "organization", "admin"].indexOf(sortParam) == -1) {
             sortParam = "";
         }
         
@@ -126,7 +126,7 @@ var pageHandlers = {
         if (sort.indexOf("organization") == -1) sort += " organization";
         if (sort.indexOf("isFullAdmin") == -1) sort += " -isFullAdmin";
         if (sort.indexOf("isOrganizationAdmin") == -1) sort += " -isOrganizationAdmin";
-        if (sort.indexOf("username") == -1) sort += " username";
+        if (sort.indexOf("username_lowercase") == -1) sort += " username_lowercase";
         sort = sort.trim();
         
         var authorgames, organizations, filterParam;

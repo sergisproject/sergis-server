@@ -45,7 +45,9 @@ module.exports = function (mongoose) {
         },
 
         // The full name of the user
-        name: String,
+        name: {
+            type: String
+        },
 
         // The salted and hashed password of the user
         encryptedPassword: String,
@@ -53,7 +55,8 @@ module.exports = function (mongoose) {
         // The user's organization
         organization: {
             type: Schema.Types.ObjectId,
-            ref: "Organization"
+            ref: "Organization",
+            index: true  // for sorting
         },
         
         // Whether the user is a full admin

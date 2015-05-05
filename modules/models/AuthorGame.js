@@ -21,7 +21,8 @@ module.exports = function (mongoose) {
         owner: {
             type: Schema.Types.ObjectId,
             ref: "User",
-            required: true
+            required: true,
+            index: true  // for sorting
         },
         
         // The game name
