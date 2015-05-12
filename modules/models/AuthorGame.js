@@ -25,6 +25,12 @@ module.exports = function (mongoose) {
             index: true  // for sorting
         },
         
+        // The other users that the game is shared with
+        sharedWith: [{
+            type: Schema.Types.ObjectId,
+            ref: "User"
+        }],
+        
         // The game name
         name: {
             type: String,

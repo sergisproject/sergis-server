@@ -163,7 +163,8 @@ module.exports = function (mongoose) {
         }).then(function (games) {
             // Sort by access
             var order = ["public", "organization", "private"];
-            return games.sort(function (a, b) {
+            games = games.slice(0);
+            games.sort(function (a, b) {
                 // Try to sort by access
                 var sortByAccess = order.indexOf(a.access) - order.indexOf(b.access);
                 if (sortByAccess !== 0) return sortByAccess;
@@ -180,6 +181,7 @@ module.exports = function (mongoose) {
                 bOrg = bOrg ? bOrg.getTime() : 0;
                 return aOrg - bOrg;
             });
+            return games;
         });
     };
     

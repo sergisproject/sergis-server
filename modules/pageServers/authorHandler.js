@@ -87,16 +87,37 @@ var pageHandlers = {
         }
 
         db.models.AuthorGame.findById(req.body.id)
-                            .select("owner jsondata")
+                            .select("owner sharedWith jsondata")
                             .lean(true)
                             .exec().then(function (game) {
-            if (!game || !(req.user._id.equals(game.owner) || req.user.isFullAdmin)) {
-                // AHH! We don't exist, or we don't have access!
+            if (!game) {
+                // Game don't exist!
                 req.error = {
                     number: 400,
                     details: "Invalid game ID."
                 };
                 return next("route");
+            }
+            if (!req.user._id.equals(game.owner) && !req.user.isFullAdmin) {
+                // We don't have access!
+                // Well, first, check if we're in the sharedWith list
+                var foundUser = false;
+                if (game.sharedWith) {
+                    for (var i = 0; i < game.sharedWith.length; i++) {
+                        if (game.sharedWith[i].equals(req.user._id)) {
+                            // Found us!
+                            foundUser = true;
+                            break;
+                        }
+                    }
+                }
+                if (!foundUser) {
+                    req.error = {
+                        number: 400,
+                        details: "Invalid game ID."
+                    };
+                    return next("route");
+                }
             }
             
             // Render page
@@ -163,7 +184,7 @@ var pageHandlers = {
             }).then(function () {
                 // Get the JSON data for the game
                 return db.models.AuthorGame.findById(req.body.authorGameID)
-                                           .select("jsondata")
+                                           .select("owner sharedWith jsondata")
                                            .lean(true)
                                            .exec();
             }).then(function (game) {
@@ -175,6 +196,28 @@ var pageHandlers = {
                     };
                     next("route");
                     return Promise.reject();
+                }
+                if (!req.user._id.equals(game.owner) && !req.user.isFullAdmin) {
+                    // We don't have access!
+                    // Well, first, check if we're in the sharedWith list
+                    var foundUser = false;
+                    if (game.sharedWith) {
+                        for (var i = 0; i < game.sharedWith.length; i++) {
+                            if (game.sharedWith[i].equals(req.user._id)) {
+                                // Found us!
+                                foundUser = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!foundUser) {
+                        req.error = {
+                            number: 400,
+                            details: "Invalid author game ID."
+                        };
+                        next("route");
+                        return Promise.reject();
+                    }
                 }
                 
                 // Move control to accounts.createGame to check the data and create the game

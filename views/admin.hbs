@@ -132,7 +132,7 @@
 {{#each authorgames}}
     <tr>
         <td>{{this.name}}</td>
-        <td>{{this.owner.username}}</td>
+        <td><a href="{{../HTTP_PREFIX}}/account/admin/{{this.owner.username}}"><i>{{this.owner.name}}</i></a></td>
         <td>{{formatDate this.lastModified}}</td>
         <td>
             <form action="{{../HTTP_PREFIX}}/author/preview" method="POST" target="_blank">
