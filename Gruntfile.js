@@ -82,6 +82,17 @@ module.exports = function (grunt) {
                 dest: config.SERGIS_CLIENT + "/lib/client.min.js"
             },
 
+            // uglify:client.nomin
+            "client.nomin": {
+                options: {
+                    sourceMapRoot: config.HTTP_PREFIX + "/client-lib/",
+                    compress: false,
+                    mangle: false
+                },
+                src: makePaths(config.SERGIS_CLIENT + "/lib", config.CLIENT_RESOURCES_JS),
+                dest: config.SERGIS_CLIENT + "/lib/client.min.js"
+            },
+
             // uglify:client.local
             "client.local": {
                 options: {
@@ -92,11 +103,33 @@ module.exports = function (grunt) {
                 dest: config.SERGIS_CLIENT + "/lib/client.local.min.js"
             },
 
+            // uglify:client.local.nomin
+            "client.local.nomin": {
+                options: {
+                    sourceMapRoot: config.HTTP_PREFIX + "/client-lib/",
+                    compress: false,
+                    mangle: false
+                },
+                src: makePaths(config.SERGIS_CLIENT + "/lib", config.CLIENT_RESOURCES_JS_LOCAL),
+                dest: config.SERGIS_CLIENT + "/lib/client.local.min.js"
+            },
+
             // uglify:author
             author: {
                 options: {
                     banner: '/*! SerGIS Project (sergis-author) - <%= grunt.template.today("yyyy-mm-dd") %> */\n',
                     sourceMapRoot: config.HTTP_PREFIX + "/author-lib/javascripts/"
+                },
+                src: makePaths(config.SERGIS_AUTHOR + "/javascripts", config.AUTHOR_RESOURCES_JS),
+                dest: config.SERGIS_AUTHOR + "/javascripts/author.min.js"
+            },
+
+            // uglify:author.nomin
+            "author.nomin": {
+                options: {
+                    sourceMapRoot: config.HTTP_PREFIX + "/author-lib/javascripts/",
+                    compress: false,
+                    mangle: false
                 },
                 src: makePaths(config.SERGIS_AUTHOR + "/javascripts", config.AUTHOR_RESOURCES_JS),
                 dest: config.SERGIS_AUTHOR + "/javascripts/author.min.js"
@@ -152,7 +185,7 @@ module.exports = function (grunt) {
         watch: {
             js: {
                 files: ["<%= jshint.server.src %>", "<%= jshint.client.src %>", "<%= jshint.author.src %>"],
-                tasks: ["jshint", "uglify", "copy", "clean"]
+                tasks: ["uglify:client.nomin", "uglify:client.local.nomin", "uglify:author.nomin", "copy", "clean"]
             },
             css: {
                 files: ["static/*"],
@@ -169,6 +202,11 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks("grunt-contrib-watch");
 
     grunt.registerTask("test", ["jshint"]);
-    grunt.registerTask("default", ["jshint", "uglify", "cssmin", "copy", "clean"]);
-    grunt.registerTask("dist", ["uglify", "cssmin", "copy", "clean"]);
+    grunt.registerTask("default", ["jshint",
+                                   "uglify:client.nomin", "uglify:client.local.nomin", "uglify:author.nomin",
+                                   "cssmin",
+                                   "copy", "clean"]);
+    grunt.registerTask("dist", ["uglify:client", "uglify:client.local", "uglify:author",
+                                "cssmin",
+                                "copy", "clean"]);
 };
