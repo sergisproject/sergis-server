@@ -9,6 +9,7 @@ The Node.js-based server for interaction with the SerGIS Web Client for [the Ser
 - Make sure the submodules in `sergis-author` and `sergis-client` are there (if you cloned the git repo, run `git submodule init` and/or `git submodule update`).
 - To run the required [grunt](http://www.gruntjs.com/) tasks, `grunt-cli` must be installed. To do this, run: `npm install -g grunt-cli`
 - SerGIS Server requires a running [MongoDB](https://www.mongodb.org/) server. The path to the MongoDB server can be set in `config.js`.
+- Make sure to create the `dist` and `uploads` directories if you are using them for `config.STATIC_DIR` and `config.UPLOADS_DIR` (respectively). See `config.js`.
 
 ## Configuring the Server
 

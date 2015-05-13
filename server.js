@@ -48,6 +48,9 @@ var STATIC_DIRECTORIES = {
     },
     "/author-lib": {
         path: config.SERGIS_AUTHOR
+    },
+    "/uploads": {
+        path: config.UPLOADS_DIR
     }
 };
 

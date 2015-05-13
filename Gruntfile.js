@@ -133,6 +133,15 @@ module.exports = function (grunt) {
                 },
                 src: makePaths(config.SERGIS_AUTHOR + "/javascripts", config.AUTHOR_RESOURCES_JS),
                 dest: config.SERGIS_AUTHOR + "/javascripts/author.min.js"
+            },
+            
+            // uglify:author.lib
+            "author.lib": {
+                options: {
+                    banner: '/*! <%= grunt.template.today("yyyy-mm-dd") %> */\n'
+                },
+                src: makePaths(__dirname, config.AUTHOR_RESOURCES_JS_LIB),
+                dest: config.STATIC_DIR + "/author.lib.min.js"
             }
         },
 
@@ -203,10 +212,12 @@ module.exports = function (grunt) {
 
     grunt.registerTask("test", ["jshint"]);
     grunt.registerTask("default", ["jshint",
-                                   "uglify:client.nomin", "uglify:client.local.nomin", "uglify:author.nomin",
+                                   "uglify:client.nomin", "uglify:client.local.nomin",
+                                   "uglify:author.nomin", "uglify:author.lib",
                                    "cssmin",
                                    "copy", "clean"]);
-    grunt.registerTask("dist", ["uglify:client", "uglify:client.local", "uglify:author",
+    grunt.registerTask("dist", ["uglify:client", "uglify:client.local",
+                                "uglify:author", "uglify:author.lib",
                                 "cssmin",
                                 "copy", "clean"]);
 };

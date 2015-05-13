@@ -34,6 +34,7 @@ var pageHandlers = {
         res.render(path.join(config.SERGIS_AUTHOR, "index.html"), {
             stylesheetPath: config.AUTHOR_STATIC + "/stylesheets/stylesheet.css",
             author_js_src: config.HTTP_PREFIX + "/static/author.min.js",
+            author_js_lib_src: config.HTTP_PREFIX + "/static/author.lib.min.js",
             socket_io_script_src: config.SOCKET_ORIGIN + config.SOCKET_PREFIX + "/socket.io/socket.io.js",
             socket_io_origin: config.SOCKET_ORIGIN,
             socket_io_prefix: config.SOCKET_PREFIX,

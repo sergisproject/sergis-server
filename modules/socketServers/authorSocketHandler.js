@@ -9,9 +9,30 @@
 // This file handles everything having to do with serving the socket for
 // sergis-author
 
+// node modules
+var fs = require("fs"),
+    path = require("path");
+
+// required modules
+var ss = require("socket.io-stream");
+
 // our modules
 var config = require("../../config"),
     db = require("../db");
+
+
+// The maximum file size to upload
+var AUTHOR_MAX_FILE_SIZE = 16 * 1024 * 1024; // 16 MB
+var AUTHOR_MAX_FILE_SIZE_HUMAN_READABLE = "16 MB";
+
+// The file types that the user is allowed to upload through uploadFile
+var FILE_TYPES_TO_EXTENSION = {
+    "image/jpeg": "jpg",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/png": "png",
+    "image/svg+xml": "svg"
+};
 
 
 /**
@@ -729,5 +750,71 @@ function initHandlers(socket, user) {
         
         // Return to the author
         callback(true);
+    });
+    
+    // uploadFile function; args: [fileName, fileType, fileSize] --> string
+    ss(socket).on("uploadFile", function (stream, args, callback) {
+        var fileName = args[0], fileType = args[1], fileSize = args[2];
+        
+        if (!fileName || !fileType || typeof fileSize != "number" || fileSize <= 0) {
+            callback(false, "Invalid file metadata.");
+            return;
+        }
+        
+        // Check the file size
+        if (fileSize >= AUTHOR_MAX_FILE_SIZE) {
+            callback(false, fileName + " is too large. Max file size is " + AUTHOR_MAX_FILE_SIZE_HUMAN_READABLE);
+            return;
+        }
+        
+        // Check the file type
+        fileType = ("" + fileType).toLowerCase();
+        if (!FILE_TYPES_TO_EXTENSION.hasOwnProperty(fileType)) {
+            callback(false, "Invalid file type: " + fileType);
+            return;
+        }
+        
+        // Make sure the file name won't kill us
+        fileName = user.username + "_" + path.basename(fileName);
+        if (!config.URL_SAFE_REGEX.test(fileName)) {
+            // Replace bad characters
+            for (var i = 0; i < fileName.length; i++) {
+                if (!config.URL_SAFE_REGEX.test(fileName[i])) {
+                    // Replace this character
+                    fileName = fileName.substring(0, i) + "_" + fileName.substring(i + 1);
+                }
+            }
+        }
+        // Replace multiple "_" in a row
+        fileName = fileName.replace(/__+/g, "_");
+        
+        // Remove a file extension if it has one
+        fileName = fileName.replace(/\.([A-Za-z]{1,4})$/, "");
+        
+        // Make sure that the filename doesn't already exist
+        var count = 0;
+        while (fs.existsSync(path.join(config.UPLOADS_DIR, fileName + "." + FILE_TYPES_TO_EXTENSION[fileType]))) {
+            if (count > 0) {
+                fileName = fileName.slice(-2 - count.toString().length);
+            }
+            fileName += "(" + (++count) + ")";
+        }
+        
+        // Append an extension
+        fileName += "." + FILE_TYPES_TO_EXTENSION[fileType];
+        
+        // Stream it to the local file
+        var writeStream = fs.createWriteStream(path.join(config.UPLOADS_DIR, fileName));
+        writeStream.on("finish", function () {
+            // All done writing to the file!
+            // Resolve with the URL to the file
+            callback(true, config.HTTP_PREFIX + "/uploads/" + fileName);
+        });
+        writeStream.on("error", function (err) {
+            // An error!!
+            reportError(err);
+            callback(false);
+        });
+        stream.pipe(writeStream);
     });
 }
