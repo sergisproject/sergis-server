@@ -795,7 +795,7 @@ function initHandlers(socket, user) {
         var count = 0;
         while (fs.existsSync(path.join(config.UPLOADS_DIR, fileName + "." + FILE_TYPES_TO_EXTENSION[fileType]))) {
             if (count > 0) {
-                fileName = fileName.slice(-2 - count.toString().length);
+                fileName = fileName.slice(0, -2 - count.toString().length);
             }
             fileName += "(" + (++count) + ")";
         }
