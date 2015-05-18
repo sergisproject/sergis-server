@@ -125,7 +125,7 @@ module.exports = function (socket, next) {
  */
 function initHandlers(socket, user) {
     if (config.DEVELOPMENT) {
-        console.log("Author socket connected (" + user.username + "): " + socket.id);
+        console.log("Author socket connected    (" + user.username + "): " + socket.id);
     }
     
     // The current game that the user is editing
