@@ -303,22 +303,20 @@ function startHttpServer() {
     if (config.SERVER_LOG_DIRS && Object.keys(config.SERVER_LOG_DIRS).length > 0) {
         var logRouter = express.Router();
         var serveIndex = require("serve-index");
-        logRouter.all("*",
-            accounts.checkUser,
-            accounts.requireLogin,
-            function (req, res, next) {
-                if (!req.user.isFullAdmin) {
-                    req.error = {number: 403};
-                    return next("route");
-                }
-                next();
+        logRouter.use(accounts.checkUser);
+        logRouter.use(accounts.requireLogin);
+        logRouter.use(function (req, res, next) {
+            if (!req.user.isFullAdmin) {
+                req.error = {number: 403};
+                return next("route");
             }
-        );
+            next();
+        });
         Object.keys(config.SERVER_LOG_DIRS).forEach(function (logDirName) {
             if (!config.URL_SAFE_REGEX.test(logDirName)) {
                 throw new Error("Invalid SERVER_LOG_DIR property: " + logDirName);
             }
-            logRouter.all(logDirName, serveIndex(config.SERVER_LOG_DIRS[logDirName]));
+            logRouter.use(logDirName, serveIndex(config.SERVER_LOG_DIRS[logDirName]));
         });
         app.use(config.HTTP_PREFIX + "/server-logs", logRouter);
     }

@@ -11,7 +11,7 @@
     {{#if serverLogs}}
     <h2>Server Logs</h2>
     <ul>
-        {{#each serverLogs}}<li><a href="{{HTTP_PREFIX}}/server-logs/{{this}}">{{this}}</a></li>{{/each}}
+        {{#each serverLogs}}<li><a href="{{../HTTP_PREFIX}}/server-logs/{{this}}">{{this}}</a></li>{{/each}}
     </ul>
     {{/if}}
     <form action="" method="POST">
