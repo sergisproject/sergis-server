@@ -10,7 +10,9 @@
 {{#if me.isFullAdmin}}
     {{#if serverLogs}}
     <h2>Server Logs</h2>
-    <p><a href="{{HTTP_PREFIX}}/server-logs/">View Server Logs</a></p>
+    <ul>
+        {{#each serverLogs}}<li><a href="{{HTTP_PREFIX}}/server-logs/{{this}}">{{this}}</a></li>{{/each}}
+    </ul>
     {{/if}}
     <form action="" method="POST">
         <input type="hidden" name="action" value="create-organization">

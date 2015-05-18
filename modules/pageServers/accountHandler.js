@@ -9,6 +9,9 @@
 // This file handles everything having to do with serving account and
 // administrative pages for sergis-server.
 
+// node modules
+var path = require("path");
+
 // required modules
 var express = require("express"),
     multer = require("multer");
@@ -189,7 +192,7 @@ var pageHandlers = {
                 }),
                 authorgames: authorgames,
                 statusMessages: req.statusMessages,
-                serverLogs: !!config.SERVER_LOG_DIR,
+                serverLogs: Object.keys(config.SERVER_LOG_DIRS),
                 organization: req.user.isOrganizationAdmin && req.user.organization && req.user.organization.name,
                 organizations: organizations,
                 filter: filterParam,

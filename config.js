@@ -295,13 +295,16 @@ config.UPLOADS_DIR = path.join(__dirname, "uploads");
 
 
 /**
- * Directory of server logs, to be easily accessible by a Full Admin.
- * If not available, use empty string ("").
- * This directory should contain an index.html file.
+ * Directories of server logs, to be easily accessible by a Full Admin.
+ * Each is represented by a unique identifier (must be URL-safe).
  *
- * @type {string}
+ * @type {Object.<string,string>}
  */
-config.SERVER_LOG_DIR = "";
+config.SERVER_LOG_DIRS = {
+    // "server-logs": "C:\log directory one",
+    // "db-logs": "C:\log directory two",
+    // ...
+};
 
 
 ///////////////////////////////////////////////////////////////////////////

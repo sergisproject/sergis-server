@@ -20,7 +20,7 @@ var path = require("path"),
 // required modules
 // NOTE: require'd below if needed:
 // express, express-sessions, connect-mongo, http, socket.io, cookie-parser,
-// body-parser, hbs
+// body-parser, hbs, serve-index
 
 // our modules
 var config = require("./config");
@@ -299,9 +299,10 @@ function startHttpServer() {
         return hbs.__express(path, data, callback);
     });
     
-    // Set up SERVER_LOG_DIR (if applicable)
-    if (config.SERVER_LOG_DIR) {
+    // Set up SERVER_LOG_DIRS (if applicable)
+    if (config.SERVER_LOG_DIRS && Object.keys(config.SERVER_LOG_DIRS).length > 0) {
         var logRouter = express.Router();
+        var serveIndex = require("serve-index");
         logRouter.all("*",
             accounts.checkUser,
             accounts.requireLogin,
@@ -311,9 +312,14 @@ function startHttpServer() {
                     return next("route");
                 }
                 next();
-            },
-            express.static(config.SERVER_LOG_DIR)
+            }
         );
+        Object.keys(config.SERVER_LOG_DIRS).forEach(function (logDirName) {
+            if (!config.URL_SAFE_REGEX.test(logDirName)) {
+                throw new Error("Invalid SERVER_LOG_DIR property: " + logDirName);
+            }
+            logRouter.all(logDirName, serveIndex(config.SERVER_LOG_DIRS[logDirName]));
+        });
         app.use(config.HTTP_PREFIX + "/server-logs", logRouter);
     }
 
