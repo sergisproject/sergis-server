@@ -316,7 +316,7 @@ function startHttpServer() {
             if (!config.URL_SAFE_REGEX.test(logDirName)) {
                 throw new Error("Invalid SERVER_LOG_DIR property: " + logDirName);
             }
-            logRouter.use(logDirName, serveIndex(config.SERVER_LOG_DIRS[logDirName]));
+            logRouter.use("/" + logDirName, serveIndex(config.SERVER_LOG_DIRS[logDirName]));
         });
         app.use(config.HTTP_PREFIX + "/server-logs", logRouter);
     }
