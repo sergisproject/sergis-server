@@ -124,6 +124,10 @@ module.exports = function (socket, next) {
  * Initialize all of the game storage-related handlers for a socket instance.
  */
 function initHandlers(socket, user) {
+    if (config.DEVELOPMENT) {
+        console.log("Author socket connected (" + user.username + "): " + socket.id);
+    }
+    
     // The current game that the user is editing
     var currentGameID = null;
 
@@ -133,10 +137,14 @@ function initHandlers(socket, user) {
     // Set up disconnection
     socket.on("disconnect", function () {
         // Disconnect us from our current game (if applicable)
-        if (currentGameID) disconnectGame();
+        if (currentGameID !== null) disconnectGame();
         
         // Remove us from usersBySocketID
         delete usersBySocketID[socket.id];
+        
+        if (config.DEVELOPMENT) {
+            console.log("Author socket disconnected (" + user.username + "): " + socket.id);
+        }
     });
 
 
