@@ -318,7 +318,7 @@ config.SERVER_LOG_DIRS = {
  *
  * @type {boolean}
  */
-config.ASSUME_ADMIN = true;
+config.ASSUME_ADMIN = false;
 
 
 /**
