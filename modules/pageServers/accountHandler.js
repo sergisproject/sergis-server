@@ -61,13 +61,17 @@ var pageHandlers = {
             organizations = _organizations;
             
             // Populate the user's creator
-            return user.populate("creator").execPopulate();
+            // (if it's a Mongoose object, which it might not be if config.ASSUME_ADMIN is true)
+            if (user.populate) return user.populate("creator").execPopulate();
         }).then(function () {
             res.render("account.hbs", {
                 title: "SerGIS Account - " + user.username,
                 me: req.user,
                 user: user,
                 isMe: req.user.equals(user),
+                // If the user doesn't equal itself, then we can't modify it
+                // (probably because config.ASSUME_ADMIN is true)
+                readonly: !user.equals(user),
                 statusMessages: req.statusMessages,
                 organizations: organizations.map(function (org) {
                     return {
@@ -180,7 +184,9 @@ var pageHandlers = {
                         name: user.name,
                         isFullAdmin: user.isFullAdmin,
                         isOrganizationAdmin: user.isOrganizationAdmin,
-                        isMe: user.equals(req.user),
+                        // If the req.user doesn't equal itself,
+                        // then we're an assumed admin
+                        isMe: req.user.equals(req.user) && user.equals(req.user),
                         organizations: organizations.map(function (org) {
                             return {
                                 _id: org._id,

@@ -8,6 +8,9 @@
 {{/if}}
     
     <h2>{{user.name}}</h2>
+
+{{#unless readonly}}
+
 {{#unless isMe}}
     <p><strong><a href="{{../HTTP_PREFIX}}/games/{{../user.username}}">Games by {{user.name}}</a></strong></p>
 {{/unless}}
@@ -85,6 +88,9 @@
         <p><input type="submit" value="Delete Account"></p>
     </form>
 {{/if}}
+
+{{/unless}}
+
 </section>
 
 {{> FOOTER }}

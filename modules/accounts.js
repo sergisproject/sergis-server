@@ -75,7 +75,12 @@ var accounts = module.exports = {
                 username_lowercase: "tempadmin",
                 encryptedPassword: "",
                 name: "WARNING: Set ASSUME_ADMIN to false in config.js",
-                isFullAdmin: true
+                isFullAdmin: true,
+                isAnyAdmin: true,
+                adminStatus: "yup",
+                equals: function () {
+                    return false;
+                }
             };
         }
 
